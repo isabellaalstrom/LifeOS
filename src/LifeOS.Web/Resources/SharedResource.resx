@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="App_Title" xml:space="preserve"><value>LifeOS</value></data>
+  <data name="Nav_Overview" xml:space="preserve"><value>Översikt</value></data>
+  <data name="Nav_Goals" xml:space="preserve"><value>Mål</value></data>
+  <data name="Nav_Planning" xml:space="preserve"><value>Planering</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projekt</value></data>
+  <data name="Nav_Habits" xml:space="preserve"><value>Vanor</value></data>
+  <data name="Nav_Retros" xml:space="preserve"><value>Retron</value></data>
+  <data name="QuickAdd" xml:space="preserve"><value>Snabbtillägg (kommer i fas 2)</value></data>
+  <data name="Logout" xml:space="preserve"><value>Logga ut</value></data>
+  <data name="Coming" xml:space="preserve"><value>Kommer i fas {0}</value></data>
+  <data name="Login_Title" xml:space="preserve"><value>Logga in</value></data>
+  <data name="Login_Email" xml:space="preserve"><value>E-post</value></data>
+  <data name="Login_Password" xml:space="preserve"><value>Lösenord</value></data>
+  <data name="Login_Submit" xml:space="preserve"><value>Logga in</value></data>
+  <data name="Login_Invalid" xml:space="preserve"><value>Fel e-post eller lösenord.</value></data>
+  <data name="Login_LockedOut" xml:space="preserve"><value>Kontot är tillfälligt låst. Försök igen om en stund.</value></data>
+  <data name="Setup_Title" xml:space="preserve"><value>Välkommen till LifeOS</value></data>
+  <data name="Setup_Intro" xml:space="preserve"><value>Skapa ditt konto för att komma igång. Detta kan bara göras en gång.</value></data>
+  <data name="Setup_Confirm" xml:space="preserve"><value>Bekräfta lösenord</value></data>
+  <data name="Setup_Submit" xml:space="preserve"><value>Skapa konto</value></data>
+  <data name="Setup_Mismatch" xml:space="preserve"><value>Lösenorden matchar inte.</value></data>
+  <data name="Setup_PasswordHint" xml:space="preserve"><value>Minst 10 tecken.</value></data>
+  <data name="Overview_Today" xml:space="preserve"><value>Dagens fokus</value></data>
+  <data name="Overview_Sprint" xml:space="preserve"><value>Aktuell sprint</value></data>
+  <data name="Overview_Goals" xml:space="preserve"><value>Målframsteg</value></data>
+  <data name="Overview_Deadlines" xml:space="preserve"><value>Kommande deadlines</value></data>
+  <data name="Overview_Insights" xml:space="preserve"><value>AI-insikter (valfritt)</value></data>
+  <data name="Goals_Description" xml:space="preserve"><value>Långsiktiga mål per år, kvartal och månad.</value></data>
+  <data name="Planning_Description" xml:space="preserve"><value>Veckosprintar, backlog och Kanban.</value></data>
+  <data name="Projects_Description" xml:space="preserve"><value>Projekt och uppgifter.</value></data>
+  <data name="Habits_Description" xml:space="preserve"><value>Vanor och rutiner.</value></data>
+  <data name="Retros_Description" xml:space="preserve"><value>Månads-, kvartals- och årsretron.</value></data>
+  <data name="Error_Title" xml:space="preserve"><value>Något gick fel</value></data>
+  <data name="Error_Body" xml:space="preserve"><value>Ett oväntat fel inträffade. Försök igen.</value></data>
+  <data name="NotFound_Title" xml:space="preserve"><value>Sidan hittades inte</value></data>
+  <data name="NotFound_Body" xml:space="preserve"><value>Sidan du letar efter finns inte.</value></data>
+</root>

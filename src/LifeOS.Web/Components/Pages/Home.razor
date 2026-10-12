@@ -1,0 +1,40 @@
+﻿@page "/"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Nav_Overview"] – @L["App_Title"]</PageTitle>
+<MudText Typo="Typo.h4" Tag="@("h1")" Class="mb-4">@L["Nav_Overview"]</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
+            <MudText Typo="Typo.h6">@L["Overview_Today"]</MudText>
+            <MudText Color="Color.Secondary">@L["Coming", 2]</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
+            <MudText Typo="Typo.h6">@L["Overview_Sprint"]</MudText>
+            <MudText Color="Color.Secondary">@L["Coming", 2]</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
+            <MudText Typo="Typo.h6">@L["Overview_Goals"]</MudText>
+            <MudText Color="Color.Secondary">@L["Coming", 3]</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
+            <MudText Typo="Typo.h6">@L["Overview_Deadlines"]</MudText>
+            <MudText Color="Color.Secondary">@L["Coming", 2]</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
+            <MudText Typo="Typo.h6">@L["Overview_Insights"]</MudText>
+            <MudText Color="Color.Secondary">@L["Coming", 5]</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+

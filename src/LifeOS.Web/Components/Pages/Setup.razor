@@ -1,0 +1,85 @@
+@page "/setup"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@using System.ComponentModel.DataAnnotations
+@using LifeOS.Infrastructure.Identity
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Setup_Title"] – @L["App_Title"]</PageTitle>
+<h1>@L["Setup_Title"]</h1>
+<p>@L["Setup_Intro"]</p>
+
+@foreach (var error in _errors)
+{
+    <p class="form-error" role="alert">@error</p>
+}
+
+<EditForm Model="Input" method="post" OnValidSubmit="CreateOwnerAsync" FormName="setup">
+    <DataAnnotationsValidator />
+    <label>@L["Login_Email"]
+        <InputText type="email" @bind-Value="Input.Email" autocomplete="username" class="field" />
+    </label>
+    <label>@L["Login_Password"]
+        <InputText type="password" @bind-Value="Input.Password" autocomplete="new-password" class="field" />
+        <small>@L["Setup_PasswordHint"]</small>
+    </label>
+    <label>@L["Setup_Confirm"]
+        <InputText type="password" @bind-Value="Input.ConfirmPassword" autocomplete="new-password" class="field" />
+    </label>
+    <button type="submit" class="btn-primary">@L["Setup_Submit"]</button>
+</EditForm>
+
+@code {
+    private readonly List<string> _errors = [];
+
+    [SupplyParameterFromForm] private SetupModel Input { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+
+        // Registration is closed once the single owner exists.
+        if (UserManager.Users.Any())
+        {
+            Navigation.NavigateTo("login");
+        }
+    }
+
+    private async Task CreateOwnerAsync()
+    {
+        _errors.Clear();
+        if (Input.Password != Input.ConfirmPassword)
+        {
+            _errors.Add(L["Setup_Mismatch"]);
+            return;
+        }
+
+        if (UserManager.Users.Any())
+        {
+            Navigation.NavigateTo("login");
+            return;
+        }
+
+        var user = new AppUser { UserName = Input.Email, Email = Input.Email };
+        var result = await UserManager.CreateAsync(user, Input.Password);
+        if (!result.Succeeded)
+        {
+            _errors.AddRange(result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        await SignInManager.SignInAsync(user, isPersistent: true);
+        Navigation.NavigateTo("");
+    }
+
+    private sealed class SetupModel
+    {
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required] public string Password { get; set; } = "";
+        [Required] public string ConfirmPassword { get; set; } = "";
+    }
+}

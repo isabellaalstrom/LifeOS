@@ -1,0 +1,21 @@
+@page "/Error"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Error_Title"]</PageTitle>
+<h1>@L["Error_Title"]</h1>
+<p>@L["Error_Body"]</p>
+
+@if (RequestId is not null && Environment.IsDevelopment())
+{
+    <p><small>Request ID: <code>@RequestId</code></small></p>
+}
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+    [Inject] private IHostEnvironment Environment { get; set; } = default!;
+
+    private string? RequestId => HttpContext?.TraceIdentifier;
+}

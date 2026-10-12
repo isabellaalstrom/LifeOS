@@ -1,0 +1,9 @@
+@page "/not-found"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["NotFound_Title"]</PageTitle>
+<h1>@L["NotFound_Title"]</h1>
+<p>@L["NotFound_Body"]</p>
+<p><a href="">@L["Nav_Overview"]</a></p>

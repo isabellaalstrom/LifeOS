@@ -1,0 +1,5 @@
+@page "/habits"
+@attribute [Authorize]
+@inject IStringLocalizer<SharedResource> L
+
+<PagePlaceholder Title="@L["Nav_Habits"]" Description="@L["Habits_Description"]" Phase="3" />

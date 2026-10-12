@@ -1,0 +1,15 @@
+﻿@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@Title – @L["App_Title"]</PageTitle>
+<MudText Typo="Typo.h4" Tag="@("h1")" Class="mb-1">@Title</MudText>
+<MudText Color="Color.Secondary" Class="mb-4">@Description</MudText>
+<MudPaper Outlined="true" Class="pa-6 text-center">
+    <MudText Color="Color.Secondary">@L["Coming", Phase]</MudText>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter, EditorRequired] public int Phase { get; set; }
+}
+
