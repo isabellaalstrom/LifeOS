@@ -1,0 +1,11 @@
+﻿bin/
+obj/
+.vs/
+*.user
+data/
+artifacts/
+design-time.db*
+*.db
+*.db-shm
+*.db-wal
+.env
