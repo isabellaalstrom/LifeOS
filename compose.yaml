@@ -1,0 +1,21 @@
+# Standalone hosting (e.g. NAS). Run with: docker compose up -d --build
+# Data (SQLite DB, Data Protection keys, backups) lives in the named volume mounted at /data.
+# Run exactly one replica: SQLite must not be shared by several app instances.
+services:
+  lifeos:
+    build: .
+    image: lifeos:local
+    container_name: lifeos
+    restart: unless-stopped
+    ports:
+      # Bound to localhost by default. Put a TLS reverse proxy in front, or change to "8080:8080" for LAN access.
+      - "127.0.0.1:8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      LifeOS__DataPath: /data
+      # Secrets (later phases: OpenAI key, VAPID keys) go in an untracked .env file or Docker secrets, never in git.
+    volumes:
+      - lifeos-data:/data
+
+volumes:
+  lifeos-data:

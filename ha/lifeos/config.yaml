@@ -1,0 +1,20 @@
+# Home Assistant app (add-on) manifest. Packaging only: LifeOS does not talk to HA entities, APIs or automations.
+name: LifeOS
+version: "0.1.0"
+slug: lifeos
+description: Personal life management with weekly sprints, habits and retrospectives
+url: https://github.com/isabellaalstrom/LifeOS
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+init: false
+# Served through the HA sidebar via Ingress. No host port is published.
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:compass-rose
+panel_title: LifeOS
+# /data (SQLite DB, Data Protection keys, backups) is persistent and included in HA backups.
+# "cold" stops the app while the backup runs so the SQLite file is consistent.
+backup: cold
