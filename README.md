@@ -70,7 +70,9 @@ path is covered by `DatabaseTests.Backup_is_a_consistent_copy_that_can_be_restor
 ## Home Assistant app
 
 See [docs/ha-ingress-spike.md](docs/ha-ingress-spike.md) for the install and test procedure and what is/isn't proven.
-Short version: `./ha/build-local-app.ps1`, copy `artifacts/ha-app/lifeos` to HA `/addons/lifeos`, install from *Local add-ons*.
+Short version: add `https://github.com/isabellaalstrom/LifeOS` as an app repository in HA (needs a published release image),
+or for a local build run `./ha/build-local-app.ps1`, copy `artifacts/ha-app/lifeos` to HA `/addons/lifeos` and install from *Local add-ons*.
+Releases: bump `version` in `lifeos/config.yaml`, then push a matching `vX.Y.Z` tag; `publish-app-image.yml` publishes the images to GHCR.
 LifeOS is only hosted by HA; it does not use HA entities, APIs or automations. Login is the app's own cookie login.
 
 ## Validation checklist (Phase 1)

@@ -2,6 +2,9 @@
 name: LifeOS
 version: "0.1.0"
 slug: lifeos
+# Prebuilt image published by .github/workflows/publish-app-image.yml ({arch} = amd64 | aarch64).
+# The tag is `version` above, so bump it for every release. ha/build-local-app.ps1 strips this line for local builds.
+image: ghcr.io/isabellaalstrom/lifeos-{arch}
 description: Personal life management with weekly sprints, habits and retrospectives
 url: https://github.com/isabellaalstrom/LifeOS
 arch:

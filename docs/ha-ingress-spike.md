@@ -47,7 +47,15 @@ Supervisor behaviour I could not observe from here:
 4. Cookie behaviour inside the HA iframe (SameSite=Lax, path = ingress prefix).
 5. Build of the app image on the HA host (arm/amd64 availability of the .NET 10 images).
 
-### Procedure
+### Install option A: as a repository app (prebuilt image, no local build)
+
+Requires the repo and the two GHCR packages (`lifeos-amd64`, `lifeos-aarch64`) to be public and a release tag published
+(`git tag v0.1.0 && git push --tags`; the tag must equal `version` in `lifeos/config.yaml`).
+
+1. HA: Settings → Add-ons → Add-on store → ⋮ → **Repositories** → add `https://github.com/isabellaalstrom/LifeOS`.
+2. Reload the store, open **LifeOS** under "LifeOS apps" → Install → Start. Then continue at step 4 below.
+
+### Install option B: local build
 
 1. On the dev machine: `./ha/build-local-app.ps1` (stages `artifacts/ha-app/lifeos`).
 2. Copy the `lifeos` folder to HA's `addons` share, i.e. `/addons/lifeos` (Samba add-on or SSH).

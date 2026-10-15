@@ -15,8 +15,9 @@ $out = Join-Path $root 'artifacts/ha-app/lifeos'
 if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 New-Item -ItemType Directory -Force $out | Out-Null
 
-Copy-Item (Join-Path $PSScriptRoot 'lifeos/config.yaml') $out
-Copy-Item (Join-Path $PSScriptRoot 'lifeos/Dockerfile') $out
+# A local build must not use the published image, so drop the image: line.
+(Get-Content (Join-Path $root 'lifeos/config.yaml')) | Where-Object { $_ -notmatch '^image:' } | Set-Content (Join-Path $out 'config.yaml') -Encoding utf8
+Copy-Item (Join-Path $PSScriptRoot 'Dockerfile') $out
 Copy-Item (Join-Path $root 'Directory.Build.props') $out
 
 # Source without build output or local data.
