@@ -79,13 +79,13 @@ LifeOS is only hosted by HA; it does not use HA entities, APIs or automations. L
 
 | Check | How | Status |
 |---|---|---|
-| Builds, 45 tests pass | `dotnet test` | verified |
+| Builds, all tests pass (46) | `dotnet test` | verified |
 | Starts locally, migrations applied, data persists across restart | `dotnet run`, restart, still signed in | verified |
 | `/health` anonymous 200; app pages redirect to login | integration tests + browser | verified |
 | Mobile + desktop shell (drawer / bottom navigation) | browser at 375 px and desktop | verified |
 | Behind simulated ingress incl. WebSockets | `tools/IngressProxy` + browser | verified |
-| Docker image builds and runs, data survives container restart | `docker compose up` | **not yet run** (see below) |
-| HA app on real Home Assistant OS | docs/ha-ingress-spike.md | **not yet run** |
+| Docker image builds and runs, data survives container restart | built and run locally, volume kept db and keys across restart; CI smoke test | verified |
+| HA app on real Home Assistant OS (install, login, WebSockets, navigation) | docs/ha-ingress-spike.md | verified (reconnect/Companion/diagnostics headers still open) |
 
 ## CI
 

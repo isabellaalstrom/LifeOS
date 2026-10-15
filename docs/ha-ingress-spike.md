@@ -35,7 +35,27 @@ dotnet run --project tools/IngressProxy
 # browse http://127.0.0.1:5180/api/hassio_ingress/TEST_INGRESS_TOKEN/
 ```
 
-## NOT proven yet: real Home Assistant OS
+## Verified on real Home Assistant (2026-10-15, app 0.1.2, via Nabu Casa remote access)
+
+| Check | Result |
+|---|---|
+| Install as repository app from a prebuilt public GHCR image | OK |
+| First-run account creation, logout, login | OK |
+| Blazor circuit over **WebSockets** (`wss://…/api/hassio_ingress/<token>/_blazor`) | OK |
+| Static assets and navigation under the ingress path | OK |
+
+Two real bugs only the real environment exposed, both fixed:
+
+1. **0.1.0: no interactivity.** `dotnet publish --no-restore` in the Dockerfile produced an image without the fingerprinted
+   `blazor.web.js`, so the script 404'd/302'd and the page never became interactive. Fixed in 0.1.1; CI now smoke-tests the
+   built image (script must be fingerprinted and served as JavaScript).
+2. **0.1.1: no side menu on wide screens.** The menu relied on MudBlazor's JavaScript. Navigation is now pure CSS (side menu
+   from 960 px, bottom bar below) in 0.1.2, with a regression test.
+
+Still unverified on real HA: the exact headers HA sends (`diagnostics/request`), reconnect after a network change or phone
+sleep, the Companion app, and local-network access (non-Nabu Casa). None of these block Phase 2.
+
+## Simulated-only until the table above covers it
 
 The simulator is not HA. These must be verified on a real instance (procedure below) because they depend on
 Supervisor behaviour I could not observe from here:
