@@ -7,9 +7,52 @@ h1:focus {
     outline: none;
 }
 
-/* Mobile bottom navigation: shown below the MudBlazor md breakpoint (960px), where the drawer is hidden. */
-.bottom-nav {
+/* Navigation is pure CSS: side menu from 960px up, bottom bar below it. Same links in both. */
+.bottom-nav,
+.side-nav {
     display: none;
+}
+
+@media (min-width: 960px) {
+    .side-nav {
+        position: fixed;
+        top: 48px; /* dense app bar */
+        bottom: 0;
+        left: 0;
+        z-index: 1100;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        box-sizing: border-box;
+        width: 240px;
+        padding: 8px;
+        background: var(--mud-palette-drawer-background);
+        border-right: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .side-nav a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--mud-palette-drawer-text);
+    }
+
+    .side-nav a:hover {
+        background: var(--mud-palette-action-default-hover);
+    }
+
+    .side-nav a.active {
+        color: var(--mud-palette-primary);
+        background: var(--mud-palette-action-default-hover);
+        font-weight: 600;
+    }
+
+    .main-content {
+        margin-left: 240px;
+    }
 }
 
 @media (max-width: 959.98px) {

@@ -99,6 +99,23 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
         Assert.Contains("Planering", await page.Content.ReadAsStringAsync());
     }
 
+    [Fact]
+    public async Task Navigation_is_server_rendered_without_needing_a_blazor_circuit()
+    {
+        // Regression: the side menu once depended on MudBlazor JS and never appeared behind HA ingress.
+        await _factory.EnsureOwnerAsync();
+        var client = _factory.CreateBrowserClient();
+        await PostLoginAsync(client, WebAppFactory.OwnerPassword);
+
+        var html = await client.GetStringAsync("/planning");
+        Assert.Contains("class=\"side-nav\"", html);
+        Assert.Contains("class=\"bottom-nav\"", html);
+        foreach (var section in new[] { "Översikt", "Mål", "Planering", "Projekt", "Vanor", "Retron" })
+        {
+            Assert.Contains(section, html);
+        }
+    }
+
     private static async Task<HttpResponseMessage> PostLoginAsync(HttpClient client, string password)
     {
         var html = await client.GetStringAsync("/login");

@@ -8,9 +8,7 @@
 
 <MudLayout>
     <MudAppBar Elevation="0" Dense="true" Class="app-bar">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       Class="d-md-none" OnClick="@(() => _drawerOpen = !_drawerOpen)" aria-label="Meny" />
-        <MudText Typo="Typo.h6" Class="ml-2">@L["App_Title"]</MudText>
+        <MudText Typo="Typo.h6">@L["App_Title"]</MudText>
         <MudSpacer />
         @* Quick capture lands in Phase 2; the entry point exists now so the shell layout is final. *@
         <MudTooltip Text="@L["QuickAdd"]">
@@ -24,17 +22,16 @@
         </form>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md"
-               ClipMode="DrawerClipMode.Always" Elevation="0">
-        <MudNavMenu>
-            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@L["Nav_Overview"]</MudNavLink>
-            <MudNavLink Href="goals" Icon="@Icons.Material.Filled.Flag">@L["Nav_Goals"]</MudNavLink>
-            <MudNavLink Href="planning" Icon="@Icons.Material.Filled.ViewKanban">@L["Nav_Planning"]</MudNavLink>
-            <MudNavLink Href="projects" Icon="@Icons.Material.Filled.Folder">@L["Nav_Projects"]</MudNavLink>
-            <MudNavLink Href="habits" Icon="@Icons.Material.Filled.Repeat">@L["Nav_Habits"]</MudNavLink>
-            <MudNavLink Href="retros" Icon="@Icons.Material.Filled.Insights">@L["Nav_Retros"]</MudNavLink>
-        </MudNavMenu>
-    </MudDrawer>
+    @* Navigation is plain CSS-driven (side menu on wide screens, bottom bar on narrow ones) so it never depends on
+       a live Blazor circuit or MudBlazor's JavaScript, which matters behind proxies such as HA ingress. *@
+    <nav class="side-nav" aria-label="Huvudnavigering">
+        <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Filled.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
+        <NavLink href="goals"><MudIcon Icon="@Icons.Material.Filled.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
+        <NavLink href="planning"><MudIcon Icon="@Icons.Material.Filled.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
+        <NavLink href="projects"><MudIcon Icon="@Icons.Material.Filled.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+        <NavLink href="habits"><MudIcon Icon="@Icons.Material.Filled.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
+        <NavLink href="retros"><MudIcon Icon="@Icons.Material.Filled.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
+    </nav>
 
     <MudMainContent Class="main-content">
         <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
@@ -60,7 +57,6 @@
 
 @code {
     private MudThemeProvider? _themeProvider;
-    private bool _drawerOpen;
     private bool _isDarkMode;
 
     // System fonts only: no external font requests (works offline on a NAS, no third-party calls).
