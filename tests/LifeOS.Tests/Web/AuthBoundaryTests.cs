@@ -107,7 +107,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
         var client = _factory.CreateBrowserClient();
         await PostLoginAsync(client, WebAppFactory.OwnerPassword);
 
-        var html = await client.GetStringAsync("/planning");
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync("/planning"));
         Assert.Contains("class=\"side-nav\"", html);
         Assert.Contains("class=\"bottom-nav\"", html);
         foreach (var section in new[] { "Översikt", "Mål", "Planering", "Projekt", "Vanor", "Retron" })
