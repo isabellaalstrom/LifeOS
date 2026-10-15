@@ -10,7 +10,7 @@ COPY src/LifeOS.Infrastructure/LifeOS.Infrastructure.csproj src/LifeOS.Infrastru
 COPY src/LifeOS.Web/LifeOS.Web.csproj src/LifeOS.Web/
 RUN dotnet restore src/LifeOS.Web/LifeOS.Web.csproj
 COPY src/ src/
-RUN dotnet publish src/LifeOS.Web/LifeOS.Web.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/LifeOS.Web/LifeOS.Web.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

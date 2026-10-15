@@ -35,7 +35,22 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
+          load: true
           tags: lifeos:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Smoke test the image (static assets and health)
+        # Regression guard: a broken publish once shipped without fingerprinted Blazor assets, so no page was interactive.
+        run: |
+          docker run -d --name lifeos -p 8080:8080 lifeos:ci
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/health >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:8080/health
+          html=$(curl -s -L http://127.0.0.1:8080/setup)
+          script=$(echo "$html" | grep -oE '_framework/blazor\.web\.[A-Za-z0-9]+\.js' | head -1)
+          test -n "$script" || { echo "blazor.web.js is not fingerprinted"; exit 1; }
+          for p in "$script" _framework/blazor.web.js; do
+            code=$(curl -s -o /dev/null -w "%{http_code} %{content_type}" "http://127.0.0.1:8080/$p")
+            echo "$p -> $code"
+            [[ "$code" == "200 text/javascript"* ]] || exit 1
+          done
+          docker logs lifeos | tail -5
