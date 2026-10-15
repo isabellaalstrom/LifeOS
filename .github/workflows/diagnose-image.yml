@@ -1,0 +1,39 @@
+name: Diagnose published image (temporary)
+
+# Manual, read-only: pulls the published image, runs it and probes static assets. Remove once the HA issue is solved.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag
+        default: "0.1.0"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run image
+        run: |
+          docker run -d --name lifeos -p 8099:8099 ghcr.io/isabellaalstrom/lifeos-amd64:${{ inputs.tag }}
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8099/health && break; sleep 1; done; echo
+      - name: Page references
+        run: |
+          curl -s -L http://127.0.0.1:8099/setup | grep -nE '<base|<script|<link' || true
+      - name: Probe blazor.web.js (plain and fingerprinted)
+        run: |
+          html=$(curl -s -L http://127.0.0.1:8099/setup)
+          fp=$(echo "$html" | grep -oE '_framework/blazor\.web\.[A-Za-z0-9]+\.js' | head -1)
+          echo "fingerprinted reference: ${fp:-NONE}"
+          for p in _framework/blazor.web.js ${fp}; do
+            [ -z "$p" ] && continue
+            curl -s -o /dev/null -w "$p -> %{http_code} %{content_type}\n" http://127.0.0.1:8099/$p
+          done
+      - name: Files inside the image
+        run: |
+          docker exec lifeos sh -c 'ls /app | grep -iE "staticwebassets|LifeOS.Web" ; echo ---; ls /app/wwwroot 2>/dev/null | head -20; echo ---; ls /app/wwwroot/_framework 2>/dev/null | head' || true
+      - name: App log
+        if: always()
+        run: docker logs lifeos 2>&1 | grep -vE 'Executed DbCommand|SELECT|FROM|WHERE|LIMIT' | tail -40
