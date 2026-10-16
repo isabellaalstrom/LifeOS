@@ -210,4 +210,9 @@
   <data name="Err_SprintClosed" xml:space="preserve"><value>Sprinten är stängd.</value></data>
   <data name="Err_InvalidEstimate" xml:space="preserve"><value>Uppskattningen måste vara mellan 1 och 10 000 minuter.</value></data>
   <data name="Err_InvalidCapacity" xml:space="preserve"><value>Ogiltig kapacitet.</value></data>
-  <data name="Err_Generic" xml:space="preserve"><value>Något gick fel. Försök igen.</value></data></root>
+  <data name="Err_Generic" xml:space="preserve"><value>Något gick fel. Försök igen.</value></data>
+  <data name="Hero_Morning" xml:space="preserve"><value>God morgon.</value></data>
+  <data name="Hero_Afternoon" xml:space="preserve"><value>God eftermiddag.</value></data>
+  <data name="Hero_Evening" xml:space="preserve"><value>God kväll.</value></data>
+  <data name="Hero_Night" xml:space="preserve"><value>God natt.</value></data>
+  <data name="Hero_Tagline" xml:space="preserve"><value>Ett steg i taget.</value></data></root>

@@ -2,6 +2,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject IDialogService DialogService
 @inject LifeOS.Web.Services.AppEvents Events
+@inject LifeOS.Application.Abstractions.IUserClock Clock
 
 <MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -10,8 +11,12 @@
 
 <MudLayout>
     <MudAppBar Elevation="0" Dense="true" Class="app-bar">
-        <MudText Typo="Typo.h6">@L["App_Title"]</MudText>
+        <a href="" class="brand" aria-label="@L["App_Title"]">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-name">@L["App_Title"]</span>
+        </a>
         <MudSpacer />
+        <span class="app-date">@_dateText</span>
         @* Quick capture from every page: one field, lands in the Inbox. *@
         <MudTooltip Text="@L["QuickAdd"]">
             <MudIconButton Icon="@Icons.Material.Filled.AddCircleOutline" Color="Color.Inherit"
@@ -27,28 +32,28 @@
     @* Navigation is plain CSS-driven (side menu on wide screens, bottom bar on narrow ones) so it never depends on
        a live Blazor circuit or MudBlazor's JavaScript, which matters behind proxies such as HA ingress. *@
     <nav class="side-nav" aria-label="Huvudnavigering">
-        <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Filled.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
-        <NavLink href="goals"><MudIcon Icon="@Icons.Material.Filled.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
-        <NavLink href="planning"><MudIcon Icon="@Icons.Material.Filled.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
-        <NavLink href="projects"><MudIcon Icon="@Icons.Material.Filled.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
-        <NavLink href="habits"><MudIcon Icon="@Icons.Material.Filled.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
-        <NavLink href="retros"><MudIcon Icon="@Icons.Material.Filled.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
+        <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Outlined.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
+        <NavLink href="goals"><MudIcon Icon="@Icons.Material.Outlined.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
+        <NavLink href="planning"><MudIcon Icon="@Icons.Material.Outlined.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
+        <NavLink href="projects"><MudIcon Icon="@Icons.Material.Outlined.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+        <NavLink href="habits"><MudIcon Icon="@Icons.Material.Outlined.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
+        <NavLink href="retros"><MudIcon Icon="@Icons.Material.Outlined.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
     </nav>
 
     <MudMainContent Class="main-content">
-        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="page-container">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 <nav class="bottom-nav" aria-label="Huvudnavigering">
-    <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Filled.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
-    <NavLink href="goals"><MudIcon Icon="@Icons.Material.Filled.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
-    <NavLink href="planning"><MudIcon Icon="@Icons.Material.Filled.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
-    <NavLink href="projects"><MudIcon Icon="@Icons.Material.Filled.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
-    <NavLink href="habits"><MudIcon Icon="@Icons.Material.Filled.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
-    <NavLink href="retros"><MudIcon Icon="@Icons.Material.Filled.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
+    <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Outlined.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
+    <NavLink href="goals"><MudIcon Icon="@Icons.Material.Outlined.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
+    <NavLink href="planning"><MudIcon Icon="@Icons.Material.Outlined.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
+    <NavLink href="projects"><MudIcon Icon="@Icons.Material.Outlined.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+    <NavLink href="habits"><MudIcon Icon="@Icons.Material.Outlined.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
+    <NavLink href="retros"><MudIcon Icon="@Icons.Material.Outlined.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
 </nav>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -60,20 +65,12 @@
 @code {
     private MudThemeProvider? _themeProvider;
     private bool _isDarkMode;
+    private string _dateText = string.Empty;
 
-    // System fonts only: no external font requests (works offline on a NAS, no third-party calls).
-    private readonly MudTheme _theme = new()
-    {
-        PaletteLight = new PaletteLight { Primary = "#3b6ea5", Secondary = "#667585" },
-        PaletteDark = new PaletteDark { Primary = "#7fb0e6", Secondary = "#9aa7b5" },
-        Typography = new Typography
-        {
-            Default = new DefaultTypography
-            {
-                FontFamily = ["system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"]
-            }
-        }
-    };
+    private readonly MudTheme _theme = LifeOS.Web.Theming.LifeOsTheme.Create();
+
+    protected override void OnInitialized() =>
+        _dateText = Clock.Today.ToString("dddd d MMMM", System.Globalization.CultureInfo.CurrentCulture);
 
     private async Task QuickAddAsync()
     {

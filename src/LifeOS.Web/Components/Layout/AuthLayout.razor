@@ -2,7 +2,13 @@
 
 @* Plain static layout for login/setup/error pages. No MudBlazor providers or interactivity needed. *@
 <main class="auth-shell">
-    <div class="auth-card">
-        @Body
+    <div class="auth-wrap">
+        <div class="brand auth-brand" aria-hidden="true">
+            <span class="brand-mark"></span>
+            <span class="brand-name">LifeOS</span>
+        </div>
+        <div class="auth-card">
+            @Body
+        </div>
     </div>
 </main>

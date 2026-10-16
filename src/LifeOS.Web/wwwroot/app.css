@@ -1,13 +1,144 @@
+/* =====================================================================
+   LifeOS look: calm, warm, paper-like.
+   Cream background, sage side panel, one strong indigo accent, soft pastel cards, serif headings.
+   The palette lives here as variables (and is mirrored in Theming/LifeOsTheme.cs) so the correct
+   light/dark colors apply immediately, before the Blazor circuit and MudBlazor's own styles are active.
+   ===================================================================== */
+
+:root {
+    --lo-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --lo-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --lo-radius: 18px;
+    --lo-radius-sm: 14px;
+
+    --lo-bg: #F6F2E9;
+    --lo-card: #FFFDF8;
+    --lo-line: #E6DFCF;
+    --lo-soft: #EBE6D8;
+    --lo-sidebar: #E7EDE6;
+    --lo-ink: #26303A;
+    --lo-ink-2: #66707A;
+    --lo-accent: #2F4A9E;
+    --lo-accent-ink: #FFFFFF;
+
+    /* pastel tones for cards */
+    --lo-sage: #DDEBDD;
+    --lo-butter: #FBF0C3;
+    --lo-peach: #F7E3D1;
+    --lo-lavender: #E4E6F6;
+    --lo-sky: #DCE7F1;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --lo-bg: #15181D;
+        --lo-card: #1E2229;
+        --lo-line: #2B3139;
+        --lo-soft: #262B33;
+        --lo-sidebar: #1A211E;
+        --lo-ink: #ECE9E1;
+        --lo-ink-2: #A8B0B8;
+        --lo-accent: #9DB4F2;
+        --lo-accent-ink: #13161B;
+
+        --lo-sage: #243229;
+        --lo-butter: #383322;
+        --lo-peach: #3A2D24;
+        --lo-lavender: #2A2D44;
+        --lo-sky: #233445;
+    }
+}
+
+/* Override MudBlazor's palette variables from the body so the first paint already matches. */
+body {
+    --mud-palette-background: var(--lo-bg);
+    --mud-palette-surface: var(--lo-card);
+    --mud-palette-text-primary: var(--lo-ink);
+    --mud-palette-text-secondary: var(--lo-ink-2);
+    --mud-palette-lines-default: var(--lo-line);
+    --mud-palette-drawer-background: var(--lo-sidebar);
+    --mud-palette-appbar-background: var(--lo-bg);
+    --mud-palette-appbar-text: var(--lo-ink);
+    --mud-palette-primary: var(--lo-accent);
+    --mud-palette-primary-text: var(--lo-accent-ink);
+    --mud-palette-background-gray: var(--lo-soft);
+}
+
 html, body {
     margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--lo-sans);
+    background: var(--lo-bg);
+    color: var(--lo-ink);
+}
+
+h1, h2, h3 {
+    font-family: var(--lo-serif);
 }
 
 h1:focus {
     outline: none;
 }
 
-/* Navigation is pure CSS: side menu from 960px up, bottom bar below it. Same links in both. */
+a {
+    color: var(--lo-accent);
+}
+
+/* ---------- App bar ---------- */
+.app-bar,
+.mud-appbar.app-bar {
+    background: var(--lo-bg) !important;
+    color: var(--lo-ink) !important;
+    border-bottom: 1px solid var(--lo-line);
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--lo-ink);
+}
+
+.brand-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FFE9A8 0 35%, #F2C65A 36% 100%);
+    box-shadow: 0 0 0 3px var(--lo-sage);
+}
+
+.brand-name {
+    font-family: var(--lo-serif);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.app-date {
+    display: none;
+    margin-right: 12px;
+    font-size: 0.9rem;
+    color: var(--lo-ink-2);
+    text-transform: none;
+}
+
+@media (min-width: 600px) {
+    .app-date {
+        display: inline-block; /* ::first-letter needs a block-level box */
+    }
+}
+
+.page-container {
+    padding: 24px 20px 32px;
+}
+
+@media (max-width: 599.98px) {
+    .page-container {
+        padding: 16px 14px 24px;
+    }
+}
+
+/* ---------- Navigation: pure CSS, side panel from 960px, bottom bar below ---------- */
 .bottom-nav,
 .side-nav {
     display: none;
@@ -22,42 +153,49 @@ h1:focus {
         z-index: 1100;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
         box-sizing: border-box;
-        width: 240px;
-        padding: 8px;
-        background: var(--mud-palette-drawer-background);
-        border-right: 1px solid var(--mud-palette-lines-default);
+        width: 232px;
+        padding: 16px 12px;
+        background: var(--lo-sidebar);
     }
 
     .side-nav a {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 12px;
-        border-radius: 8px;
+        padding: 12px 14px;
+        border-radius: var(--lo-radius-sm);
         text-decoration: none;
-        color: var(--mud-palette-drawer-text);
+        font-weight: 600;
+        color: var(--lo-ink);
+    }
+
+    .side-nav a .mud-icon-root {
+        color: var(--lo-ink-2);
     }
 
     .side-nav a:hover {
-        background: var(--mud-palette-action-default-hover);
+        background: color-mix(in srgb, var(--lo-ink) 7%, transparent);
     }
 
     .side-nav a.active {
-        color: var(--mud-palette-primary);
-        background: var(--mud-palette-action-default-hover);
-        font-weight: 600;
+        background: var(--lo-accent);
+        color: var(--lo-accent-ink);
+    }
+
+    .side-nav a.active .mud-icon-root {
+        color: var(--lo-accent-ink);
     }
 
     .main-content {
-        margin-left: 240px;
+        margin-left: 232px;
     }
 }
 
 @media (max-width: 959.98px) {
     .main-content {
-        padding-bottom: calc(64px + env(safe-area-inset-bottom));
+        padding-bottom: calc(76px + env(safe-area-inset-bottom));
     }
 
     .bottom-nav {
@@ -66,9 +204,10 @@ h1:focus {
         z-index: 1300;
         display: flex;
         justify-content: space-around;
-        padding-bottom: env(safe-area-inset-bottom);
-        background: var(--mud-palette-surface);
-        border-top: 1px solid var(--mud-palette-lines-default);
+        gap: 2px;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+        background: var(--lo-sidebar);
+        border-top: 1px solid var(--lo-line);
     }
 
     .bottom-nav a {
@@ -78,150 +217,113 @@ h1:focus {
         flex-direction: column;
         align-items: center;
         gap: 2px;
-        padding: 8px 2px;
-        font-size: 0.65rem;
+        padding: 6px 2px;
+        border-radius: var(--lo-radius-sm);
+        font-size: 0.68rem;
+        font-weight: 600;
         text-decoration: none;
-        color: var(--mud-palette-text-secondary);
+        color: var(--lo-ink-2);
     }
 
     .bottom-nav a.active {
-        color: var(--mud-palette-primary);
+        background: var(--lo-accent);
+        color: var(--lo-accent-ink);
     }
 }
 
-/* Static login/setup/error pages (no MudBlazor). */
-.auth-shell {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 16px;
-    background: #f4f6f8;
-    color: #1f2933;
+/* ---------- Typography and controls ---------- */
+.mud-typography-h4, .mud-typography-h5 {
+    letter-spacing: -0.01em;
 }
 
-.auth-card {
-    width: 100%;
-    max-width: 380px;
-    padding: 24px;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+.mud-button-root {
+    border-radius: var(--lo-radius-sm);
 }
 
-.auth-card label {
-    display: block;
-    margin-bottom: 12px;
-    font-size: 0.9rem;
+.mud-button-filled.mud-button-filled-primary {
+    box-shadow: none;
 }
 
-.auth-card .field {
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    margin-top: 4px;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #b6bec7;
-    border-radius: 8px;
+.mud-paper {
+    border-radius: var(--lo-radius);
 }
 
-.btn-primary {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    color: #fff;
-    background: #3b6ea5;
-    border: 0;
-    border-radius: 8px;
-    cursor: pointer;
+.mud-paper-outlined {
+    border-color: var(--lo-line);
 }
 
-.form-error, .validation-message {
-    color: #b00020;
-    font-size: 0.9rem;
+.mud-dialog {
+    border-radius: 22px;
+    background: var(--lo-card);
 }
 
-@media (prefers-color-scheme: dark) {
-    .auth-shell { background: #121417; color: #e6e9ec; }
-    .auth-card { background: #1d2126; box-shadow: none; }
-    .auth-card .field { background: #14171a; color: inherit; border-color: #3a424b; }
+.mud-chip {
+    font-weight: 500;
 }
 
-#blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 2000;
-}
-
-#blazor-error-ui .dismiss {
-    cursor: pointer;
-    position: absolute;
-    right: 0.75rem;
-    top: 0.5rem;
-}
-
-/* ---------- Planning ---------- */
+/* ---------- Sub-navigation tabs (Sprint | Idag | Inkorg | Backlog) ---------- */
 .subnav {
     display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--mud-palette-lines-default);
+    gap: 8px;
+    margin-bottom: 20px;
     overflow-x: auto;
+    padding-bottom: 2px;
 }
 
 .subnav a {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 999px;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: var(--lo-radius-sm);
     text-decoration: none;
     white-space: nowrap;
-    color: var(--mud-palette-text-secondary);
+    font-weight: 600;
+    color: var(--lo-ink);
+    background: var(--lo-soft);
 }
 
 .subnav a:hover {
-    background: var(--mud-palette-action-default-hover);
+    background: color-mix(in srgb, var(--lo-ink) 10%, var(--lo-soft));
 }
 
 .subnav a.active {
-    color: var(--mud-palette-primary);
-    background: var(--mud-palette-action-default-hover);
-    font-weight: 600;
+    color: var(--lo-accent-ink);
+    background: var(--lo-accent);
 }
 
 .count-badge {
     display: inline-block;
     min-width: 20px;
-    padding: 0 6px;
+    padding: 0 7px;
     border-radius: 999px;
     font-size: 0.75rem;
     line-height: 20px;
     text-align: center;
-    color: var(--mud-palette-primary-text);
-    background: var(--mud-palette-primary);
+    color: var(--lo-accent-ink);
+    background: var(--lo-accent);
 }
 
+.subnav a.active .count-badge {
+    color: var(--lo-accent);
+    background: var(--lo-accent-ink);
+}
+
+/* ---------- Task rows: soft rounded cards, like the reference ---------- */
 .task-row {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 4px;
-    border-bottom: 1px solid var(--mud-palette-lines-default);
+    margin-bottom: 8px;
+    padding: 4px 10px 4px 6px;
+    border: 1px solid var(--lo-line);
+    border-radius: var(--lo-radius-sm);
+    background: var(--lo-card);
 }
 
 .task-row.is-done .task-title {
     text-decoration: line-through;
-    color: var(--mud-palette-text-secondary);
+    color: var(--lo-ink-2);
 }
 
 .task-main {
@@ -230,7 +332,7 @@ h1:focus {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 6px 4px;
+    padding: 8px 4px;
     cursor: pointer;
 }
 
@@ -255,16 +357,17 @@ h1:focus {
     flex-shrink: 0;
 }
 
+/* ---------- Sprint ---------- */
 .sprint-header {
     display: flex;
     align-items: center;
     gap: 4px;
     flex-wrap: wrap;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .sprint-title {
-    min-width: 140px;
+    min-width: 150px;
     text-align: center;
 }
 
@@ -273,53 +376,58 @@ h1:focus {
     flex-wrap: wrap;
     gap: 4px 16px;
     font-size: 0.875rem;
-    color: var(--mud-palette-text-secondary);
+    color: var(--lo-ink-2);
 }
 
 .scope-stats strong {
-    color: var(--mud-palette-text-primary);
+    color: var(--lo-ink);
 }
 
 .kanban {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
-}
-
-.kanban > .mud-drop-container,
-.kanban {
-    min-height: 0;
+    gap: 14px;
 }
 
 .kanban-col {
-    padding: 8px;
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: 10px;
-    background: var(--mud-palette-background-gray);
+    padding: 10px;
+    border-radius: var(--lo-radius);
+    background: var(--lo-soft);
+}
+
+.kanban-col:nth-child(2) {
+    background: var(--lo-butter);
+}
+
+.kanban-col:nth-child(3) {
+    background: var(--lo-sage);
 }
 
 .kanban-col-title {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 4px 8px;
+    padding: 4px 6px 10px;
+    font-family: var(--lo-serif);
+    font-size: 1.05rem;
     font-weight: 600;
 }
 
 .kanban-zone {
-    min-height: 48px;
+    min-height: 56px;
 }
 
 .kanban-card {
-    margin-bottom: 6px;
-    padding: 2px 4px;
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: 8px;
-    background: var(--mud-palette-surface);
+    margin-bottom: 8px;
+    border-radius: var(--lo-radius-sm);
+    background: var(--lo-card);
+    box-shadow: 0 1px 2px rgba(38, 48, 58, 0.06);
 }
 
 .kanban-card .task-row {
-    border-bottom: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
 }
 
 @media (min-width: 960px) {
@@ -335,8 +443,8 @@ h1:focus {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--mud-palette-lines-default);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--lo-line);
 }
 
 .log-row {
@@ -345,16 +453,98 @@ h1:focus {
     align-items: flex-start;
 }
 
+/* ---------- Overview and cards ---------- */
+.hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 168px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-radius: 24px;
+    background: linear-gradient(180deg, var(--lo-sky), color-mix(in srgb, var(--lo-sky) 70%, var(--lo-sage)));
+}
+
+.hero-text {
+    position: relative;
+    z-index: 1;
+    padding: 24px 24px 22px;
+}
+
+.hero-title {
+    margin: 0;
+    font-family: var(--lo-serif);
+    font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.hero-sub {
+    margin: 6px 0 0;
+    color: var(--lo-ink-2);
+}
+
+.hero-art {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: min(62%, 460px);
+    height: 100%;
+    pointer-events: none;
+}
+
+@media (max-width: 599.98px) {
+    .hero-art {
+        width: 100%;
+        opacity: 0.55;
+    }
+}
+
+.tone-card {
+    height: 100%;
+    padding: 18px 20px;
+    border: 0;
+    border-radius: var(--lo-radius);
+}
+
+.tone-card .task-row {
+    background: color-mix(in srgb, var(--lo-card) 72%, transparent);
+    border-color: transparent;
+}
+
+.tone-sage { background: var(--lo-sage); }
+.tone-butter { background: var(--lo-butter); }
+.tone-peach { background: var(--lo-peach); }
+.tone-lavender { background: var(--lo-lavender); }
+.tone-sky { background: var(--lo-sky); }
+.tone-paper { background: var(--lo-card); border: 1px solid var(--lo-line); }
+
+.card-eyebrow {
+    margin: 0 0 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--lo-ink-2);
+}
+
+.card-title {
+    margin: 0 0 8px;
+    font-family: var(--lo-serif);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
 .project-card {
     cursor: pointer;
+    border-color: var(--lo-line);
+    background: var(--lo-card);
 }
 
 .project-card:hover {
-    background: var(--mud-palette-action-default-hover);
-}
-
-.overview-card {
-    height: 100%;
+    background: color-mix(in srgb, var(--lo-ink) 4%, var(--lo-card));
 }
 
 .area-dot {
@@ -371,4 +561,109 @@ h1:focus {
     padding: 0;
     border: 0;
     background: none;
+}
+
+/* ---------- Static login / setup / error pages (no MudBlazor) ---------- */
+.auth-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: var(--lo-bg);
+    color: var(--lo-ink);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px;
+    border: 1px solid var(--lo-line);
+    border-radius: 24px;
+    background: var(--lo-card);
+}
+
+.auth-card h1 {
+    margin-top: 0;
+    font-size: 1.8rem;
+}
+
+.auth-card label {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+    color: var(--lo-ink-2);
+}
+
+.auth-card .field {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 6px;
+    padding: 12px;
+    font-size: 1rem;
+    color: var(--lo-ink);
+    border: 1px solid var(--lo-line);
+    border-radius: var(--lo-radius-sm);
+    background: var(--lo-bg);
+}
+
+.auth-card .field:focus {
+    outline: 2px solid var(--lo-accent);
+    outline-offset: 1px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--lo-accent-ink);
+    background: var(--lo-accent);
+    border: 0;
+    border-radius: var(--lo-radius-sm);
+    cursor: pointer;
+}
+
+.form-error, .validation-message {
+    color: #B4533F;
+    font-size: 0.9rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .form-error, .validation-message { color: #E08A76; }
+}
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 2000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.auth-wrap {
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-brand {
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.app-date::first-letter {
+    text-transform: uppercase;
 }

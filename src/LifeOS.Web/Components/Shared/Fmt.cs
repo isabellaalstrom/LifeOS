@@ -9,9 +9,14 @@ public static class Fmt
 {
     public static string Duration(IStringLocalizer l, int? minutes)
     {
-        if (minutes is null or <= 0)
+        if (minutes is null)
         {
             return string.Empty;
+        }
+
+        if (minutes <= 0)
+        {
+            return l["Duration_Minutes", 0];
         }
 
         var h = minutes.Value / 60;

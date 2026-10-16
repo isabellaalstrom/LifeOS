@@ -2,15 +2,16 @@
 @attribute [Authorize]
 @inherits PlanningComponentBase
 @implements IDisposable
+@using LifeOS.Application.Abstractions
 @using LifeOS.Application.Organize
 @using LifeOS.Application.Planning
 @using LifeOS.Domain.Planning
 @using LifeOS.Domain.Tasks
 @inject TodayService TodayService
 @inject TaskService Tasks
+@inject IUserClock Clock
 
 <PageTitle>@L["Nav_Overview"] – @L["App_Title"]</PageTitle>
-<MudText Typo="Typo.h4" Tag="@("h1")" Class="mb-4">@L["Nav_Overview"]</MudText>
 
 @if (_view is null)
 {
@@ -18,19 +19,50 @@
 }
 else
 {
+    @* ---- greeting ---- *@
+    <section class="hero">
+        <div class="hero-text">
+            <h1 class="hero-title">@Greeting</h1>
+            <p class="hero-sub">
+                @L["Sprint_Week", _view.Sprint.IsoWeek]
+                @if (!string.IsNullOrWhiteSpace(_view.Sprint.Goal))
+                {
+                    <text> · @_view.Sprint.Goal</text>
+                }
+                else
+                {
+                    <text> · @L["Hero_Tagline"]</text>
+                }
+            </p>
+        </div>
+        <svg class="hero-art" viewBox="0 0 460 170" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+            <circle cx="378" cy="50" r="26" fill="#F5CF6B" />
+            <circle cx="369" cy="46" r="2.4" fill="#7A5A1E" />
+            <circle cx="387" cy="46" r="2.4" fill="#7A5A1E" />
+            <path d="M368 56 Q378 65 388 56" stroke="#7A5A1E" stroke-width="2.4" fill="none" stroke-linecap="round" />
+            <rect x="250" y="32" width="64" height="12" rx="6" fill="#FFFFFF" opacity="0.75" />
+            <rect x="282" y="48" width="44" height="10" rx="5" fill="#FFFFFF" opacity="0.6" />
+            <path d="M0 150 C 70 96, 150 98, 230 128 S 380 150, 460 108 L460 170 L0 170 Z" fill="#B9D3B2" />
+            <path d="M0 160 C 90 120, 170 126, 250 146 S 400 160, 460 134 L460 170 L0 170 Z" fill="#9FC49A" />
+            <path d="M120 170 C 190 150, 250 156, 330 170 Z" fill="#E8DDB8" opacity="0.9" />
+            <path d="M0 170 C 100 150, 190 160, 280 168 S 420 168, 460 160 L460 170 Z" fill="#86B287" />
+        </svg>
+    </section>
+
     @foreach (var past in _view.PastSprintsToClose)
     {
-        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="false">
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" ShowCloseIcon="false">
             @L["Sprint_PastHint", past.IsoWeek, past.OpenTasks]
             <MudButton Size="Size.Small" Class="ml-2" Href="@($"planning?week={past.WeekStart:yyyy-MM-dd}")">@L["Sprint_PastOpen"]</MudButton>
         </MudAlert>
     }
 
-    <MudGrid>
+    <MudGrid Spacing="3">
         @* ---- today's focus ---- *@
         <MudItem xs="12" md="6">
-            <MudPaper Outlined="true" Class="pa-4 overview-card">
-                <MudText Typo="Typo.h6">@L["Overview_Today"]</MudText>
+            <div class="tone-card tone-sage">
+                <p class="card-eyebrow">@L["Tab_Today"]</p>
+                <h2 class="card-title">@L["Overview_Today"]</h2>
                 @if (_view.Focus.Count == 0)
                 {
                     <MudText Color="Color.Secondary" Class="my-2">@L["Overview_FocusEmpty"]</MudText>
@@ -39,18 +71,19 @@ else
                 {
                     <TaskRow Item="t" Today="_view.Date" ShowProject="false" OnOpen="OpenAsync" OnToggle="ToggleAsync" />
                 }
-                <MudButton Href="today" Variant="Variant.Text" Size="Size.Small" Class="mt-2">@L["Overview_OpenToday"]</MudButton>
-            </MudPaper>
+                <MudButton Href="today" Variant="Variant.Text" Size="Size.Small" Class="mt-1">@L["Overview_OpenToday"]</MudButton>
+            </div>
         </MudItem>
 
         @* ---- current sprint ---- *@
         <MudItem xs="12" md="6">
-            <MudPaper Outlined="true" Class="pa-4 overview-card">
-                <MudText Typo="Typo.h6">@L["Overview_Sprint"] · @L["Sprint_Week", _view.Sprint.IsoWeek]</MudText>
+            <div class="tone-card tone-sky">
+                <p class="card-eyebrow">@L["Tab_Sprint"]</p>
+                <h2 class="card-title">@L["Overview_Sprint"] · @L["Sprint_Week", _view.Sprint.IsoWeek]</h2>
                 @if (!_view.Sprint.Exists)
                 {
                     <MudText Color="Color.Secondary" Class="my-2">@L["Overview_NoSprint"]</MudText>
-                    <MudButton Href="planning" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@L["Overview_PlanWeek"]</MudButton>
+                    <MudButton Href="planning" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium">@L["Overview_PlanWeek"]</MudButton>
                 }
                 else
                 {
@@ -59,14 +92,14 @@ else
                     <MudText Class="my-1">@(string.IsNullOrWhiteSpace(s.Goal) ? L["Sprint_NoGoal"] : s.Goal)</MudText>
                     @if (total > 0)
                     {
-                        <MudProgressLinear Value="@(s.Done * 100.0 / total)" Rounded="true" Class="my-1" />
+                        <MudProgressLinear Value="@(s.Done * 100.0 / total)" Color="Color.Primary" Rounded="true" Size="Size.Medium" Class="my-2" />
                         <MudText Typo="Typo.body2" Color="Color.Secondary">
                             @L["Overview_Sprint_Progress", s.Done, total] · @L["Status_ToDo"] @s.ToDo · @L["Status_InProgress"] @s.InProgress
                         </MudText>
                     }
                     @if (s.Capacity != CapacityStatus.NotSet)
                     {
-                        <MudText Typo="Typo.caption" Color="@(s.Capacity is CapacityStatus.Over or CapacityStatus.NearLimit ? Color.Warning : Color.Secondary)">
+                        <MudText Typo="Typo.caption" Color="@(s.Capacity is CapacityStatus.Over or CapacityStatus.NearLimit ? Color.Warning : Color.Secondary)" Class="d-block">
                             @L["Sprint_Planned", Fmt.Duration(L, s.PlannedMinutes), Fmt.Duration(L, s.CapacityMinutes)]
                         </MudText>
                     }
@@ -75,21 +108,23 @@ else
                     </MudText>
                     <MudButton Href="planning" Variant="Variant.Text" Size="Size.Small" Class="mt-2">@L["Overview_OpenSprint"]</MudButton>
                 }
-            </MudPaper>
+            </div>
         </MudItem>
 
         @* ---- goals (phase 3) ---- *@
         <MudItem xs="12" md="6">
-            <MudPaper Outlined="true" Class="pa-4 overview-card">
-                <MudText Typo="Typo.h6">@L["Overview_Goals"]</MudText>
+            <div class="tone-card tone-lavender">
+                <p class="card-eyebrow">@L["Nav_Goals"]</p>
+                <h2 class="card-title">@L["Overview_Goals"]</h2>
                 <MudText Color="Color.Secondary">@L["Coming", 3]</MudText>
-            </MudPaper>
+            </div>
         </MudItem>
 
         @* ---- deadlines ---- *@
         <MudItem xs="12" md="6">
-            <MudPaper Outlined="true" Class="pa-4 overview-card">
-                <MudText Typo="Typo.h6">@L["Overview_Deadlines"]</MudText>
+            <div class="tone-card tone-peach">
+                <p class="card-eyebrow">@L["Task_Due"]</p>
+                <h2 class="card-title">@L["Overview_Deadlines"]</h2>
                 @if (_view.Deadlines.Count == 0)
                 {
                     <MudText Color="Color.Secondary" Class="my-2">@L["Overview_NoDeadlines"]</MudText>
@@ -98,24 +133,26 @@ else
                 {
                     <TaskRow Item="t" Today="_view.Date" ShowProject="false" OnOpen="OpenAsync" OnToggle="ToggleAsync" />
                 }
-            </MudPaper>
+            </div>
         </MudItem>
 
         @* ---- inbox ---- *@
         <MudItem xs="12" md="6">
-            <MudPaper Outlined="true" Class="pa-4 overview-card">
-                <MudText Typo="Typo.h6">@L["Overview_Inbox"]</MudText>
+            <div class="tone-card tone-butter">
+                <p class="card-eyebrow">@L["Tab_Inbox"]</p>
+                <h2 class="card-title">@L["Overview_Inbox"]</h2>
                 <MudText Color="Color.Secondary" Class="my-1">@L["Overview_InboxCount", _view.InboxCount]</MudText>
                 <MudButton Href="planning/inbox" Variant="Variant.Text" Size="Size.Small">@L["Overview_OpenInbox"]</MudButton>
-            </MudPaper>
+            </div>
         </MudItem>
 
         @* ---- AI insights (phase 5) ---- *@
         <MudItem xs="12" md="6">
-            <MudPaper Outlined="true" Class="pa-4 overview-card">
-                <MudText Typo="Typo.h6">@L["Overview_Insights"]</MudText>
+            <div class="tone-card tone-paper">
+                <p class="card-eyebrow">AI</p>
+                <h2 class="card-title">@L["Overview_Insights"]</h2>
                 <MudText Color="Color.Secondary">@L["Coming", 5]</MudText>
-            </MudPaper>
+            </div>
         </MudItem>
     </MudGrid>
 }
@@ -124,6 +161,21 @@ else
     private OverviewView? _view;
 
     [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
+
+    private string Greeting
+    {
+        get
+        {
+            var hour = TimeZoneInfo.ConvertTime(Clock.UtcNow, Clock.Zone).Hour;
+            return hour switch
+            {
+                >= 5 and < 12 => L["Hero_Morning"],
+                >= 12 and < 18 => L["Hero_Afternoon"],
+                >= 18 and < 23 => L["Hero_Evening"],
+                _ => L["Hero_Night"],
+            };
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

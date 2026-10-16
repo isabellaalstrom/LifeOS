@@ -46,3 +46,12 @@
 - Reordering is move up/down within a column; free drag-reordering is not implemented.
 - Time zone is stored per user (`AppUser.TimeZoneId`) but there is no settings page yet (defaults to Europe/Stockholm).
 - Goal and habit links on tasks arrive in Phase 3.
+
+# Visual design
+
+| # | Decision | Why |
+|---|---|---|
+| 26 | Warm "paper" look inspired by a calm family-hub app: cream background, sage side panel, one deep indigo accent, soft pastel cards (sage, butter, peach, lavender, sky), serif headings, large rounded controls, small illustrated greeting on the overview. | Brief: calm, modern, mobile-first, optimized for reflection rather than throughput |
+| 27 | System fonts only: a serif stack for headings and the system sans for text. No web fonts, no external requests. | Works offline on a NAS; no third-party calls |
+| 28 | The palette exists twice: as MudBlazor theme (`Theming/LifeOsTheme.cs`) and as CSS variables in `app.css`. The CSS variables follow `prefers-color-scheme` and override Mud's palette from `body`. | Correct light/dark colors on first paint, before the Blazor circuit starts (no flash) |
+| 29 | Light and dark follow the system setting; there is no manual toggle yet. | Fewer settings; revisit with a settings page |

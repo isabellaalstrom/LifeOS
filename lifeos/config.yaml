@@ -1,6 +1,6 @@
 # Home Assistant app (add-on) manifest. Packaging only: LifeOS does not talk to HA entities, APIs or automations.
 name: LifeOS
-version: "0.2.0"
+version: "0.2.1"
 slug: lifeos
 # Prebuilt image published by .github/workflows/publish-app-image.yml ({arch} = amd64 | aarch64).
 # The tag is `version` above, so bump it for every release. ha/build-local-app.ps1 strips this line for local builds.
