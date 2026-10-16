@@ -1,0 +1,103 @@
+@page "/today"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Tasks
+@inject TodayService TodayService
+@inject TaskService Tasks
+
+<PageTitle>@L["Today_Title"] – @L["App_Title"]</PageTitle>
+<PlanningTabs />
+
+@if (_view is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudText Typo="Typo.h5" Tag="@("h1")">@L["Today_Title"]</MudText>
+    <MudText Color="Color.Secondary" Class="mb-3">@_view.Date.ToString("dddd d MMMM", System.Globalization.CultureInfo.CurrentCulture)</MudText>
+
+    @* ---- focus ---- *@
+    <div class="d-flex align-center gap-2 mb-1">
+        <MudText Typo="Typo.h6">@L["Today_Focus"]</MudText>
+        @if (_view.Focus.Count > 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Today_Done", _view.Focus.Count(t => t.Status == TaskItemStatus.Done), _view.Focus.Count]</MudText>
+        }
+    </div>
+    @if (_view.Focus.Count == 0)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-3"><MudText Color="Color.Secondary">@L["Today_FocusEmpty"]</MudText></MudPaper>
+    }
+    @foreach (var t in _view.Focus)
+    {
+        <TaskRow Item="t" Today="_view.Date" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+            <Actions>
+                @if (t.FocusDate == _view.Date)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@L["Task_RemoveFocus"]"
+                                   OnClick="() => SetFocusAsync(t, false)" />
+                }
+            </Actions>
+        </TaskRow>
+    }
+
+    @* ---- due / overdue ---- *@
+    @if (_view.DueOrOverdue.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Today_Due"]</MudText>
+        @foreach (var t in _view.DueOrOverdue)
+        {
+            <TaskRow Item="t" Today="_view.Date" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+                <Actions>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => SetFocusAsync(t, true)">@L["Today_AddFocus"]</MudButton>
+                </Actions>
+            </TaskRow>
+        }
+    }
+
+    @* ---- from the sprint ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Today_Suggestions"]</MudText>
+    @if (_view.SprintSuggestions.Count == 0)
+    {
+        <MudText Color="Color.Secondary">@L["Today_NoSuggestions"]</MudText>
+    }
+    @foreach (var t in _view.SprintSuggestions)
+    {
+        <TaskRow Item="t" Today="_view.Date" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+            <Actions>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => SetFocusAsync(t, true)">@L["Today_AddFocus"]</MudButton>
+            </Actions>
+        </TaskRow>
+    }
+}
+
+@code {
+    private TodayView? _view;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync() => _view = await TodayService.GetTodayAsync();
+
+    private async Task SetFocusAsync(TaskView task, bool focus)
+    {
+        await RunAsync(() => Tasks.SetFocusAsync(task.Id, focus ? _view!.Date : null));
+        await ReloadAsync();
+    }
+
+    private async Task ToggleAsync((TaskView Item, bool Done) change)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(change.Item.Id, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        await ReloadAsync();
+    }
+
+    private async Task OpenAsync(TaskView task)
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+}

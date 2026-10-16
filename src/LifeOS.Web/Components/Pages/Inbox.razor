@@ -1,0 +1,122 @@
+@page "/planning/inbox"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@implements IDisposable
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Tasks
+@inject TaskService Tasks
+@inject SprintService Sprints
+@inject IUserClock Clock
+
+<PageTitle>@L["Inbox_Title"] – @L["App_Title"]</PageTitle>
+<PlanningTabs InboxCount="_items?.Count" />
+
+<MudText Typo="Typo.h5" Tag="@("h1")" Class="mb-3">@L["Inbox_Title"]</MudText>
+
+<MudTextField @bind-Value="_newTitle" Placeholder="@L["Inbox_Capture"]" Immediate="true" Variant="Variant.Outlined"
+              Margin="Margin.Dense" MaxLength="@TaskService.MaxTitleLength" OnKeyDown="OnKeyDown" Class="mb-3"
+              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="CaptureAsync"
+              AdornmentAriaLabel="@L["Inbox_Add"]" />
+
+@if (_items is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudPaper Outlined="true" Class="pa-6 text-center">
+        <MudText Color="Color.Secondary">@L["Inbox_Empty"]</MudText>
+    </MudPaper>
+}
+else
+{
+    @foreach (var t in _items)
+    {
+        <TaskRow Item="t" Today="Clock.Today" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+            <Actions>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => ToBacklogAsync(t)">@L["Inbox_ToBacklog"]</MudButton>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="@L["Menu"]">
+                    <MudMenuItem OnClick="() => PlanAsync(t)">@L["Inbox_PlanThisWeek"]</MudMenuItem>
+                </MudMenu>
+            </Actions>
+        </TaskRow>
+    }
+}
+
+@code {
+    private IReadOnlyList<TaskView>? _items;
+    private string _newTitle = string.Empty;
+
+    [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Events.InboxChanged += OnInboxChangedAsync;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync() => _items = await Tasks.ListInboxAsync();
+
+    private async Task OnInboxChangedAsync()
+    {
+        await ReloadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Events.InboxChanged -= OnInboxChangedAsync;
+
+    private async Task CaptureAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newTitle))
+        {
+            return;
+        }
+
+        if (await RunAsync(() => Tasks.CaptureAsync(_newTitle)))
+        {
+            _newTitle = string.Empty;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await CaptureAsync();
+        }
+    }
+
+    private async Task ToBacklogAsync(TaskView task)
+    {
+        await RunAsync(() => Tasks.SetTriageAsync(task.Id, TaskTriage.Backlog));
+        Snackbar.Add(L["Inbox_Moved"], Severity.Success);
+        await ReloadAsync();
+    }
+
+    private async Task PlanAsync(TaskView task)
+    {
+        if (await RunAsync(() => Sprints.AddTaskAsync(Sprints.CurrentWeekStart, task.Id)))
+        {
+            Snackbar.Add(L["Backlog_AddedToSprint"], Severity.Success);
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task ToggleAsync((TaskView Item, bool Done) change)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(change.Item.Id, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        await ReloadAsync();
+    }
+
+    private async Task OpenAsync(TaskView task)
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+}

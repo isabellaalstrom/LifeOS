@@ -39,6 +39,7 @@ builder.Services.AddOptions<KeyManagementOptions>().Configure<IOptions<LifeOSOpt
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<AppEvents>();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)

@@ -1,40 +1,157 @@
-﻿@page "/"
+@page "/"
 @attribute [Authorize]
-@inject IStringLocalizer<SharedResource> L
+@inherits PlanningComponentBase
+@implements IDisposable
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Planning
+@using LifeOS.Domain.Tasks
+@inject TodayService TodayService
+@inject TaskService Tasks
 
 <PageTitle>@L["Nav_Overview"] – @L["App_Title"]</PageTitle>
 <MudText Typo="Typo.h4" Tag="@("h1")" Class="mb-4">@L["Nav_Overview"]</MudText>
 
-<MudGrid>
-    <MudItem xs="12" md="6">
-        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
-            <MudText Typo="Typo.h6">@L["Overview_Today"]</MudText>
-            <MudText Color="Color.Secondary">@L["Coming", 2]</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" md="6">
-        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
-            <MudText Typo="Typo.h6">@L["Overview_Sprint"]</MudText>
-            <MudText Color="Color.Secondary">@L["Coming", 2]</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" md="6">
-        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
-            <MudText Typo="Typo.h6">@L["Overview_Goals"]</MudText>
-            <MudText Color="Color.Secondary">@L["Coming", 3]</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" md="6">
-        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
-            <MudText Typo="Typo.h6">@L["Overview_Deadlines"]</MudText>
-            <MudText Color="Color.Secondary">@L["Coming", 2]</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12">
-        <MudPaper Outlined="true" Class="pa-4 card-placeholder">
-            <MudText Typo="Typo.h6">@L["Overview_Insights"]</MudText>
-            <MudText Color="Color.Secondary">@L["Coming", 5]</MudText>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+@if (_view is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    @foreach (var past in _view.PastSprintsToClose)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="false">
+            @L["Sprint_PastHint", past.IsoWeek, past.OpenTasks]
+            <MudButton Size="Size.Small" Class="ml-2" Href="@($"planning?week={past.WeekStart:yyyy-MM-dd}")">@L["Sprint_PastOpen"]</MudButton>
+        </MudAlert>
+    }
 
+    <MudGrid>
+        @* ---- today's focus ---- *@
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4 overview-card">
+                <MudText Typo="Typo.h6">@L["Overview_Today"]</MudText>
+                @if (_view.Focus.Count == 0)
+                {
+                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_FocusEmpty"]</MudText>
+                }
+                @foreach (var t in _view.Focus.Take(5))
+                {
+                    <TaskRow Item="t" Today="_view.Date" ShowProject="false" OnOpen="OpenAsync" OnToggle="ToggleAsync" />
+                }
+                <MudButton Href="today" Variant="Variant.Text" Size="Size.Small" Class="mt-2">@L["Overview_OpenToday"]</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        @* ---- current sprint ---- *@
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4 overview-card">
+                <MudText Typo="Typo.h6">@L["Overview_Sprint"] · @L["Sprint_Week", _view.Sprint.IsoWeek]</MudText>
+                @if (!_view.Sprint.Exists)
+                {
+                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_NoSprint"]</MudText>
+                    <MudButton Href="planning" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@L["Overview_PlanWeek"]</MudButton>
+                }
+                else
+                {
+                    var s = _view.Sprint;
+                    var total = s.ToDo + s.InProgress + s.Done;
+                    <MudText Class="my-1">@(string.IsNullOrWhiteSpace(s.Goal) ? L["Sprint_NoGoal"] : s.Goal)</MudText>
+                    @if (total > 0)
+                    {
+                        <MudProgressLinear Value="@(s.Done * 100.0 / total)" Rounded="true" Class="my-1" />
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            @L["Overview_Sprint_Progress", s.Done, total] · @L["Status_ToDo"] @s.ToDo · @L["Status_InProgress"] @s.InProgress
+                        </MudText>
+                    }
+                    @if (s.Capacity != CapacityStatus.NotSet)
+                    {
+                        <MudText Typo="Typo.caption" Color="@(s.Capacity is CapacityStatus.Over or CapacityStatus.NearLimit ? Color.Warning : Color.Secondary)">
+                            @L["Sprint_Planned", Fmt.Duration(L, s.PlannedMinutes), Fmt.Duration(L, s.CapacityMinutes)]
+                        </MudText>
+                    }
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
+                        @s.Stats.Original @L["Sprint_ScopeOriginal"].Value.ToLowerInvariant() · @s.Stats.AddedAfterStart @L["Sprint_ScopeAdded"].Value.ToLowerInvariant()
+                    </MudText>
+                    <MudButton Href="planning" Variant="Variant.Text" Size="Size.Small" Class="mt-2">@L["Overview_OpenSprint"]</MudButton>
+                }
+            </MudPaper>
+        </MudItem>
+
+        @* ---- goals (phase 3) ---- *@
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4 overview-card">
+                <MudText Typo="Typo.h6">@L["Overview_Goals"]</MudText>
+                <MudText Color="Color.Secondary">@L["Coming", 3]</MudText>
+            </MudPaper>
+        </MudItem>
+
+        @* ---- deadlines ---- *@
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4 overview-card">
+                <MudText Typo="Typo.h6">@L["Overview_Deadlines"]</MudText>
+                @if (_view.Deadlines.Count == 0)
+                {
+                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_NoDeadlines"]</MudText>
+                }
+                @foreach (var t in _view.Deadlines)
+                {
+                    <TaskRow Item="t" Today="_view.Date" ShowProject="false" OnOpen="OpenAsync" OnToggle="ToggleAsync" />
+                }
+            </MudPaper>
+        </MudItem>
+
+        @* ---- inbox ---- *@
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4 overview-card">
+                <MudText Typo="Typo.h6">@L["Overview_Inbox"]</MudText>
+                <MudText Color="Color.Secondary" Class="my-1">@L["Overview_InboxCount", _view.InboxCount]</MudText>
+                <MudButton Href="planning/inbox" Variant="Variant.Text" Size="Size.Small">@L["Overview_OpenInbox"]</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        @* ---- AI insights (phase 5) ---- *@
+        <MudItem xs="12" md="6">
+            <MudPaper Outlined="true" Class="pa-4 overview-card">
+                <MudText Typo="Typo.h6">@L["Overview_Insights"]</MudText>
+                <MudText Color="Color.Secondary">@L["Coming", 5]</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private OverviewView? _view;
+
+    [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Events.InboxChanged += OnInboxChangedAsync;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync() => _view = await TodayService.GetOverviewAsync();
+
+    private async Task OnInboxChangedAsync()
+    {
+        await ReloadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Events.InboxChanged -= OnInboxChangedAsync;
+
+    private async Task ToggleAsync((TaskView Item, bool Done) change)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(change.Item.Id, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        await ReloadAsync();
+    }
+
+    private async Task OpenAsync(TaskView task)
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+}

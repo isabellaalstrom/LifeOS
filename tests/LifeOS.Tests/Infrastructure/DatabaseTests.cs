@@ -1,6 +1,7 @@
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -19,6 +20,42 @@ public class DatabaseTests
         Assert.NotEmpty(context.Database.GetAppliedMigrations());
         // Fails when the model was changed without adding a migration.
         Assert.False(context.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
+    public async Task A_phase_1_database_upgrades_to_the_latest_schema_without_losing_data()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lifeos-upgrade-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var options = new LifeOSOptions { DataPath = directory };
+        try
+        {
+            var dbOptions = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(options.ConnectionString).Options;
+
+            // Create the database exactly as Phase 1 shipped it (initial migration only) and add a life area.
+            await using (var old = new AppDbContext(dbOptions, new FakeCurrentUser("user-a"), TimeProvider.System))
+            {
+                var migrator = old.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
+                await migrator.MigrateAsync("20261012094315_InitialCreate");
+                await old.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO LifeAreas (Id, Name, SortOrder, OwnerId, CreatedUtc, UpdatedUtc) VALUES ('11111111-1111-1111-1111-111111111111', 'Hem', 0, 'user-a', 0, 0)");
+            }
+
+            await using (var upgraded = new AppDbContext(dbOptions, new FakeCurrentUser("user-a"), TimeProvider.System))
+            {
+                await upgraded.Database.MigrateAsync();
+                var area = await upgraded.LifeAreas.SingleAsync();
+                Assert.Equal("Hem", area.Name);
+                Assert.False(area.IsArchived);
+                Assert.Null(area.Color);
+                Assert.Empty(await upgraded.Tasks.ToListAsync());
+            }
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            Directory.Delete(directory, recursive: true);
+        }
     }
 
     [Fact]

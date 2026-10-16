@@ -1,0 +1,67 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@inject ProjectService Projects
+@inject LifeAreaService Areas
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="@L["Project_Name"]" Required="true" Immediate="true" AutoFocus="true"
+                      MaxLength="150" Class="mb-2" />
+        <MudTextField @bind-Value="_description" Label="@L["Project_Description"]" Lines="3" Sizing="InputSizing.Auto" MaxLength="2000" Class="mb-2" />
+        <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
+            @foreach (var a in _areas)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync"
+                   Disabled="@string.IsNullOrWhiteSpace(_name)">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid? ProjectId { get; set; }
+
+    private IReadOnlyList<LifeAreaView> _areas = [];
+    private string _name = string.Empty;
+    private string? _description;
+    private Guid? _areaId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _areas = await Areas.ListAsync();
+        if (ProjectId is { } id && await Projects.GetAsync(id) is { } p)
+        {
+            _name = p.Name;
+            _description = p.Description;
+            _areaId = p.LifeAreaId;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        Guid? result = ProjectId;
+        var ok = await RunAsync(async () =>
+        {
+            var input = new ProjectInput(_name, _description, _areaId);
+            if (ProjectId is { } id)
+            {
+                await Projects.UpdateAsync(id, input);
+            }
+            else
+            {
+                result = await Projects.CreateAsync(input);
+            }
+        });
+
+        if (ok)
+        {
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+    }
+}

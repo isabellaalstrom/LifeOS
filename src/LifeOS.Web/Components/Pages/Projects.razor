@@ -1,5 +1,88 @@
 @page "/projects"
 @attribute [Authorize]
-@inject IStringLocalizer<SharedResource> L
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Projects
+@inject ProjectService ProjectsApi
+@inject NavigationManager Navigation
 
-<PagePlaceholder Title="@L["Nav_Projects"]" Description="@L["Projects_Description"]" Phase="2" />
+<PageTitle>@L["Nav_Projects"] – @L["App_Title"]</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-3">
+    <MudText Typo="Typo.h5" Tag="@("h1")">@L["Nav_Projects"]</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Category" Href="areas">@L["Projects_Areas"]</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="NewAsync">
+        @L["Projects_New"]
+    </MudButton>
+</div>
+
+<MudSwitch T="bool" Value="_showClosed" ValueChanged="ShowClosedChangedAsync" Label="@L["Projects_ShowClosed"]" Color="Color.Primary" Class="mb-2" />
+
+@if (_items is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudPaper Outlined="true" Class="pa-6 text-center">
+        <MudText Color="Color.Secondary">@L["Projects_Empty"]</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="2">
+        @foreach (var p in _items)
+        {
+            var total = p.OpenTasks + p.DoneTasks;
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Outlined="true" Class="pa-3 project-card" @onclick="() => Open(p)" role="link" tabindex="0">
+                    <MudText Typo="Typo.subtitle1">@p.Name</MudText>
+                    <div class="task-meta my-1">
+                        @if (p.LifeAreaName is not null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@p.LifeAreaName</MudChip>
+                        }
+                        @if (p.Status != ProjectStatus.Active)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["ProjectStatus_" + p.Status]</MudChip>
+                        }
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @L["Project_OpenTasks", p.OpenTasks] · @L["Project_DoneTasks", p.DoneTasks]
+                    </MudText>
+                    @if (total > 0)
+                    {
+                        <MudProgressLinear Value="@(p.DoneTasks * 100.0 / total)" Rounded="true" Class="mt-1" />
+                    }
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private IReadOnlyList<ProjectView>? _items;
+    private bool _showClosed;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync() => _items = await ProjectsApi.ListAsync(_showClosed);
+
+    private async Task ShowClosedChangedAsync(bool value)
+    {
+        _showClosed = value;
+        await ReloadAsync();
+    }
+
+    private void Open(ProjectView project) => Navigation.NavigateTo($"projects/{project.Id}");
+
+    private async Task NewAsync()
+    {
+        var result = await ShowDialogAsync<ProjectDialog>(L["Projects_New"]);
+        if (result?.Data is Guid id)
+        {
+            Navigation.NavigateTo($"projects/{id}");
+        }
+    }
+}

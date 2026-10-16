@@ -1,0 +1,127 @@
+@page "/projects/{Id:guid}"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Projects
+@using LifeOS.Domain.Tasks
+@inject ProjectService Projects
+@inject TaskService Tasks
+@inject IUserClock Clock
+
+@if (_loaded && _project is null)
+{
+    <MudAlert Severity="Severity.Warning">@L["Err_NotFound"]</MudAlert>
+    <MudButton Href="projects" Class="mt-2">@L["Project_Back"]</MudButton>
+}
+else if (_project is not null)
+{
+    <PageTitle>@_project.Name – @L["App_Title"]</PageTitle>
+
+    <MudButton Href="projects" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-2">@L["Project_Back"]</MudButton>
+
+    <div class="d-flex align-center flex-wrap gap-2">
+        <MudText Typo="Typo.h5" Tag="@("h1")">@_project.Name</MudText>
+        @if (_project.Status != ProjectStatus.Active)
+        {
+            <MudChip T="string" Size="Size.Small">@L["ProjectStatus_" + _project.Status]</MudChip>
+        }
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditAsync">@L["Edit"]</MudButton>
+        <MudMenu Label="@L["Project_Status"]" Variant="Variant.Text" Size="Size.Small" Dense="true">
+            @foreach (var status in Enum.GetValues<ProjectStatus>().Where(s => s != _project.Status))
+            {
+                var target = status;
+                <MudMenuItem OnClick="() => SetStatusAsync(target)">@L["ProjectStatus_" + target]</MudMenuItem>
+            }
+        </MudMenu>
+    </div>
+
+    <div class="task-meta my-1">
+        @if (_project.LifeAreaName is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_project.LifeAreaName</MudChip>
+        }
+        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Project_OpenTasks", _project.OpenTasks] · @L["Project_DoneTasks", _project.DoneTasks]</MudText>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_project.Description))
+    {
+        <MudText Class="my-2" Style="white-space:pre-wrap">@_project.Description</MudText>
+    }
+
+    <div class="d-flex align-center mt-3 mb-1">
+        <MudText Typo="Typo.h6">@L["Task_Tasks"]</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="NewTaskAsync">
+            @L["Project_NewTask"]
+        </MudButton>
+    </div>
+
+    @if (_tasks.Count == 0)
+    {
+        <MudPaper Outlined="true" Class="pa-4 text-center"><MudText Color="Color.Secondary">@L["Project_NoTasks"]</MudText></MudPaper>
+    }
+    @foreach (var t in _tasks)
+    {
+        <TaskRow Item="t" Today="Clock.Today" ShowProject="false" ShowPlanned="true" OnOpen="OpenTaskAsync" OnToggle="ToggleAsync" />
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ProjectView? _project;
+    private IReadOnlyList<TaskView> _tasks = [];
+    private bool _loaded;
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _project = await Projects.GetAsync(Id);
+        _tasks = _project is null ? [] : await Tasks.ListForProjectAsync(Id);
+        _loaded = true;
+    }
+
+    private async Task EditAsync()
+    {
+        if (await ShowDialogAsync<ProjectDialog>(L["Project_Edit"], new DialogParameters<ProjectDialog> { { x => x.ProjectId, Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task SetStatusAsync(ProjectStatus status)
+    {
+        await RunAsync(() => Projects.SetStatusAsync(Id, status));
+        await ReloadAsync();
+    }
+
+    private async Task NewTaskAsync()
+    {
+        var parameters = new DialogParameters<TaskDialog>
+        {
+            { x => x.DefaultProjectId, Id },
+            { x => x.DefaultAreaId, _project?.LifeAreaId },
+        };
+        if (await ShowDialogAsync<TaskDialog>(L["Task_New"], parameters) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OpenTaskAsync(TaskView task)
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ToggleAsync((TaskView Item, bool Done) change)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(change.Item.Id, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        await ReloadAsync();
+    }
+}

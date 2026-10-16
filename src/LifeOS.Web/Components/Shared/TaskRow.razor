@@ -1,0 +1,87 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Tasks
+
+@* One task as a calm list row: done checkbox, title, and only the details that are set. *@
+<div class="task-row @(Item.Status == TaskItemStatus.Done ? "is-done" : null)">
+    <MudCheckBox T="bool" Value="@(Item.Status == TaskItemStatus.Done)" ValueChanged="OnToggleChanged"
+                 Size="Size.Medium" Color="Color.Primary" Disabled="@(Item.Status == TaskItemStatus.Cancelled)"
+                 aria-label="@L["Status_Done"]" />
+    <div class="task-main" role="button" tabindex="0" @onclick="() => OnOpen.InvokeAsync(Item)"
+         @onkeydown="OnKeyDown">
+        <span class="task-title">@Item.Title</span>
+        <span class="task-meta">
+            @if (Item.LifeAreaName is not null)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="@AreaStyle">@Item.LifeAreaName</MudChip>
+            }
+            @if (ShowProject && Item.ProjectName is not null)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Folder">@Item.ProjectName</MudChip>
+            }
+            @if (Item.DueDate is { } due)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                         Color="@(IsOverdue ? Color.Warning : Color.Default)"
+                         Icon="@Icons.Material.Filled.Event">@Fmt.Day(due)</MudChip>
+            }
+            @if (Item.EstimateMinutes is { } est)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Timer">@Fmt.Duration(L, est)</MudChip>
+            }
+            @if (Item.Priority is TaskPriority.High or TaskPriority.Medium)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                         Color="@(Item.Priority == TaskPriority.High ? Color.Error : Color.Default)"
+                         Icon="@Icons.Material.Filled.Flag">@L[Fmt.PriorityKey(Item.Priority)]</MudChip>
+            }
+            @if (Item.SubtaskTotal > 0)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                         Icon="@Icons.Material.Filled.Checklist">@Item.SubtaskDone/@Item.SubtaskTotal</MudChip>
+            }
+            @if (ShowPlanned && Item.PlannedWeekStart is { } week)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                         Icon="@Icons.Material.Filled.ViewKanban">@L["Task_Planned", SprintWeek(week)]</MudChip>
+            }
+        </span>
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="task-actions">@Actions</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TaskView Item { get; set; } = default!;
+
+    /// <summary>Today in the user's time zone, to flag overdue deadlines.</summary>
+    [Parameter] public DateOnly Today { get; set; }
+
+    [Parameter] public bool ShowProject { get; set; } = true;
+
+    [Parameter] public bool ShowPlanned { get; set; }
+
+    [Parameter] public EventCallback<TaskView> OnOpen { get; set; }
+
+    [Parameter] public EventCallback<(TaskView Item, bool Done)> OnToggle { get; set; }
+
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    private bool IsOverdue => Item.IsOpen && Item.DueDate is { } d && Today != default && d < Today;
+
+    private string? AreaStyle => Item.LifeAreaColor is { Length: > 0 } c ? $"border-color:{c};color:{c}" : null;
+
+    private Task OnToggleChanged(bool done) => OnToggle.InvokeAsync((Item, done));
+
+    private static int SprintWeek(DateOnly weekStart) => LifeOS.Application.Planning.SprintService.IsoWeek(weekStart);
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            await OnOpen.InvokeAsync(Item);
+        }
+    }
+}

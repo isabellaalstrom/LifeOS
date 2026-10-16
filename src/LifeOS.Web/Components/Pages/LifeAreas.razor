@@ -1,0 +1,162 @@
+@page "/areas"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@inject LifeAreaService Areas
+
+<PageTitle>@L["Areas_Title"] – @L["App_Title"]</PageTitle>
+
+<MudButton Href="projects" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-2">@L["Project_Back"]</MudButton>
+<MudText Typo="Typo.h5" Tag="@("h1")">@L["Areas_Title"]</MudText>
+<MudText Color="Color.Secondary" Class="mb-3">@L["Areas_Intro"]</MudText>
+
+<MudTextField @bind-Value="_newName" Placeholder="@L["Areas_New"]" Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+              MaxLength="100" OnKeyDown="OnKeyDown" Class="mb-3" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add"
+              OnAdornmentClick="CreateAsync" AdornmentAriaLabel="@L["Add"]" />
+
+@if (_areas is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    @if (_areas.Count == 0)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-3">
+            <MudText Color="Color.Secondary" Class="mb-2">@L["Areas_Empty"]</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Areas_Suggestions"]</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                @foreach (var name in LifeAreaService.Suggestions)
+                {
+                    var n = name;
+                    <MudChip T="string" Variant="@(_picked.Contains(n) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(_picked.Contains(n) ? Color.Primary : Color.Default)"
+                             OnClick="() => TogglePick(n)">@n</MudChip>
+                }
+            </div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@(_picked.Count == 0)"
+                       OnClick="AddPickedAsync">@L["Areas_AddSelected"]</MudButton>
+        </MudPaper>
+    }
+
+    @foreach (var a in _areas.Where(a => !a.IsArchived))
+    {
+        <div class="task-row">
+            @if (_editing == a.Id)
+            {
+                <MudTextField @bind-Value="_editName" Immediate="true" Variant="Variant.Text" Margin="Margin.Dense" MaxLength="100"
+                              AutoFocus="true" OnKeyDown="e => OnEditKeyDown(e, a)" Class="flex-grow-1" />
+                <input type="color" class="color-input" value="@(_editColor ?? "#3b6ea5")" @onchange="e => _editColor = e.Value?.ToString()" aria-label="@L["Areas_Color"]" />
+                <MudButton Size="Size.Small" Color="Color.Primary" OnClick="() => SaveEditAsync(a)">@L["Save"]</MudButton>
+                <MudButton Size="Size.Small" OnClick="() => _editing = null">@L["Cancel"]</MudButton>
+            }
+            else
+            {
+                <span class="area-dot" style="background:@(a.Color ?? "var(--mud-palette-lines-inputs)")"></span>
+                <div class="task-main"><span class="task-title">@a.Name</span></div>
+                <div class="task-actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" aria-label="@L["Edit"]" OnClick="() => StartEdit(a)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Archive" Size="Size.Small" aria-label="@L["Areas_Archive"]" OnClick="() => ArchiveAsync(a, true)" />
+                </div>
+            }
+        </div>
+    }
+
+    @if (_areas.Any(a => a.IsArchived))
+    {
+        <MudSwitch T="bool" @bind-Value="_showArchived" Label="@L["Areas_ShowArchived"]" Color="Color.Primary" Class="mt-3" />
+        @if (_showArchived)
+        {
+            @foreach (var a in _areas.Where(a => a.IsArchived))
+            {
+                <div class="task-row is-done">
+                    <div class="task-main"><span class="task-title">@a.Name</span></div>
+                    <div class="task-actions">
+                        <MudButton Size="Size.Small" OnClick="() => ArchiveAsync(a, false)">@L["Areas_Restore"]</MudButton>
+                    </div>
+                </div>
+            }
+        }
+    }
+}
+
+@code {
+    private IReadOnlyList<LifeAreaView>? _areas;
+    private string _newName = string.Empty;
+    private readonly HashSet<string> _picked = [];
+    private bool _showArchived;
+    private Guid? _editing;
+    private string _editName = string.Empty;
+    private string? _editColor;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync() => _areas = await Areas.ListAsync(includeArchived: true);
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newName))
+        {
+            return;
+        }
+
+        if (await RunAsync(() => Areas.CreateAsync(_newName)))
+        {
+            _newName = string.Empty;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await CreateAsync();
+        }
+    }
+
+    private void TogglePick(string name)
+    {
+        if (!_picked.Remove(name))
+        {
+            _picked.Add(name);
+        }
+    }
+
+    private async Task AddPickedAsync()
+    {
+        await RunAsync(() => Areas.CreateManyAsync(_picked));
+        _picked.Clear();
+        await ReloadAsync();
+    }
+
+    private void StartEdit(LifeAreaView area)
+    {
+        _editing = area.Id;
+        _editName = area.Name;
+        _editColor = area.Color;
+    }
+
+    private async Task SaveEditAsync(LifeAreaView area)
+    {
+        if (await RunAsync(() => Areas.UpdateAsync(area.Id, _editName, _editColor)))
+        {
+            _editing = null;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnEditKeyDown(KeyboardEventArgs e, LifeAreaView area)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveEditAsync(area);
+        }
+    }
+
+    private async Task ArchiveAsync(LifeAreaView area, bool archived)
+    {
+        await RunAsync(() => Areas.SetArchivedAsync(area.Id, archived));
+        await ReloadAsync();
+    }
+}

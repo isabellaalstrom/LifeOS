@@ -1,0 +1,153 @@
+@page "/planning/backlog"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Tasks
+@inject TaskService Tasks
+@inject SprintService Sprints
+@inject LifeAreaService Areas
+@inject ProjectService Projects
+@inject IUserClock Clock
+
+<PageTitle>@L["Backlog_Title"] – @L["App_Title"]</PageTitle>
+<PlanningTabs />
+
+<div class="d-flex align-center flex-wrap gap-2 mb-3">
+    <MudText Typo="Typo.h5" Tag="@("h1")">@L["Backlog_Title"]</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="NewAsync">
+        @L["Task_New"]
+    </MudButton>
+</div>
+
+<MudGrid Spacing="2" Class="mb-2">
+    <MudItem xs="12" md="5">
+        <MudTextField T="string" Value="_text" ValueChanged="TextChangedAsync" Placeholder="@L["Backlog_Filter_Text"]" Immediate="true"
+                      DebounceInterval="250" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="6" md="3">
+        <MudSelect T="Guid?" Value="_areaId" ValueChanged="AreaChangedAsync" Label="@L["Task_Area"]" Clearable="true"
+                   Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var a in _areas)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="6" md="4">
+        <MudSelect T="Guid?" Value="_projectId" ValueChanged="ProjectChangedAsync" Label="@L["Task_Project"]" Clearable="true"
+                   Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var p in _projects)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+
+@if (_items is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudPaper Outlined="true" Class="pa-6 text-center">
+        <MudText Color="Color.Secondary">@L["Backlog_Empty"]</MudText>
+    </MudPaper>
+}
+else
+{
+    @foreach (var t in _items)
+    {
+        <TaskRow Item="t" Today="Clock.Today" ShowPlanned="true" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+            <Actions>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="@L["Menu"]">
+                    <MudMenuItem OnClick="() => PlanAsync(t, Sprints.CurrentWeekStart)">@L["Backlog_PlanThisWeek"]</MudMenuItem>
+                    <MudMenuItem OnClick="() => PlanAsync(t, Sprints.CurrentWeekStart.AddDays(7))">@L["Backlog_PlanNextWeek"]</MudMenuItem>
+                    <MudMenuItem OnClick="() => FocusAsync(t)">@L["Task_FocusToday"]</MudMenuItem>
+                </MudMenu>
+            </Actions>
+        </TaskRow>
+    }
+}
+
+@code {
+    private IReadOnlyList<TaskView>? _items;
+    private IReadOnlyList<LifeAreaView> _areas = [];
+    private IReadOnlyList<ProjectView> _projects = [];
+    private string? _text;
+    private Guid? _areaId;
+    private Guid? _projectId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _areas = await Areas.ListAsync();
+        _projects = await Projects.ListAsync();
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync() =>
+        _items = await Tasks.ListBacklogAsync(new TaskFilter(_areaId, _projectId, _text));
+
+    private async Task TextChangedAsync(string? text)
+    {
+        _text = text;
+        await ReloadAsync();
+    }
+
+    private async Task AreaChangedAsync(Guid? id)
+    {
+        _areaId = id;
+        await ReloadAsync();
+    }
+
+    private async Task ProjectChangedAsync(Guid? id)
+    {
+        _projectId = id;
+        await ReloadAsync();
+    }
+
+    private async Task NewAsync()
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_New"]) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OpenAsync(TaskView task)
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ToggleAsync((TaskView Item, bool Done) change)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(change.Item.Id, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        await ReloadAsync();
+    }
+
+    private async Task PlanAsync(TaskView task, DateOnly week)
+    {
+        var ok = await RunAsync(() => task.PlannedWeekStart is null
+            ? Sprints.AddTaskAsync(week, task.Id)
+            : Sprints.MoveTaskAsync(task.Id, week));
+        if (ok)
+        {
+            Snackbar.Add(L["Backlog_AddedToSprint"], Severity.Success);
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task FocusAsync(TaskView task)
+    {
+        await RunAsync(() => Tasks.SetFocusAsync(task.Id, Clock.Today));
+        Snackbar.Add(L["Task_FocusAdded"], Severity.Success);
+    }
+}

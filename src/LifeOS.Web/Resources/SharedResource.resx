@@ -11,7 +11,7 @@
   <data name="Nav_Projects" xml:space="preserve"><value>Projekt</value></data>
   <data name="Nav_Habits" xml:space="preserve"><value>Vanor</value></data>
   <data name="Nav_Retros" xml:space="preserve"><value>Retron</value></data>
-  <data name="QuickAdd" xml:space="preserve"><value>Snabbtillägg (kommer i fas 2)</value></data>
+  <data name="QuickAdd" xml:space="preserve"><value>Snabbtillägg</value></data>
   <data name="Logout" xml:space="preserve"><value>Logga ut</value></data>
   <data name="Coming" xml:space="preserve"><value>Kommer i fas {0}</value></data>
   <data name="Login_Title" xml:space="preserve"><value>Logga in</value></data>
@@ -40,4 +40,174 @@
   <data name="Error_Body" xml:space="preserve"><value>Ett oväntat fel inträffade. Försök igen.</value></data>
   <data name="NotFound_Title" xml:space="preserve"><value>Sidan hittades inte</value></data>
   <data name="NotFound_Body" xml:space="preserve"><value>Sidan du letar efter finns inte.</value></data>
-</root>
+
+  <data name="Save" xml:space="preserve"><value>Spara</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Avbryt</value></data>
+  <data name="Delete" xml:space="preserve"><value>Ta bort</value></data>
+  <data name="Edit" xml:space="preserve"><value>Redigera</value></data>
+  <data name="Add" xml:space="preserve"><value>Lägg till</value></data>
+  <data name="Close" xml:space="preserve"><value>Stäng</value></data>
+  <data name="Back" xml:space="preserve"><value>Tillbaka</value></data>
+  <data name="Menu" xml:space="preserve"><value>Meny</value></data>
+  <data name="All" xml:space="preserve"><value>alla</value></data>
+  <data name="QuickAdd_Title" xml:space="preserve"><value>Snabbtillägg</value></data>
+  <data name="QuickAdd_Label" xml:space="preserve"><value>Vad vill du komma ihåg?</value></data>
+  <data name="QuickAdd_Hint" xml:space="preserve"><value>Hamnar i inkorgen. Sortera senare.</value></data>
+  <data name="QuickAdd_Saved" xml:space="preserve"><value>Tillagd i inkorgen.</value></data>
+  <data name="Task_Title" xml:space="preserve"><value>Titel</value></data>
+  <data name="Task_Notes" xml:space="preserve"><value>Anteckningar</value></data>
+  <data name="Task_Priority" xml:space="preserve"><value>Prioritet</value></data>
+  <data name="Task_Estimate" xml:space="preserve"><value>Uppskattning (minuter)</value></data>
+  <data name="Task_Due" xml:space="preserve"><value>Deadline</value></data>
+  <data name="Task_Scheduled" xml:space="preserve"><value>Schemalagd dag</value></data>
+  <data name="Task_ScheduledTime" xml:space="preserve"><value>Tid</value></data>
+  <data name="Task_Area" xml:space="preserve"><value>Livsområde</value></data>
+  <data name="Task_Project" xml:space="preserve"><value>Projekt</value></data>
+  <data name="Task_Subtasks" xml:space="preserve"><value>Underuppgifter</value></data>
+  <data name="Task_AddSubtask" xml:space="preserve"><value>Ny underuppgift</value></data>
+  <data name="Task_New" xml:space="preserve"><value>Ny uppgift</value></data>
+  <data name="Task_Edit" xml:space="preserve"><value>Redigera uppgift</value></data>
+  <data name="Task_Tasks" xml:space="preserve"><value>Uppgifter</value></data>
+  <data name="Task_Deleted" xml:space="preserve"><value>Uppgiften togs bort.</value></data>
+  <data name="Task_Cancelled" xml:space="preserve"><value>Uppgiften har sprinthistorik och markerades som avbruten i stället.</value></data>
+  <data name="Task_FocusToday" xml:space="preserve"><value>Fokus idag</value></data>
+  <data name="Task_FocusAdded" xml:space="preserve"><value>Tillagd i dagens fokus.</value></data>
+  <data name="Task_RemoveFocus" xml:space="preserve"><value>Ta bort från fokus</value></data>
+  <data name="Task_Planned" xml:space="preserve"><value>Planerad v. {0}</value></data>
+  <data name="Priority_None" xml:space="preserve"><value>Ingen</value></data>
+  <data name="Priority_Low" xml:space="preserve"><value>Låg</value></data>
+  <data name="Priority_Medium" xml:space="preserve"><value>Medel</value></data>
+  <data name="Priority_High" xml:space="preserve"><value>Hög</value></data>
+  <data name="Status_ToDo" xml:space="preserve"><value>Att göra</value></data>
+  <data name="Status_InProgress" xml:space="preserve"><value>Pågår</value></data>
+  <data name="Status_Done" xml:space="preserve"><value>Klar</value></data>
+  <data name="Status_Cancelled" xml:space="preserve"><value>Avbruten</value></data>
+  <data name="Duration_Minutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="Duration_Hours" xml:space="preserve"><value>{0} h</value></data>
+  <data name="Duration_HM" xml:space="preserve"><value>{0} h {1} min</value></data>
+  <data name="Tab_Sprint" xml:space="preserve"><value>Sprint</value></data>
+  <data name="Tab_Today" xml:space="preserve"><value>Idag</value></data>
+  <data name="Tab_Inbox" xml:space="preserve"><value>Inkorg</value></data>
+  <data name="Tab_Backlog" xml:space="preserve"><value>Backlog</value></data>
+  <data name="Sprint_Week" xml:space="preserve"><value>Vecka {0}</value></data>
+  <data name="Sprint_Prev" xml:space="preserve"><value>Föregående vecka</value></data>
+  <data name="Sprint_Next" xml:space="preserve"><value>Nästa vecka</value></data>
+  <data name="Sprint_ThisWeek" xml:space="preserve"><value>Denna vecka</value></data>
+  <data name="Sprint_Current" xml:space="preserve"><value>Aktuell</value></data>
+  <data name="Sprint_Closed" xml:space="preserve"><value>Stängd</value></data>
+  <data name="Sprint_Goal" xml:space="preserve"><value>Sprintmål</value></data>
+  <data name="Sprint_GoalHint" xml:space="preserve"><value>Vad vill du få ut av veckan? (valfritt)</value></data>
+  <data name="Sprint_NoGoal" xml:space="preserve"><value>Inget mål satt.</value></data>
+  <data name="Sprint_Capacity" xml:space="preserve"><value>Kapacitet (timmar)</value></data>
+  <data name="Sprint_Planned" xml:space="preserve"><value>Planerat: {0} av {1}</value></data>
+  <data name="Sprint_PlannedNoCap" xml:space="preserve"><value>Planerat: {0}</value></data>
+  <data name="Sprint_CapNear" xml:space="preserve"><value>Du närmar dig kapaciteten.</value></data>
+  <data name="Sprint_CapOver" xml:space="preserve"><value>Du har planerat {0} mer än kapaciteten. Det är okej, men tänk på balansen.</value></data>
+  <data name="Sprint_Start" xml:space="preserve"><value>Starta sprint</value></data>
+  <data name="Sprint_StartHint" xml:space="preserve"><value>Valfritt. Ändringar efter start räknas som tillagt arbete. Utan start räknas veckans början (måndag 00:00).</value></data>
+  <data name="Sprint_Started" xml:space="preserve"><value>Startad {0}</value></data>
+  <data name="Sprint_ScopeOriginal" xml:space="preserve"><value>planerat från start</value></data>
+  <data name="Sprint_ScopeAdded" xml:space="preserve"><value>tillagt under veckan</value></data>
+  <data name="Sprint_ScopeRemoved" xml:space="preserve"><value>borttaget</value></data>
+  <data name="Sprint_ScopeCarriedIn" xml:space="preserve"><value>överfört hit</value></data>
+  <data name="Sprint_ScopeCarriedOut" xml:space="preserve"><value>överfört vidare</value></data>
+  <data name="Sprint_Log" xml:space="preserve"><value>Ändringslogg</value></data>
+  <data name="Sprint_LogEmpty" xml:space="preserve"><value>Inga ändringar än.</value></data>
+  <data name="Sprint_LogAdded" xml:space="preserve"><value>Lades till</value></data>
+  <data name="Sprint_LogRemoved" xml:space="preserve"><value>Togs bort</value></data>
+  <data name="Sprint_LogBefore" xml:space="preserve"><value>före start</value></data>
+  <data name="Sprint_LogAfter" xml:space="preserve"><value>efter start</value></data>
+  <data name="Reason_Planned" xml:space="preserve"><value>planerad</value></data>
+  <data name="Reason_Rescheduled" xml:space="preserve"><value>flyttad</value></data>
+  <data name="Reason_CarryOver" xml:space="preserve"><value>överförd</value></data>
+  <data name="Reason_Dropped" xml:space="preserve"><value>borttagen</value></data>
+  <data name="Reason_ReturnedToBacklog" xml:space="preserve"><value>tillbaka till backlog</value></data>
+  <data name="Sprint_PlanFromBacklog" xml:space="preserve"><value>Planera från backlog</value></data>
+  <data name="Sprint_NewTask" xml:space="preserve"><value>Ny uppgift i sprinten</value></data>
+  <data name="Sprint_NothingToPlan" xml:space="preserve"><value>Inget att planera just nu. Fånga något i inkorgen eller skapa en ny uppgift.</value></data>
+  <data name="Sprint_EmptyBoard" xml:space="preserve"><value>Inga uppgifter i sprinten än.</value></data>
+  <data name="Sprint_MoveTo" xml:space="preserve"><value>Flytta till</value></data>
+  <data name="Sprint_MoveUp" xml:space="preserve"><value>Högre upp</value></data>
+  <data name="Sprint_MoveDown" xml:space="preserve"><value>Längre ner</value></data>
+  <data name="Sprint_MoveNext" xml:space="preserve"><value>Flytta till nästa vecka</value></data>
+  <data name="Sprint_Remove" xml:space="preserve"><value>Ta bort från sprint</value></data>
+  <data name="Sprint_Left" xml:space="preserve"><value>Lämnade sprinten</value></data>
+  <data name="Sprint_Close" xml:space="preserve"><value>Stäng sprint</value></data>
+  <data name="Sprint_CloseTitle" xml:space="preserve"><value>Stäng vecka {0}</value></data>
+  <data name="Sprint_CloseIntro" xml:space="preserve"><value>Välj vad som händer med det som inte blev klart. Det är helt okej att något inte hinns med.</value></data>
+  <data name="Sprint_CloseNothing" xml:space="preserve"><value>Allt är klart eller inget kvar att flytta. Sprinten stängs.</value></data>
+  <data name="Sprint_CarryNext" xml:space="preserve"><value>Nästa sprint</value></data>
+  <data name="Sprint_CarryBacklog" xml:space="preserve"><value>Backlog</value></data>
+  <data name="Sprint_CloseConfirm" xml:space="preserve"><value>Stäng sprint</value></data>
+  <data name="Sprint_PastHint" xml:space="preserve"><value>Vecka {0} har {1} oavslutade uppgifter. Vill du stänga den?</value></data>
+  <data name="Sprint_PastOpen" xml:space="preserve"><value>Öppna</value></data>
+  <data name="Inbox_Title" xml:space="preserve"><value>Inkorg</value></data>
+  <data name="Inbox_Empty" xml:space="preserve"><value>Inkorgen är tom. Fånga idéer och uppgifter här och sortera dem när det passar.</value></data>
+  <data name="Inbox_ToBacklog" xml:space="preserve"><value>Till backlog</value></data>
+  <data name="Inbox_PlanThisWeek" xml:space="preserve"><value>Planera denna vecka</value></data>
+  <data name="Inbox_Capture" xml:space="preserve"><value>Fånga något…</value></data>
+  <data name="Inbox_Add" xml:space="preserve"><value>Lägg till</value></data>
+  <data name="Inbox_Moved" xml:space="preserve"><value>Flyttad till backlog.</value></data>
+  <data name="Backlog_Title" xml:space="preserve"><value>Backlog</value></data>
+  <data name="Backlog_Empty" xml:space="preserve"><value>Backloggen är tom.</value></data>
+  <data name="Backlog_Filter_Text" xml:space="preserve"><value>Sök i backlog</value></data>
+  <data name="Backlog_PlanThisWeek" xml:space="preserve"><value>Planera denna vecka</value></data>
+  <data name="Backlog_PlanNextWeek" xml:space="preserve"><value>Planera nästa vecka</value></data>
+  <data name="Backlog_AddedToSprint" xml:space="preserve"><value>Planerad i sprinten.</value></data>
+  <data name="Today_Title" xml:space="preserve"><value>Idag</value></data>
+  <data name="Today_Focus" xml:space="preserve"><value>Dagens fokus</value></data>
+  <data name="Today_FocusEmpty" xml:space="preserve"><value>Inget valt än. Välj något litet och viktigt nedan.</value></data>
+  <data name="Today_Due" xml:space="preserve"><value>Förfaller eller är försenat</value></data>
+  <data name="Today_Suggestions" xml:space="preserve"><value>Från veckans sprint</value></data>
+  <data name="Today_AddFocus" xml:space="preserve"><value>Lägg till i fokus</value></data>
+  <data name="Today_Done" xml:space="preserve"><value>{0} av {1} klara</value></data>
+  <data name="Today_NoSuggestions" xml:space="preserve"><value>Inga fler uppgifter i sprinten.</value></data>
+  <data name="Overview_FocusEmpty" xml:space="preserve"><value>Inget fokus valt för idag.</value></data>
+  <data name="Overview_OpenToday" xml:space="preserve"><value>Öppna Idag</value></data>
+  <data name="Overview_OpenSprint" xml:space="preserve"><value>Öppna sprint</value></data>
+  <data name="Overview_NoSprint" xml:space="preserve"><value>Ingen sprint planerad för veckan än.</value></data>
+  <data name="Overview_PlanWeek" xml:space="preserve"><value>Planera veckan</value></data>
+  <data name="Overview_Sprint_Progress" xml:space="preserve"><value>{0} av {1} klara</value></data>
+  <data name="Overview_NoDeadlines" xml:space="preserve"><value>Inga deadlines de kommande två veckorna.</value></data>
+  <data name="Overview_Inbox" xml:space="preserve"><value>Inkorg</value></data>
+  <data name="Overview_InboxCount" xml:space="preserve"><value>{0} i inkorgen</value></data>
+  <data name="Overview_OpenInbox" xml:space="preserve"><value>Öppna inkorgen</value></data>
+  <data name="Projects_New" xml:space="preserve"><value>Nytt projekt</value></data>
+  <data name="Projects_Empty" xml:space="preserve"><value>Inga projekt än.</value></data>
+  <data name="Projects_Areas" xml:space="preserve"><value>Livsområden</value></data>
+  <data name="Projects_ShowClosed" xml:space="preserve"><value>Visa avslutade</value></data>
+  <data name="Project_Name" xml:space="preserve"><value>Namn</value></data>
+  <data name="Project_Description" xml:space="preserve"><value>Beskrivning</value></data>
+  <data name="Project_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Project_Edit" xml:space="preserve"><value>Redigera projekt</value></data>
+  <data name="Project_Back" xml:space="preserve"><value>Alla projekt</value></data>
+  <data name="Project_NewTask" xml:space="preserve"><value>Ny uppgift</value></data>
+  <data name="Project_NoTasks" xml:space="preserve"><value>Inga uppgifter i projektet än.</value></data>
+  <data name="Project_OpenTasks" xml:space="preserve"><value>{0} öppna</value></data>
+  <data name="Project_DoneTasks" xml:space="preserve"><value>{0} klara</value></data>
+  <data name="ProjectStatus_Active" xml:space="preserve"><value>Aktivt</value></data>
+  <data name="ProjectStatus_OnHold" xml:space="preserve"><value>Pausat</value></data>
+  <data name="ProjectStatus_Completed" xml:space="preserve"><value>Slutfört</value></data>
+  <data name="ProjectStatus_Archived" xml:space="preserve"><value>Arkiverat</value></data>
+  <data name="Areas_Title" xml:space="preserve"><value>Livsområden</value></data>
+  <data name="Areas_Intro" xml:space="preserve"><value>Områden som delar in livet, till exempel hem, hälsa eller cykling. Helt valfritt att använda.</value></data>
+  <data name="Areas_Empty" xml:space="preserve"><value>Inga livsområden än. Välj några förslag eller skapa egna.</value></data>
+  <data name="Areas_Suggestions" xml:space="preserve"><value>Förslag</value></data>
+  <data name="Areas_AddSelected" xml:space="preserve"><value>Lägg till valda</value></data>
+  <data name="Areas_New" xml:space="preserve"><value>Nytt livsområde</value></data>
+  <data name="Areas_Color" xml:space="preserve"><value>Färg</value></data>
+  <data name="Areas_Archive" xml:space="preserve"><value>Arkivera</value></data>
+  <data name="Areas_Restore" xml:space="preserve"><value>Återställ</value></data>
+  <data name="Areas_ShowArchived" xml:space="preserve"><value>Visa arkiverade</value></data>
+  <data name="Err_NotFound" xml:space="preserve"><value>Hittades inte. Kanske är det borttaget.</value></data>
+  <data name="Err_TitleRequired" xml:space="preserve"><value>Ange en titel.</value></data>
+  <data name="Err_NameRequired" xml:space="preserve"><value>Ange ett namn.</value></data>
+  <data name="Err_SubtaskTooDeep" xml:space="preserve"><value>Underuppgifter kan bara ligga en nivå ner.</value></data>
+  <data name="Err_SubtaskNotPlannable" xml:space="preserve"><value>Underuppgifter planeras via sin huvuduppgift.</value></data>
+  <data name="Err_TaskNotOpen" xml:space="preserve"><value>Bara öppna uppgifter kan planeras.</value></data>
+  <data name="Err_AlreadyInSprint" xml:space="preserve"><value>Uppgiften finns redan i sprinten.</value></data>
+  <data name="Err_PlannedInOtherSprint" xml:space="preserve"><value>Uppgiften är redan planerad i en annan vecka. Flytta den i stället.</value></data>
+  <data name="Err_SprintClosed" xml:space="preserve"><value>Sprinten är stängd.</value></data>
+  <data name="Err_InvalidEstimate" xml:space="preserve"><value>Uppskattningen måste vara mellan 1 och 10 000 minuter.</value></data>
+  <data name="Err_InvalidCapacity" xml:space="preserve"><value>Ogiltig kapacitet.</value></data>
+  <data name="Err_Generic" xml:space="preserve"><value>Något gick fel. Försök igen.</value></data></root>

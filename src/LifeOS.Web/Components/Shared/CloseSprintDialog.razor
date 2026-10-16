@@ -1,0 +1,83 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Tasks
+@inject SprintService Sprints
+
+<MudDialog>
+    <DialogContent>
+        @if (_board is null)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (_open.Count == 0)
+        {
+            <MudText>@L["Sprint_CloseNothing"]</MudText>
+        }
+        else
+        {
+            <MudText Class="mb-3">@L["Sprint_CloseIntro"]</MudText>
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => SetAll(CarryDecision.NextSprint)">
+                    @L["Sprint_CarryNext"] (@L["All"])
+                </MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => SetAll(CarryDecision.Backlog)">
+                    @L["Sprint_CarryBacklog"] (@L["All"])
+                </MudButton>
+            </div>
+            @foreach (var t in _open)
+            {
+                <div class="close-row">
+                    <span class="task-title">@t.Task.Title</span>
+                    <MudToggleGroup T="CarryDecision" Value="_choices[t.Task.Id]" ValueChanged="d => _choices[t.Task.Id] = d"
+                                    Size="Size.Small" Color="Color.Primary" CheckMark="true">
+                        <MudToggleItem Value="@CarryDecision.NextSprint" Text="@L["Sprint_CarryNext"]" />
+                        <MudToggleItem Value="@CarryDecision.Backlog" Text="@L["Sprint_CarryBacklog"]" />
+                    </MudToggleGroup>
+                </div>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CloseAsync" Disabled="@(_board is null)">@L["Sprint_CloseConfirm"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public DateOnly Week { get; set; }
+
+    private SprintBoard? _board;
+    private List<SprintBoardTask> _open = [];
+    private readonly Dictionary<Guid, CarryDecision> _choices = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _board = await Sprints.GetBoardAsync(Week);
+        _open = _board.ActiveTasks
+            .Where(t => t.Task.Status is TaskItemStatus.ToDo or TaskItemStatus.InProgress)
+            .ToList();
+        foreach (var t in _open)
+        {
+            _choices[t.Task.Id] = CarryDecision.NextSprint;
+        }
+    }
+
+    private void SetAll(CarryDecision decision)
+    {
+        foreach (var id in _choices.Keys.ToList())
+        {
+            _choices[id] = decision;
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (await RunAsync(() => Sprints.CloseAsync(Week, CarryDecision.NextSprint, _choices)))
+        {
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+}

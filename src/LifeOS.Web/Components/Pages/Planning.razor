@@ -1,5 +1,407 @@
 @page "/planning"
 @attribute [Authorize]
-@inject IStringLocalizer<SharedResource> L
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Planning
+@using LifeOS.Domain.Tasks
+@inject SprintService Sprints
+@inject TaskService Tasks
+@inject IUserClock Clock
+@inject NavigationManager Navigation
 
-<PagePlaceholder Title="@L["Nav_Planning"]" Description="@L["Planning_Description"]" Phase="2" />
+<PageTitle>@L["Nav_Planning"] – @L["App_Title"]</PageTitle>
+<PlanningTabs />
+
+@if (_board is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    @* ---- week header ---- *@
+    <div class="sprint-header">
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" aria-label="@L["Sprint_Prev"]" OnClick="() => GoToWeek(_board.WeekStart.AddDays(-7))" />
+        <div class="sprint-title">
+            <MudText Typo="Typo.h5" Tag="@("h1")">@L["Sprint_Week", _board.IsoWeek]</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Fmt.Range(_board.WeekStart)</MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" aria-label="@L["Sprint_Next"]" OnClick="() => GoToWeek(_board.WeekStart.AddDays(7))" />
+        @if (!_board.IsCurrent)
+        {
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="() => GoToWeek(Sprints.CurrentWeekStart)">@L["Sprint_ThisWeek"]</MudButton>
+        }
+        @if (_board.IsClosed)
+        {
+            <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.Lock">@L["Sprint_Closed"]</MudChip>
+        }
+        else if (_board.IsCurrent)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@L["Sprint_Current"]</MudChip>
+        }
+    </div>
+
+    @foreach (var past in _pastToClose.Where(p => p.WeekStart != _board.WeekStart))
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="false">
+            @L["Sprint_PastHint", past.IsoWeek, past.OpenTasks]
+            <MudButton Size="Size.Small" Class="ml-2" OnClick="() => GoToWeek(past.WeekStart)">@L["Sprint_PastOpen"]</MudButton>
+        </MudAlert>
+    }
+
+    @* ---- goal, capacity ---- *@
+    <MudPaper Outlined="true" Class="pa-3 mb-3">
+        <MudGrid Spacing="2" Class="align-center">
+            <MudItem xs="12" md="8">
+                <MudTextField T="string" Value="_goal" ValueChanged="SaveGoalAsync" Label="@L["Sprint_Goal"]"
+                              Placeholder="@L["Sprint_GoalHint"]" Disabled="@_board.IsClosed" MaxLength="500"
+                              Variant="Variant.Text" Immediate="false" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudNumericField T="double?" Value="_capacityHours" ValueChanged="SaveCapacityAsync" Label="@L["Sprint_Capacity"]"
+                                 Min="0" Max="1000" Step="0.5" Disabled="@_board.IsClosed" HideSpinButtons="true"
+                                 Clearable="true" Variant="Variant.Text" />
+            </MudItem>
+        </MudGrid>
+
+        <div class="mt-2">
+            <MudText Typo="Typo.body2">
+                @if (_board.CapacityMinutes is { } cap)
+                {
+                    @L["Sprint_Planned", Fmt.Duration(L, _board.PlannedMinutes), Fmt.Duration(L, cap)]
+                }
+                else
+                {
+                    @L["Sprint_PlannedNoCap", Fmt.Duration(L, _board.PlannedMinutes)]
+                }
+            </MudText>
+            @if (_board.Capacity != CapacityStatus.NotSet)
+            {
+                <MudProgressLinear Value="@CapacityPercent" Color="@CapacityColor" Rounded="true" Class="my-1" />
+            }
+            @if (_board.Capacity == CapacityStatus.NearLimit)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Warning">@L["Sprint_CapNear"]</MudText>
+            }
+            else if (_board.Capacity == CapacityStatus.Over)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Warning">
+                    @L["Sprint_CapOver", Fmt.Duration(L, _board.PlannedMinutes - (_board.CapacityMinutes ?? 0))]
+                </MudText>
+            }
+        </div>
+    </MudPaper>
+
+    @* ---- scope ---- *@
+    <div class="scope-stats mb-3">
+        <span><strong>@_board.Stats.Original</strong> @L["Sprint_ScopeOriginal"]</span>
+        <span><strong>@_board.Stats.AddedAfterStart</strong> @L["Sprint_ScopeAdded"]</span>
+        <span><strong>@_board.Stats.RemovedAfterStart</strong> @L["Sprint_ScopeRemoved"]</span>
+        @if (_board.Stats.CarriedIn > 0)
+        {
+            <span><strong>@_board.Stats.CarriedIn</strong> @L["Sprint_ScopeCarriedIn"]</span>
+        }
+        @if (_board.Stats.CarriedOut > 0)
+        {
+            <span><strong>@_board.Stats.CarriedOut</strong> @L["Sprint_ScopeCarriedOut"]</span>
+        }
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        @if (!_board.IsClosed)
+        {
+            <MudTooltip Text="@L["Sprint_StartHint"]">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.PlayArrow"
+                           Disabled="@_board.IsCommitted" OnClick="CommitAsync">
+                    @(_board.IsCommitted ? L["Sprint_Started", Fmt.Day(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(_board.CommittedUtc!.Value, Clock.Zone).DateTime))] : L["Sprint_Start"])
+                </MudButton>
+            </MudTooltip>
+        }
+        @if (_board.SprintId is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.History" OnClick="ShowLogAsync">@L["Sprint_Log"]</MudButton>
+        }
+        @if (_board.SprintId is not null && !_board.IsClosed)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Lock" OnClick="CloseSprintAsync">@L["Sprint_Close"]</MudButton>
+        }
+    </div>
+
+    @* ---- Kanban ---- *@
+    @if (!_cards.Any())
+    {
+        <MudPaper Outlined="true" Class="pa-6 text-center mb-3">
+            <MudText Color="Color.Secondary">@L["Sprint_EmptyBoard"]</MudText>
+        </MudPaper>
+    }
+    <MudDropContainer @key="_version" T="SprintBoardTask" Items="_cards" Class="kanban"
+                      ItemsSelector="@((item, zone) => ZoneOf(item.Task.Status) == zone)"
+                      ItemDropped="OnDroppedAsync"
+                      CanDrop="@((item, zone) => !_board.IsClosed)">
+        <ChildContent>
+            @foreach (var column in Columns)
+            {
+                <div class="kanban-col">
+                    <div class="kanban-col-title">
+                        @L[Fmt.StatusKey(column)]
+                        <span class="count-badge">@_cards.Count(c => c.Task.Status == column)</span>
+                    </div>
+                    <MudDropZone T="SprintBoardTask" Identifier="@ZoneOf(column)" Class="kanban-zone" />
+                </div>
+            }
+        </ChildContent>
+        <ItemRenderer>
+            <div class="kanban-card">
+                <TaskRow Item="context.Task" Today="Clock.Today" ShowProject="false" OnOpen="OpenTaskAsync" OnToggle="ToggleAsync">
+                    <Actions>
+                        @if (!_board.IsClosed)
+                        {
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="@L["Menu"]">
+                                @foreach (var status in Columns.Where(c => c != context.Task.Status))
+                                {
+                                    var target = status;
+                                    <MudMenuItem OnClick="() => SetStatusAsync(context.Task, target)">@L["Sprint_MoveTo"] @L[Fmt.StatusKey(target)].Value.ToLowerInvariant()</MudMenuItem>
+                                }
+                                <MudMenuItem OnClick="() => FocusAsync(context.Task)">@L["Task_FocusToday"]</MudMenuItem>
+                                <MudMenuItem OnClick="() => MoveUpAsync(context.Task)">@L["Sprint_MoveUp"]</MudMenuItem>
+                                <MudMenuItem OnClick="() => MoveDownAsync(context.Task)">@L["Sprint_MoveDown"]</MudMenuItem>
+                                <MudMenuItem OnClick="() => MoveToNextWeekAsync(context.Task)">@L["Sprint_MoveNext"]</MudMenuItem>
+                                <MudMenuItem OnClick="() => RemoveAsync(context.Task)">@L["Sprint_Remove"]</MudMenuItem>
+                            </MudMenu>
+                        }
+                    </Actions>
+                </TaskRow>
+            </div>
+        </ItemRenderer>
+    </MudDropContainer>
+
+    @* ---- tasks that left the sprint ---- *@
+    @if (_left.Count > 0)
+    {
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1">@L["Sprint_Left"]</MudText>
+        @foreach (var left in _left)
+        {
+            <div class="task-row is-done">
+                <div class="task-main">
+                    <span class="task-title">@left.Task.Title</span>
+                    <span class="task-meta">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@(left.LeaveReason is { } r ? L["Reason_" + r] : L["Reason_Dropped"])</MudChip>
+                    </span>
+                </div>
+            </div>
+        }
+    }
+
+    @* ---- planning ---- *@
+    @if (!_board.IsClosed)
+    {
+        <MudDivider Class="my-4" />
+        <div class="d-flex align-center flex-wrap gap-2 mb-2">
+            <MudText Typo="Typo.h6">@L["Sprint_PlanFromBacklog"]</MudText>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="NewTaskAsync">
+                @L["Sprint_NewTask"]
+            </MudButton>
+        </div>
+        <MudTextField T="string" Value="_search" ValueChanged="SearchAsync" Placeholder="@L["Backlog_Filter_Text"]" Immediate="true"
+                      DebounceInterval="250" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+        @if (_plannable.Count == 0)
+        {
+            <MudText Color="Color.Secondary">@L["Sprint_NothingToPlan"]</MudText>
+        }
+        @foreach (var t in _plannable)
+        {
+            <TaskRow Item="t" Today="Clock.Today" OnOpen="OpenTaskAsync" OnToggle="ToggleAsync">
+                <Actions>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="() => AddAsync(t)">@L["Add"]</MudButton>
+                </Actions>
+            </TaskRow>
+        }
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "week")] public string? WeekParam { get; set; }
+
+    private static readonly TaskItemStatus[] Columns = [TaskItemStatus.ToDo, TaskItemStatus.InProgress, TaskItemStatus.Done];
+
+    private SprintBoard? _board;
+    private List<SprintBoardTask> _cards = [];
+    private List<SprintBoardTask> _left = [];
+    private IReadOnlyList<TaskView> _plannable = [];
+    private IReadOnlyList<PastSprintToClose> _pastToClose = [];
+    private string? _goal;
+    private double? _capacityHours;
+    private string? _search;
+    private int _version;
+    private DateOnly _requestedWeek;
+
+    private double CapacityPercent => _board?.CapacityMinutes is > 0 and var cap
+        ? Math.Min(100.0, _board.PlannedMinutes * 100.0 / cap)
+        : 0;
+
+    private Color CapacityColor => _board?.Capacity switch
+    {
+        CapacityStatus.Over => Color.Warning,
+        CapacityStatus.NearLimit => Color.Warning,
+        _ => Color.Primary,
+    };
+
+    private static string ZoneOf(TaskItemStatus status) => status.ToString();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var week = DateOnly.TryParse(WeekParam, out var parsed) ? parsed : Sprints.CurrentWeekStart;
+        week = LifeOS.Domain.Time.PeriodCalculator.WeekStart(week);
+        if (_board is null || week != _requestedWeek)
+        {
+            _requestedWeek = week;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        _board = await Sprints.GetBoardAsync(_requestedWeek);
+        _goal = _board.Goal;
+        _capacityHours = _board.CapacityMinutes is { } m ? m / 60.0 : null;
+        _cards = _board.ActiveTasks.Where(t => t.Task.Status != TaskItemStatus.Cancelled).ToList();
+        _left = _board.Tasks.Where(t => !t.IsActive).ToList();
+        _pastToClose = await Sprints.ListPastSprintsToCloseAsync();
+        _plannable = _board.IsClosed ? [] : await Tasks.ListPlannableAsync(new TaskFilter(Text: _search));
+        _version++;
+    }
+
+    private void GoToWeek(DateOnly week) =>
+        Navigation.NavigateTo(week == Sprints.CurrentWeekStart ? "planning" : $"planning?week={week:yyyy-MM-dd}");
+
+    private async Task SaveGoalAsync(string? goal)
+    {
+        _goal = goal;
+        await RunAsync(() => Sprints.SetGoalAsync(_requestedWeek, goal));
+        await ReloadAsync();
+    }
+
+    private async Task SaveCapacityAsync(double? hours)
+    {
+        _capacityHours = hours;
+        int? minutes = hours is > 0 ? (int)Math.Round(hours.Value * 60) : null;
+        await RunAsync(() => Sprints.SetCapacityAsync(_requestedWeek, minutes));
+        await ReloadAsync();
+    }
+
+    private async Task CommitAsync()
+    {
+        await RunAsync(() => Sprints.CommitAsync(_requestedWeek));
+        await ReloadAsync();
+    }
+
+    private async Task ShowLogAsync() =>
+        await ShowDialogAsync<ScopeLogDialog>(L["Sprint_Log"], new DialogParameters<ScopeLogDialog> { { x => x.Week, _requestedWeek } });
+
+    private async Task CloseSprintAsync()
+    {
+        var result = await ShowDialogAsync<CloseSprintDialog>(
+            L["Sprint_CloseTitle", _board!.IsoWeek],
+            new DialogParameters<CloseSprintDialog> { { x => x.Week, _requestedWeek } });
+        if (result is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnDroppedAsync(MudItemDropInfo<SprintBoardTask> info)
+    {
+        if (info.Item is null || !Enum.TryParse<TaskItemStatus>(info.DropzoneIdentifier, out var status))
+        {
+            return;
+        }
+
+        await SetStatusAsync(info.Item.Task, status);
+    }
+
+    private async Task SetStatusAsync(TaskView task, TaskItemStatus status)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(task.Id, status));
+        await ReloadAsync();
+    }
+
+    private Task ToggleAsync((TaskView Item, bool Done) change) =>
+        SetStatusAsync(change.Item, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo);
+
+    private async Task OpenTaskAsync(TaskView task)
+    {
+        var result = await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } });
+        if (result is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task NewTaskAsync()
+    {
+        var result = await ShowDialogAsync<TaskDialog>(L["Task_New"]);
+        if (result?.Data is Guid id)
+        {
+            await RunAsync(() => Sprints.AddTaskAsync(_requestedWeek, id));
+            await ReloadAsync();
+        }
+    }
+
+    private async Task AddAsync(TaskView task)
+    {
+        await RunAsync(() => Sprints.AddTaskAsync(_requestedWeek, task.Id));
+        await ReloadAsync();
+    }
+
+    private async Task RemoveAsync(TaskView task)
+    {
+        await RunAsync(() => Sprints.RemoveTaskAsync(_requestedWeek, task.Id));
+        await ReloadAsync();
+    }
+
+    private async Task MoveToNextWeekAsync(TaskView task)
+    {
+        await RunAsync(() => Sprints.MoveTaskAsync(task.Id, _requestedWeek.AddDays(7)));
+        await ReloadAsync();
+    }
+
+    private async Task FocusAsync(TaskView task)
+    {
+        await RunAsync(() => Tasks.SetFocusAsync(task.Id, Clock.Today));
+        Snackbar.Add(L["Task_FocusAdded"], Severity.Success);
+    }
+
+    private Task MoveUpAsync(TaskView task) => ReorderAsync(task, -1);
+
+    private Task MoveDownAsync(TaskView task) => ReorderAsync(task, +1);
+
+    private async Task ReorderAsync(TaskView task, int delta)
+    {
+        // Swap with the neighbour in the same column, so the visible order changes as expected.
+        var all = _board!.ActiveTasks.OrderBy(t => t.Position).Select(t => t.Task.Id).ToList();
+        var column = _cards.Where(c => c.Task.Status == task.Status).OrderBy(c => c.Position).Select(c => c.Task.Id).ToList();
+        var inColumn = column.IndexOf(task.Id);
+        var neighbour = inColumn + delta;
+        if (inColumn < 0 || neighbour < 0 || neighbour >= column.Count)
+        {
+            return;
+        }
+
+        var order = all;
+        var a = order.IndexOf(task.Id);
+        var b = order.IndexOf(column[neighbour]);
+        (order[a], order[b]) = (order[b], order[a]);
+        await RunAsync(() => Sprints.ReorderAsync(_requestedWeek, order));
+        await ReloadAsync();
+    }
+
+    private async Task SearchAsync(string? text)
+    {
+        _search = text;
+        _plannable = await Tasks.ListPlannableAsync(new TaskFilter(Text: text));
+    }
+}

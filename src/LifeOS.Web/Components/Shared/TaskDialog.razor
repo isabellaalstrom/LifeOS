@@ -1,0 +1,248 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Tasks
+@inject TaskService Tasks
+@inject LifeAreaService Areas
+@inject ProjectService Projects
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else
+        {
+            <MudTextField @bind-Value="_title" Label="@L["Task_Title"]" Required="true" Immediate="true" AutoFocus="true"
+                          MaxLength="@TaskService.MaxTitleLength" Class="mb-2" OnKeyDown="OnTitleKeyDown" />
+            <MudTextField @bind-Value="_notes" Label="@L["Task_Notes"]" Lines="3" Sizing="InputSizing.Auto" MaxLength="4000" Class="mb-2" />
+
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudSelect T="TaskPriority" @bind-Value="_priority" Label="@L["Task_Priority"]">
+                        @foreach (var p in Enum.GetValues<TaskPriority>())
+                        {
+                            <MudSelectItem T="TaskPriority" Value="@p">@L[Fmt.PriorityKey(p)]</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField T="int?" @bind-Value="_estimate" Label="@L["Task_Estimate"]" Min="1" Max="@TaskService.MaxEstimateMinutes"
+                                     HideSpinButtons="true" Clearable="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
+                        @foreach (var a in _areas)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="Guid?" @bind-Value="_projectId" Label="@L["Task_Project"]" Clearable="true">
+                        @foreach (var p in _projects)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker Date="_due" DateChanged="d => _due = d" Label="@L["Task_Due"]"
+                                   Clearable="true" Editable="false" />
+                </MudItem>
+                <MudItem xs="7" sm="5">
+                    <MudDatePicker Date="_scheduled" DateChanged="d => _scheduled = d" Label="@L["Task_Scheduled"]"
+                                   Clearable="true" Editable="false" />
+                </MudItem>
+                <MudItem xs="5" sm="3">
+                    <MudTimePicker Time="_time" TimeChanged="t => _time = t" Label="@L["Task_ScheduledTime"]"
+                                   Clearable="true" Disabled="@(_scheduled is null)" />
+                </MudItem>
+            </MudGrid>
+
+            @if (_detail is not null)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1">@L["Task_Subtasks"]</MudText>
+                @foreach (var sub in _detail.Subtasks)
+                {
+                    <div class="task-row @(sub.Status == TaskItemStatus.Done ? "is-done" : null)">
+                        <MudCheckBox T="bool" Value="@(sub.Status == TaskItemStatus.Done)"
+                                     ValueChanged="done => ToggleSubtaskAsync(sub, done)" Size="Size.Small" Color="Color.Primary" />
+                        <div class="task-main"><span class="task-title">@sub.Title</span></div>
+                        <div class="task-actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@L["Delete"]"
+                                           OnClick="() => DeleteSubtaskAsync(sub)" />
+                        </div>
+                    </div>
+                }
+
+                @if (_detail.Task.ParentTaskId is null)
+                {
+                    <MudTextField @bind-Value="_newSubtask" Label="@L["Task_AddSubtask"]" Immediate="true" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Class="mt-2" OnKeyDown="OnSubtaskKeyDown"
+                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Add"
+                                  OnAdornmentClick="AddSubtaskAsync" AdornmentAriaLabel="@L["Add"]" />
+                }
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (TaskId is not null)
+        {
+            <MudButton Color="Color.Error" OnClick="DeleteAsync">@L["Delete"]</MudButton>
+            <MudSpacer />
+        }
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@(_loading || string.IsNullOrWhiteSpace(_title))">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Edit this task, or create a new one when null.</summary>
+    [Parameter] public Guid? TaskId { get; set; }
+
+    [Parameter] public Guid? DefaultProjectId { get; set; }
+
+    [Parameter] public Guid? DefaultAreaId { get; set; }
+
+    /// <summary>Where a newly created task goes. Inbox for quick capture, Backlog otherwise.</summary>
+    [Parameter] public TaskTriage NewTaskTriage { get; set; } = TaskTriage.Backlog;
+
+    /// <summary>Set to the created task's id after saving (also returned as dialog data).</summary>
+    private bool _loading = true;
+    private TaskDetail? _detail;
+    private IReadOnlyList<LifeAreaView> _areas = [];
+    private IReadOnlyList<ProjectView> _projects = [];
+
+    private string _title = string.Empty;
+    private string? _notes;
+    private TaskPriority _priority;
+    private int? _estimate;
+    private Guid? _areaId;
+    private Guid? _projectId;
+    private DateTime? _due;
+    private DateTime? _scheduled;
+    private TimeSpan? _time;
+    private string? _newSubtask;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _areas = await Areas.ListAsync();
+        _projects = await Projects.ListAsync();
+
+        if (TaskId is { } id)
+        {
+            _detail = await Tasks.GetAsync(id);
+            if (_detail is null)
+            {
+                MudDialog.Cancel();
+                return;
+            }
+
+            var t = _detail.Task;
+            _title = t.Title;
+            _notes = t.Notes;
+            _priority = t.Priority;
+            _estimate = t.EstimateMinutes;
+            _areaId = t.LifeAreaId;
+            _projectId = t.ProjectId;
+            _due = Fmt.ToDateTime(t.DueDate);
+            _scheduled = Fmt.ToDateTime(t.ScheduledDate);
+            _time = Fmt.ToTimeSpan(t.ScheduledTime);
+        }
+        else
+        {
+            _projectId = DefaultProjectId;
+            _areaId = DefaultAreaId;
+        }
+
+        _loading = false;
+    }
+
+    private TaskInput Input() => new(
+        _title, _notes, _priority, _estimate, Fmt.ToDateOnly(_due), Fmt.ToDateOnly(_scheduled),
+        Fmt.ToTimeOnly(_time), _areaId, _projectId);
+
+    private async Task SaveAsync()
+    {
+        var ok = await RunAsync(async () =>
+        {
+            if (TaskId is { } id)
+            {
+                await Tasks.UpdateAsync(id, Input());
+            }
+            else
+            {
+                var created = await Tasks.CreateAsync(Input(), NewTaskTriage);
+                _createdId = created;
+            }
+        });
+
+        if (ok)
+        {
+            MudDialog.Close(DialogResult.Ok(_createdId ?? TaskId));
+        }
+    }
+
+    private Guid? _createdId;
+
+    private async Task DeleteAsync()
+    {
+        if (TaskId is not { } id)
+        {
+            return;
+        }
+
+        var outcome = DeleteOutcome.Deleted;
+        if (await RunAsync(async () => outcome = await Tasks.DeleteAsync(id)))
+        {
+            Snackbar.Add(outcome == DeleteOutcome.Deleted ? L["Task_Deleted"] : L["Task_Cancelled"], Severity.Info);
+            MudDialog.Close(DialogResult.Ok(id));
+        }
+    }
+
+    private async Task ToggleSubtaskAsync(TaskView sub, bool done)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(sub.Id, done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        _detail = await Tasks.GetAsync(TaskId!.Value);
+    }
+
+    private async Task DeleteSubtaskAsync(TaskView sub)
+    {
+        await RunAsync(() => Tasks.DeleteAsync(sub.Id));
+        _detail = await Tasks.GetAsync(TaskId!.Value);
+    }
+
+    private async Task AddSubtaskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newSubtask) || TaskId is not { } id)
+        {
+            return;
+        }
+
+        if (await RunAsync(() => Tasks.AddSubtaskAsync(id, _newSubtask!)))
+        {
+            _newSubtask = null;
+            _detail = await Tasks.GetAsync(id);
+        }
+    }
+
+    private async Task OnSubtaskKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddSubtaskAsync();
+        }
+    }
+
+    private async Task OnTitleKeyDown(KeyboardEventArgs e)
+    {
+        // Enter saves new tasks quickly; for existing tasks use the button so notes are not cut short.
+        if (e.Key == "Enter" && TaskId is null && !string.IsNullOrWhiteSpace(_title))
+        {
+            await SaveAsync();
+        }
+    }
+}

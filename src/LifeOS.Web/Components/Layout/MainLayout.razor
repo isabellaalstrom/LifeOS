@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> L
+@inject IDialogService DialogService
+@inject LifeOS.Web.Services.AppEvents Events
 
 <MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -10,10 +12,10 @@
     <MudAppBar Elevation="0" Dense="true" Class="app-bar">
         <MudText Typo="Typo.h6">@L["App_Title"]</MudText>
         <MudSpacer />
-        @* Quick capture lands in Phase 2; the entry point exists now so the shell layout is final. *@
+        @* Quick capture from every page: one field, lands in the Inbox. *@
         <MudTooltip Text="@L["QuickAdd"]">
-            <MudIconButton Icon="@Icons.Material.Filled.AddCircleOutline" Color="Color.Inherit" Disabled="true"
-                           aria-label="@L["QuickAdd"]" />
+            <MudIconButton Icon="@Icons.Material.Filled.AddCircleOutline" Color="Color.Inherit"
+                           OnClick="QuickAddAsync" aria-label="@L["QuickAdd"]" />
         </MudTooltip>
         <form method="post" action="account/logout" class="d-inline-flex">
             <AntiforgeryToken />
@@ -72,6 +74,17 @@
             }
         }
     };
+
+    private async Task QuickAddAsync()
+    {
+        var reference = await DialogService.ShowAsync<QuickAddDialog>(
+            L["QuickAdd_Title"], new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Small, CloseOnEscapeKey = true });
+        var result = await reference.Result;
+        if (result is { Canceled: false })
+        {
+            await Events.NotifyInboxChangedAsync();
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

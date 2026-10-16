@@ -1,0 +1,56 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Organize
+@using LifeOS.Application.Planning
+@using LifeOS.Domain.Planning
+@inject SprintService Sprints
+@inject IUserClock Clock
+
+<MudDialog>
+    <DialogContent>
+        @if (_log is null)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (_log.Count == 0)
+        {
+            <MudText Color="Color.Secondary">@L["Sprint_LogEmpty"]</MudText>
+        }
+        else
+        {
+            <MudList T="string" Dense="true" ReadOnly="true">
+                @foreach (var change in _log)
+                {
+                    <MudListItem T="string">
+                        <div class="log-row">
+                            <MudIcon Icon="@(change.Kind == ScopeChangeKind.Added ? Icons.Material.Filled.AddCircleOutline : Icons.Material.Filled.RemoveCircleOutline)"
+                                     Size="Size.Small" />
+                            <div>
+                                <div>@change.TaskTitle</div>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @(change.Kind == ScopeChangeKind.Added ? L["Sprint_LogAdded"] : L["Sprint_LogRemoved"]),
+                                    @L["Reason_" + change.Reason] ·
+                                    @TimeZoneInfo.ConvertTime(change.OccurredUtc, Clock.Zone).ToString("ddd d MMM HH:mm") ·
+                                    @(change.AfterBoundary ? L["Sprint_LogAfter"] : L["Sprint_LogBefore"])
+                                </MudText>
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public DateOnly Week { get; set; }
+
+    private IReadOnlyList<ScopeChangeView>? _log;
+
+    protected override async Task OnInitializedAsync() => _log = await Sprints.GetScopeLogAsync(Week);
+}

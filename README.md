@@ -3,8 +3,25 @@
 Personal life management: goals, weekly sprints, habits and AI-assisted retrospectives.
 .NET 10 · Blazor Web App (Interactive Server) · MudBlazor · EF Core + SQLite. UI language: Swedish.
 
-**Status: Phase 1 (foundation and hosting spike).** The shell, authentication, database, health endpoint, Docker/Compose
-and Home Assistant packaging exist. Product features arrive in Phases 2–6 (see `LifeOS_Codex_MVP_Brief.md`).
+**Status: Phase 2 (organize and execute) on top of the Phase 1 foundation.** Goals, habits, retrospectives, AI and
+notifications arrive in Phases 3–6 (see `LifeOS_Codex_MVP_Brief.md`).
+
+## What works today (Phase 2)
+
+| Area | What you can do |
+|---|---|
+| **Quick capture** | The `+` button in the top bar works on every page: one field, lands in the **Inkorg** (Inbox). |
+| **Inkorg → Backlog** | Sort at your own pace: move to backlog, or plan straight into this week. Nothing needs a project, area or goal. |
+| **Livsområden** | Optional areas (Hem, Hälsa, Cykling, …). Offered as one-click suggestions, never created for you. |
+| **Projekt** | Projects with tasks, status (active/paused/done/archived) and progress. |
+| **Uppgifter** | Subtasks (one level), priority, estimate, deadline, optional scheduled day/time, notes. |
+| **Sprint** (`/planning`) | A weekly sprint per ISO week: goal, capacity with a friendly warning (never a block), Kanban (drag and drop, or the card menu on mobile), reorder, move to next week, remove. |
+| **Scope history** | Every change to a sprint's scope is logged. The sprint shows *planned from start*, *added during the week*, *removed*, *carried in/out*. The start is automatic (Monday 00:00 local time) with an optional **Starta sprint** button. |
+| **Close sprint** | Per unfinished task: carry to next sprint or back to the backlog. Finished work stays in the closed sprint. |
+| **Idag** (`/today`) | Daily focus without time blocks, plus due/overdue items and suggestions from the sprint. |
+| **Översikt** | Today's focus, current sprint, deadlines and inbox count. |
+
+Dates and "today" use the owner's time zone (`Europe/Stockholm` by default); weeks start on Monday.
 
 ## Layout
 
@@ -75,17 +92,21 @@ or for a local build run `./ha/build-local-app.ps1`, copy `artifacts/ha-app/life
 Releases: bump `version` in `lifeos/config.yaml`, then push a matching `vX.Y.Z` tag; `publish-app-image.yml` publishes the images to GHCR.
 LifeOS is only hosted by HA; it does not use HA entities, APIs or automations. Login is the app's own cookie login.
 
-## Validation checklist (Phase 1)
+## Validation checklist
 
 | Check | How | Status |
 |---|---|---|
-| Builds, all tests pass (46) | `dotnet test` | verified |
+| Builds, all tests pass (109) | `dotnet test` | verified |
 | Starts locally, migrations applied, data persists across restart | `dotnet run`, restart, still signed in | verified |
 | `/health` anonymous 200; app pages redirect to login | integration tests + browser | verified |
 | Mobile + desktop shell (drawer / bottom navigation) | browser at 375 px and desktop | verified |
 | Behind simulated ingress incl. WebSockets | `tools/IngressProxy` + browser | verified |
 | Docker image builds and runs, data survives container restart | built and run locally, volume kept db and keys across restart; CI smoke test | verified |
 | HA app on real Home Assistant OS (install, login, WebSockets, navigation) | docs/ha-ingress-spike.md | verified (reconnect/Companion/diagnostics headers still open) |
+| Phase 2 flows in a real browser (areas, project, task, quick capture, inbox, plan, Kanban drag and drop, capacity warning, focus, close sprint with carry-over) | local run + browser | verified locally |
+| Phase 1 database upgrades to Phase 2 with data kept and a pre-migration backup | test + local run | verified |
+| Phase 2 on Home Assistant (release 0.2.0) | install the update and walk through the flows above | **not yet run** |
+| No horizontal overflow on mobile width on all new pages | browser at 375 px | verified |
 
 ## CI
 

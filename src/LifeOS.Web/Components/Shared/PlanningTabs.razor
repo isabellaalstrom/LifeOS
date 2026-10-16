@@ -1,0 +1,37 @@
+@inherits PlanningComponentBase
+@implements IDisposable
+@using LifeOS.Application.Organize
+@inject TaskService Tasks
+
+@* Plain links, so the sub-navigation works without any client-side JavaScript. *@
+<nav class="subnav" aria-label="@L["Nav_Planning"]">
+    <NavLink href="planning" Match="NavLinkMatch.All">@L["Tab_Sprint"]</NavLink>
+    <NavLink href="today">@L["Tab_Today"]</NavLink>
+    <NavLink href="planning/inbox">@L["Tab_Inbox"]@if (_inbox > 0)
+        {
+            <span class="count-badge">@_inbox</span>
+        }</NavLink>
+    <NavLink href="planning/backlog">@L["Tab_Backlog"]</NavLink>
+</nav>
+
+@code {
+    [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
+
+    /// <summary>Provide the inbox count if the page already knows it; otherwise it is loaded here.</summary>
+    [Parameter] public int? InboxCount { get; set; }
+
+    private int _inbox;
+
+    protected override void OnInitialized() => Events.InboxChanged += OnInboxChangedAsync;
+
+    protected override async Task OnParametersSetAsync() =>
+        _inbox = InboxCount ?? await Tasks.InboxCountAsync();
+
+    private async Task OnInboxChangedAsync()
+    {
+        _inbox = await Tasks.InboxCountAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Events.InboxChanged -= OnInboxChangedAsync;
+}

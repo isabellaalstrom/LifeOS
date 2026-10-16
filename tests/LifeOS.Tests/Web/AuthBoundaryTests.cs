@@ -99,6 +99,40 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
         Assert.Contains("Planering", await page.Content.ReadAsStringAsync());
     }
 
+    [Theory]
+    [InlineData("/", "Översikt")]
+    [InlineData("/today", "Idag")]
+    [InlineData("/planning", "Vecka")]
+    [InlineData("/planning/inbox", "Inkorg")]
+    [InlineData("/planning/backlog", "Backlog")]
+    [InlineData("/projects", "Projekt")]
+    [InlineData("/areas", "Livsområden")]
+    public async Task Planning_pages_render_for_the_signed_in_owner(string path, string expectedText)
+    {
+        await _factory.EnsureOwnerAsync();
+        var client = _factory.CreateBrowserClient();
+        await PostLoginAsync(client, WebAppFactory.OwnerPassword);
+
+        var response = await client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+        Assert.Contains(expectedText, html);
+        Assert.DoesNotContain("An unhandled error", html);
+    }
+
+    [Fact]
+    public async Task Planning_pages_are_not_available_to_anonymous_visitors()
+    {
+        await _factory.EnsureOwnerAsync();
+        var client = _factory.CreateBrowserClient();
+        foreach (var path in new[] { "/today", "/planning/inbox", "/planning/backlog", "/areas", $"/projects/{Guid.NewGuid()}" })
+        {
+            var response = await client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Contains("/login", response.Headers.Location!.OriginalString);
+        }
+    }
+
     [Fact]
     public async Task Navigation_is_server_rendered_without_needing_a_blazor_circuit()
     {
