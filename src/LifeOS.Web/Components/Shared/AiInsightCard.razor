@@ -1,0 +1,100 @@
+@inherits PlanningComponentBase
+@using System.Globalization
+@using LifeOS.Application.Ai
+@inject IAiCoachService Coach
+@inject LifeOS.Application.Abstractions.IUserClock Clock
+
+@* The insight is only generated when the owner asks for it; opening the overview never calls the provider. *@
+<div class="tone-card tone-paper">
+    <p class="card-eyebrow">AI</p>
+    <h2 class="card-title">@L["Overview_Insights"]</h2>
+    @if (_availability is null)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (!_availability.ProviderConfigured || !_availability.EnabledByOwner)
+    {
+        <MudText Color="Color.Secondary" Class="my-1">
+            @(!_availability.ProviderConfigured ? L["Ai_Status_NotConfigured"] : L["Ai_Status_Disabled"])
+        </MudText>
+        <MudButton Href="settings" Variant="Variant.Text" Size="Size.Small">@L["Nav_Settings"]</MudButton>
+    }
+    else
+    {
+        @if (_insight is null)
+        {
+            <MudText Color="Color.Secondary" Class="my-1">@L["Ai_InsightEmpty"]</MudText>
+        }
+        else
+        {
+            <p class="chat-label">@L["Ai_Observations"]</p>
+            <ul class="insight-list">
+                @foreach (var o in _insight.Observations)
+                {
+                    <li>@o</li>
+                }
+            </ul>
+            @if (_insight.Hypotheses.Count > 0)
+            {
+                <p class="chat-label">@L["Ai_Hypotheses"]</p>
+                <ul class="insight-list">
+                    @foreach (var h in _insight.Hypotheses)
+                    {
+                        <li>@h</li>
+                    }
+                </ul>
+            }
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
+                @L["Ai_InsightUpdated", TimeZoneInfo.ConvertTime(_insight.GeneratedUtc, Clock.Zone).ToString("d MMM HH:mm", CultureInfo.CurrentCulture)]
+            </MudText>
+        }
+
+        @if (!string.IsNullOrEmpty(_notice))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="my-2" ShowCloseIcon="false">@_notice</MudAlert>
+        }
+
+        <div class="d-flex align-center gap-2 mt-2">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.AutoAwesome"
+                       Disabled="@(_busy || !_availability.CanUse)" OnClick="GenerateAsync">
+                @(_insight is null ? L["Ai_InsightCreate"] : L["Ai_InsightRefresh"])
+            </MudButton>
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private AiAvailability? _availability;
+    private DashboardInsight? _insight;
+    private string? _notice;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _availability = await Coach.GetAvailabilityAsync();
+        _insight = await Coach.GetCachedInsightAsync();
+    }
+
+    private async Task GenerateAsync()
+    {
+        _busy = true;
+        _notice = null;
+        StateHasChanged();
+        var result = await Coach.GenerateInsightAsync(force: _insight is not null);
+        if (result.Ok)
+        {
+            _insight = result.Value;
+        }
+        else
+        {
+            _notice = AiUi.StatusText(L, result.Status);
+        }
+
+        _availability = await Coach.GetAvailabilityAsync();
+        _busy = false;
+    }
+}

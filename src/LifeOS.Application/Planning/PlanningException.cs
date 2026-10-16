@@ -29,5 +29,9 @@ public sealed class PlanningException(string code) : Exception(code)
         public const string RetroCompleted = "RetroCompleted";
         public const string InvalidWellbeing = "InvalidWellbeing";
         public const string InvalidQuestion = "InvalidQuestion";
+        public const string InvalidTimeZone = "InvalidTimeZone";
+        public const string InvalidProposal = "InvalidProposal";
+        public const string ProposalDecided = "ProposalDecided";
+        public const string InvalidSubscription = "InvalidSubscription";
     }
 }

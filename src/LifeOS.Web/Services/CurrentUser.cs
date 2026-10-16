@@ -8,13 +8,22 @@ namespace LifeOS.Web.Services;
 /// Resolves the owner from the HTTP request (static SSR / endpoints) or the circuit's authentication state.
 /// Anonymous resolves to null, which the data layer treats as "no access".
 /// </summary>
-public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor, AuthenticationStateProvider authenticationStateProvider)
+public sealed class CurrentUser(
+    IHttpContextAccessor httpContextAccessor,
+    AuthenticationStateProvider authenticationStateProvider,
+    LifeOS.Application.Notifications.OwnerOverride ownerOverride)
     : ICurrentUser
 {
     public string? UserId
     {
         get
         {
+            // Background work sets the owner explicitly; web requests and circuits resolve it from the signed-in user.
+            if (ownerOverride.UserId is { } overridden)
+            {
+                return overridden;
+            }
+
             var principal = httpContextAccessor.HttpContext?.User;
             if (principal?.Identity?.IsAuthenticated != true)
             {

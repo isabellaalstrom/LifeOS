@@ -1,10 +1,15 @@
 using LifeOS.Application.Abstractions;
+using LifeOS.Application.Ai;
 using LifeOS.Application.Goals;
 using LifeOS.Application.Habits;
+using LifeOS.Application.Notifications;
 using LifeOS.Application.Organize;
 using LifeOS.Application.Planning;
 using LifeOS.Application.Retros;
+using LifeOS.Domain.Ai;
+using LifeOS.Domain.Notifications;
 using LifeOS.Domain.Time;
+using Microsoft.Extensions.Options;
 
 namespace LifeOS.Tests.Infrastructure;
 
@@ -31,6 +36,77 @@ public sealed class TestDbContextFactory(TestDatabase db, ICurrentUser user, Tim
     public IAppDbContext Create() => db.CreateContext(user, time);
 }
 
+/// <summary>A scripted AI provider. Records every request so tests can inspect exactly what would have been sent.</summary>
+public sealed class FakeAiClient : IAiClient
+{
+    private readonly Queue<AiCompletion> _responses = new();
+
+    public bool IsConfigured { get; set; } = true;
+
+    public List<AiRequest> Requests { get; } = [];
+
+    public void Enqueue(string json) => _responses.Enqueue(AiCompletion.Success(json));
+
+    public void EnqueueFailure(AiFailure failure) => _responses.Enqueue(AiCompletion.Failed(failure));
+
+    public Task<AiCompletion> CompleteAsync(AiRequest request, CancellationToken cancellationToken = default)
+    {
+        Requests.Add(request);
+        return Task.FromResult(_responses.Count > 0 ? _responses.Dequeue() : AiCompletion.Failed(AiFailure.Unavailable));
+    }
+
+    /// <summary>Everything sent in the latest request as one string (system prompt and messages).</summary>
+    public string LastSentText => Requests.Count == 0
+        ? string.Empty
+        : Requests[^1].System + "\n" + string.Join("\n", Requests[^1].Messages.Select(m => m.Content));
+}
+
+/// <summary>A notification channel that records what it was asked to send.</summary>
+public sealed class FakeSender(NotificationChannel channel) : INotificationSender
+{
+    private readonly Queue<SendOutcome> _outcomes = new();
+
+    public NotificationChannel Channel { get; } = channel;
+
+    public bool IsAvailable { get; set; } = true;
+
+    public List<NotificationPayload> Sent { get; } = [];
+
+    /// <summary>The next call returns this instead of the default success.</summary>
+    public void Enqueue(SendOutcome outcome) => _outcomes.Enqueue(outcome);
+
+    public Task<SendOutcome> SendAsync(NotificationPayload payload, CancellationToken cancellationToken = default)
+    {
+        Sent.Add(payload);
+        return Task.FromResult(_outcomes.Count > 0 ? _outcomes.Dequeue() : SendOutcome.Ok());
+    }
+}
+
+public sealed class FakeProfileStore : IUserProfileStore
+{
+    public string TimeZoneId { get; private set; } = "Europe/Stockholm";
+
+    public Task<string> GetTimeZoneIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(TimeZoneId);
+
+    public Task<bool> SetTimeZoneIdAsync(string zoneId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(zoneId);
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            return Task.FromResult(false);
+        }
+
+        TimeZoneId = zoneId;
+        return Task.FromResult(true);
+    }
+
+    public Task<IReadOnlyList<string>> ListOwnerIdsAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<string>>(["user-a", "user-b"]);
+}
+
 /// <summary>Real services on a real migrated SQLite database with a controllable user and clock.</summary>
 public sealed class ServiceHarness : IDisposable
 {
@@ -40,12 +116,17 @@ public sealed class ServiceHarness : IDisposable
     public static readonly DateOnly Week = new(2026, 10, 12);
     public static readonly DateOnly NextWeek = new(2026, 10, 19);
 
-    public ServiceHarness(string userId = "user-a", string now = Wednesday)
+    private readonly bool _ownsDatabase;
+
+    /// <param name="shareWith">Another harness whose database and clock to use, to act as a second owner.</param>
+    public ServiceHarness(string userId = "user-a", string now = Wednesday, ServiceHarness? shareWith = null)
     {
-        Db = new TestDatabase();
+        _ownsDatabase = shareWith is null;
+        Db = shareWith?.Db ?? new TestDatabase();
         User = new FakeCurrentUser(userId);
-        Clock = new FakeClock(DateTimeOffset.Parse(now, null, System.Globalization.DateTimeStyles.AssumeUniversal));
+        Clock = shareWith?.Clock ?? new FakeClock(DateTimeOffset.Parse(now, null, global::System.Globalization.DateTimeStyles.AssumeUniversal));
         Factory = new TestDbContextFactory(Db, User, Clock);
+
         Areas = new LifeAreaService(Factory);
         GoalRecorder = new GoalProgressRecorder(Clock);
         HabitRecorder = new HabitCompletionRecorder(Clock, GoalRecorder);
@@ -57,6 +138,22 @@ public sealed class ServiceHarness : IDisposable
         Habits = new HabitService(Factory, Clock, HabitRecorder, Tasks, Sprints);
         RetroStats = new RetroStatsService(Factory, Clock, Sprints);
         Retros = new RetroService(Factory, Clock, RetroStats, Tasks);
+
+        AiOptions = new AiOptions();
+        var aiOptions = Options.Create(AiOptions);
+        AiClient = new FakeAiClient();
+        Profile = new FakeProfileStore();
+        Prefs = new PreferenceService(Factory, Profile);
+        Contexts = new AiContextBuilder(Retros, RetroStats, Goals, Habits, Sprints, Tasks, Clock, aiOptions);
+        Proposals = new AiProposalService(Factory, Clock, Sprints, Retros, Goals);
+        Coach = new AiCoachService(AiClient, Factory, Clock, Prefs, Contexts, Proposals, aiOptions);
+
+        PushSender = new FakeSender(NotificationChannel.WebPush);
+        NtfySender = new FakeSender(NotificationChannel.Ntfy);
+        Planner = new NotificationPlanner(Factory, Clock, Retros);
+        Dispatcher = new NotificationDispatcher(Factory, Clock, [PushSender, NtfySender]);
+        Notifications = new NotificationService(Factory, Clock, new NotificationRunner(Planner, Dispatcher));
+        Subscriptions = new PushSubscriptionService(Factory);
     }
 
     public TestDatabase Db { get; }
@@ -89,27 +186,46 @@ public sealed class ServiceHarness : IDisposable
 
     public RetroService Retros { get; }
 
-    /// <summary>A second set of services for another owner against the same database.</summary>
-    public ServiceHarnessView ForUser(string userId)
-    {
-        var user = new FakeCurrentUser(userId);
-        var factory = new TestDbContextFactory(Db, user, Clock);
-        var goalRecorder = new GoalProgressRecorder(Clock);
-        var habitRecorder = new HabitCompletionRecorder(Clock, goalRecorder);
-        var tasks = new TaskService(factory, Clock, goalRecorder, habitRecorder);
-        var sprints = new SprintService(factory, Clock);
-        return new ServiceHarnessView(
-            tasks, sprints, new LifeAreaService(factory), new ProjectService(factory, goalRecorder),
-            new GoalService(factory, Clock, goalRecorder), new HabitService(factory, Clock, habitRecorder, tasks, sprints),
-            new RetroService(factory, Clock, new RetroStatsService(factory, Clock, sprints), tasks));
-    }
+    public AiOptions AiOptions { get; }
+
+    public FakeAiClient AiClient { get; }
+
+    public FakeProfileStore Profile { get; }
+
+    public PreferenceService Prefs { get; }
+
+    public AiContextBuilder Contexts { get; }
+
+    public AiProposalService Proposals { get; }
+
+    public AiCoachService Coach { get; }
+
+    public FakeSender PushSender { get; }
+
+    public FakeSender NtfySender { get; }
+
+    public NotificationPlanner Planner { get; }
+
+    public NotificationDispatcher Dispatcher { get; }
+
+    public NotificationService Notifications { get; }
+
+    public PushSubscriptionService Subscriptions { get; }
+
+    /// <summary>A second set of services for another owner against the same database and clock.</summary>
+    public ServiceHarness ForUser(string userId) => new(userId, shareWith: this);
 
     public async Task<Guid> NewPlannableTaskAsync(string title, int? estimate = null) =>
         await Tasks.CreateAsync(new TaskInput(title, EstimateMinutes: estimate));
 
-    public void Dispose() => Db.Dispose();
-}
+    /// <summary>Turns AI on for this owner (it is off by default).</summary>
+    public Task EnableAiAsync(AiCoachMode mode = AiCoachMode.Balanced) => Prefs.SetAiAsync(true, mode);
 
-public sealed record ServiceHarnessView(
-    TaskService Tasks, SprintService Sprints, LifeAreaService Areas, ProjectService Projects, GoalService Goals, HabitService Habits,
-    RetroService Retros);
+    public void Dispose()
+    {
+        if (_ownsDatabase)
+        {
+            Db.Dispose();
+        }
+    }
+}

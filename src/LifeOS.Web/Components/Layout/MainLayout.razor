@@ -22,6 +22,9 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddCircleOutline" Color="Color.Inherit"
                            OnClick="QuickAddAsync" aria-label="@L["QuickAdd"]" />
         </MudTooltip>
+        <MudTooltip Text="@L["Nav_Settings"]">
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" Href="settings" aria-label="@L["Nav_Settings"]" />
+        </MudTooltip>
         <form method="post" action="account/logout" class="d-inline-flex">
             <AntiforgeryToken />
             <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" ButtonType="ButtonType.Submit"

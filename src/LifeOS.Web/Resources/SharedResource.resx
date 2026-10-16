@@ -437,4 +437,96 @@
   <data name="Retro_Wellbeing_Summary" xml:space="preserve"><value>Energi {0}, balans {1}, stress {2}, nöjdhet {3}</value></data>
   <data name="Err_RetroCompleted" xml:space="preserve"><value>Återblicken är klar. Öppna den igen för att ändra.</value></data>
   <data name="Err_InvalidWellbeing" xml:space="preserve"><value>Välj ett värde mellan 1 och 5.</value></data>
-  <data name="Err_InvalidQuestion" xml:space="preserve"><value>Okänd fråga.</value></data></root>
+  <data name="Err_InvalidQuestion" xml:space="preserve"><value>Okänd fråga.</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Inställningar</value></data>
+  <data name="Settings_Intro" xml:space="preserve"><value>Här bestämmer du vad som är på. Inget skickas och ingen AI används förrän du själv slår på det.</value></data>
+  <data name="Settings_Saved" xml:space="preserve"><value>Sparat</value></data>
+  <data name="Settings_TimeZone" xml:space="preserve"><value>Tidszon</value></data>
+  <data name="Settings_TimeZoneHint" xml:space="preserve"><value>Används för veckogränser, "idag", påminnelser och tysta timmar.</value></data>
+  <data name="Settings_Ai" xml:space="preserve"><value>AI-coach</value></data>
+  <data name="Settings_AiHint" xml:space="preserve"><value>Valfri hjälp att reflektera, formulera mål och föreslå veckoplan. AI föreslår bara – inget ändras förrän du godkänner det.</value></data>
+  <data name="Settings_AiEnable" xml:space="preserve"><value>Använd AI-coachen</value></data>
+  <data name="Settings_AiNotConfigured" xml:space="preserve"><value>Ingen AI-leverantör är konfigurerad på servern. Lägg till en OpenAI-nyckel i appens inställningar i Home Assistant (openai_api_key) så blir AI tillgängligt här.</value></data>
+  <data name="Settings_AiShared" xml:space="preserve"><value>Det här skickas till AI-leverantören när du använder en AI-funktion</value></data>
+  <data name="Settings_AiShared1" xml:space="preserve"><value>Siffror och sammanfattningar för just den funktionen (antal klara uppgifter, målprocent, kapacitet).</value></data>
+  <data name="Settings_AiShared2" xml:space="preserve"><value>Dina egna svar och sammanfattning från den återblick du ber coachen läsa.</value></data>
+  <data name="Settings_AiShared3" xml:space="preserve"><value>Titlar på uppgifter bara när du ber om veckoförslag – aldrig anteckningar eller beskrivningar.</value></data>
+  <data name="Settings_AiShared4" xml:space="preserve"><value>Aldrig konto, e-post, lösenord eller andra personuppgifter.</value></data>
+  <data name="Settings_Notifications" xml:space="preserve"><value>Notiser</value></data>
+  <data name="Settings_NotifHint" xml:space="preserve"><value>Inget skickas förrän du slagit på minst en kategori. Texterna är allmänna och innehåller aldrig dina titlar eller svar.</value></data>
+  <data name="Settings_NotifTasks" xml:space="preserve"><value>Uppgifter som förfaller</value></data>
+  <data name="Settings_NotifGoals" xml:space="preserve"><value>Veckokoll på mål (söndagar)</value></data>
+  <data name="Settings_NotifRetros" xml:space="preserve"><value>Påminnelse om återblick</value></data>
+  <data name="Settings_SendTime" xml:space="preserve"><value>Skickas kl</value></data>
+  <data name="Settings_QuietStart" xml:space="preserve"><value>Tyst från</value></data>
+  <data name="Settings_QuietEnd" xml:space="preserve"><value>Tyst till</value></data>
+  <data name="Settings_QuietHint" xml:space="preserve"><value>Under tysta timmar skickas inget; påminnelsen väntar tills de är slut.</value></data>
+  <data name="Settings_Push" xml:space="preserve"><value>Den här enheten</value></data>
+  <data name="Settings_PushOff" xml:space="preserve"><value>Push-notiser är inte aktiverade på den här enheten.</value></data>
+  <data name="Settings_PushOn" xml:space="preserve"><value>Push-notiser är aktiverade på den här enheten.</value></data>
+  <data name="Settings_PushEnable" xml:space="preserve"><value>Aktivera på den här enheten</value></data>
+  <data name="Settings_PushDisable" xml:space="preserve"><value>Stäng av på den här enheten</value></data>
+  <data name="Settings_PushEnabledMsg" xml:space="preserve"><value>Push-notiser är aktiverade</value></data>
+  <data name="Settings_PushFailed" xml:space="preserve"><value>Det gick inte att aktivera push-notiser i den här webbläsaren.</value></data>
+  <data name="Settings_PushDenied" xml:space="preserve"><value>Webbläsaren nekade notiser. Tillåt dem för sidan i webbläsarens inställningar och försök igen.</value></data>
+  <data name="Settings_PushUnsupported" xml:space="preserve"><value>Den här webbläsaren stöder inte push-notiser.</value></data>
+  <data name="Settings_PushInsecure" xml:space="preserve"><value>Push-notiser kräver att LifeOS öppnas över HTTPS (till exempel via Home Assistant Cloud/Nabu Casa eller en HTTPS-adress). Öppna appen så och försök igen.</value></data>
+  <data name="Settings_PushDevices" xml:space="preserve"><value>Registrerade enheter: {0}</value></data>
+  <data name="Settings_Ntfy" xml:space="preserve"><value>Skicka även via ntfy</value></data>
+  <data name="Settings_NtfyNotConfigured" xml:space="preserve"><value>ntfy är inte konfigurerat (valfritt). Ange ntfy_url och ntfy_topic i appens inställningar i Home Assistant om du vill använda det.</value></data>
+  <data name="Settings_Test" xml:space="preserve"><value>Skicka testnotis</value></data>
+  <data name="Settings_TestSent" xml:space="preserve"><value>Testnotisen skickades.</value></data>
+  <data name="Settings_TestNowhere" xml:space="preserve"><value>Ingen mottagare: aktivera push på en enhet först.</value></data>
+  <data name="Settings_TestFailed" xml:space="preserve"><value>Det gick inte att skicka. Försöker igen automatiskt om det var en riktig påminnelse.</value></data>
+  <data name="Settings_Recent" xml:space="preserve"><value>Senaste notiser</value></data>
+  <data name="Settings_RecentNone" xml:space="preserve"><value>Inga notiser än.</value></data>
+  <data name="NotifStatus_Pending" xml:space="preserve"><value>väntar</value></data>
+  <data name="NotifStatus_Sending" xml:space="preserve"><value>skickas</value></data>
+  <data name="NotifStatus_Sent" xml:space="preserve"><value>skickad</value></data>
+  <data name="NotifStatus_Failed" xml:space="preserve"><value>misslyckades</value></data>
+  <data name="NotifStatus_Suppressed" xml:space="preserve"><value>inte skickad</value></data>
+  <data name="NotifStatus_Cancelled" xml:space="preserve"><value>avbruten</value></data>
+  <data name="Channel_WebPush" xml:space="preserve"><value>push</value></data>
+  <data name="Channel_Ntfy" xml:space="preserve"><value>ntfy</value></data>
+  <data name="Delivery_Sent" xml:space="preserve"><value>ok</value></data>
+  <data name="Delivery_Failed" xml:space="preserve"><value>fel</value></data>
+  <data name="AiMode_Balanced" xml:space="preserve"><value>Balanserad</value></data>
+  <data name="AiMode_Analytical" xml:space="preserve"><value>Analytisk</value></data>
+  <data name="AiMode_Reflective" xml:space="preserve"><value>Reflekterande</value></data>
+  <data name="AiModeHint_Balanced" xml:space="preserve"><value>Lugn och saklig, med en blandning av siffror och reflektion.</value></data>
+  <data name="AiModeHint_Analytical" xml:space="preserve"><value>Mer fokus på mönster och siffror.</value></data>
+  <data name="AiModeHint_Reflective" xml:space="preserve"><value>Mer fokus på hur du mår och vad du lär dig.</value></data>
+  <data name="Ai_Mode" xml:space="preserve"><value>Coachstil</value></data>
+  <data name="Ai_Status_NotConfigured" xml:space="preserve"><value>AI är inte konfigurerat på servern.</value></data>
+  <data name="Ai_Status_Disabled" xml:space="preserve"><value>AI-coachen är avstängd.</value></data>
+  <data name="Ai_Status_RateLimited" xml:space="preserve"><value>Dagens AI-gräns är nådd. Försök igen i morgon.</value></data>
+  <data name="Ai_Status_Failed" xml:space="preserve"><value>AI-tjänsten svarade inte som väntat. Inget har ändrats – försök igen om en stund.</value></data>
+  <data name="Ai_CallsToday" xml:space="preserve"><value>AI-anrop idag: {0} av {1}</value></data>
+  <data name="Ai_Coach" xml:space="preserve"><value>AI-coach</value></data>
+  <data name="Ai_CoachHint" xml:space="preserve"><value>Coachen läser det du sparat i den här återblicken och ställer en följdfråga. Den skiljer på vad datan visar och vad den tror, och föreslår bara.</value></data>
+  <data name="Ai_AskCoach" xml:space="preserve"><value>Be coachen läsa och fråga</value></data>
+  <data name="Ai_SendAnswer" xml:space="preserve"><value>Skicka svar</value></data>
+  <data name="Ai_YourAnswer" xml:space="preserve"><value>Ditt svar till coachen</value></data>
+  <data name="Ai_SuggestActions" xml:space="preserve"><value>Föreslå åtgärder</value></data>
+  <data name="Ai_Observations" xml:space="preserve"><value>Det här visar datan</value></data>
+  <data name="Ai_Hypotheses" xml:space="preserve"><value>Möjliga tolkningar (osäkra)</value></data>
+  <data name="Ai_Proposals" xml:space="preserve"><value>Förslag från AI</value></data>
+  <data name="Ai_ProposalsHint" xml:space="preserve"><value>Ingenting är sparat än. Godkänn de du vill ha, avvisa resten.</value></data>
+  <data name="Ai_Accept" xml:space="preserve"><value>Godkänn</value></data>
+  <data name="Ai_Reject" xml:space="preserve"><value>Avvisa</value></data>
+  <data name="Ai_Accepted" xml:space="preserve"><value>Förslaget har lagts till</value></data>
+  <data name="Ai_SuggestSprint" xml:space="preserve"><value>Föreslå vad som får plats</value></data>
+  <data name="Ai_SuggestSprintHint" xml:space="preserve"><value>Förslag väljs bland din backlog efter veckans kapacitet.</value></data>
+  <data name="Ai_NoSprintSuggestions" xml:space="preserve"><value>AI hittade inga uppgifter att föreslå just nu.</value></data>
+  <data name="Ai_FormulateGoal" xml:space="preserve"><value>Hjälp mig formulera</value></data>
+  <data name="Ai_FormulateHint" xml:space="preserve"><value>Fyller i formuläret nedan. Inget sparas förrän du trycker Spara.</value></data>
+  <data name="Ai_FormulateDone" xml:space="preserve"><value>Förslaget är ifyllt nedan. Justera fritt innan du sparar.</value></data>
+  <data name="Ai_MilestoneIdeas" xml:space="preserve"><value>Idéer till delmål</value></data>
+  <data name="Ai_InsightEmpty" xml:space="preserve"><value>Ingen insikt än. Skapa en när du vill ha en blick över dina siffror.</value></data>
+  <data name="Ai_InsightCreate" xml:space="preserve"><value>Skapa insikt</value></data>
+  <data name="Ai_InsightRefresh" xml:space="preserve"><value>Uppdatera insikt</value></data>
+  <data name="Ai_InsightUpdated" xml:space="preserve"><value>Uppdaterad {0}</value></data>
+  <data name="Err_InvalidTimeZone" xml:space="preserve"><value>Tidszonen finns inte.</value></data>
+  <data name="Err_InvalidProposal" xml:space="preserve"><value>Förslaget gick inte att läsa.</value></data>
+  <data name="Err_ProposalDecided" xml:space="preserve"><value>Förslaget är redan hanterat.</value></data>
+  <data name="Err_InvalidSubscription" xml:space="preserve"><value>Enheten kunde inte registreras för push-notiser.</value></data></root>

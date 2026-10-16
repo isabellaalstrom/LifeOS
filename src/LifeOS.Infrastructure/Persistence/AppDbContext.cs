@@ -1,8 +1,10 @@
 using LifeOS.Application.Abstractions;
 using LifeOS.Domain.Common;
+using LifeOS.Domain.Ai;
 using LifeOS.Domain.Goals;
 using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
+using LifeOS.Domain.Notifications;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Projects;
 using LifeOS.Domain.Retros;
@@ -56,6 +58,24 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
 
     public DbSet<RetroActionFollowUp> RetroActionFollowUps => Set<RetroActionFollowUp>();
 
+    public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
+
+    public DbSet<AiProposal> AiProposals => Set<AiProposal>();
+
+    public DbSet<AiInsight> AiInsights => Set<AiInsight>();
+
+    public DbSet<AiCallLog> AiCallLogs => Set<AiCallLog>();
+
+    public DbSet<AiRetroMessage> AiRetroMessages => Set<AiRetroMessage>();
+
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+
+    public DbSet<ScheduledNotification> ScheduledNotifications => Set<ScheduledNotification>();
+
+    public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
+
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+
     public async Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) =>
         new EfTransaction(await Database.BeginTransactionAsync(cancellationToken));
 
@@ -91,6 +111,14 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
         configurationBuilder.Properties<RetroActionKind>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<RetroActionStatus>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<RetroOutcome>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<AiCoachMode>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<AiFeature>().HaveConversion<string>().HaveMaxLength(30);
+        configurationBuilder.Properties<AiProposalStatus>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<AiProposalKind>().HaveConversion<string>().HaveMaxLength(30);
+        configurationBuilder.Properties<NotificationCategory>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<NotificationStatus>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<NotificationChannel>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<DeliveryStatus>().HaveConversion<string>().HaveMaxLength(20);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -232,6 +260,68 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
             b.Property(x => x.Note).HasMaxLength(2000);
             b.HasIndex(x => new { x.ActionId, x.RecordedUtc });
             b.HasIndex(x => x.RetroId);
+        });
+
+        modelBuilder.Entity<UserPreference>(b => b.HasIndex(x => x.OwnerId).IsUnique());
+
+        modelBuilder.Entity<AiProposal>(b =>
+        {
+            b.Property(x => x.Summary).HasMaxLength(300).IsRequired();
+            b.Property(x => x.Rationale).HasMaxLength(1000);
+            b.Property(x => x.PayloadJson).HasMaxLength(4000).IsRequired();
+            b.Property(x => x.Context).HasMaxLength(100).IsRequired();
+            b.Property(x => x.LastError).HasMaxLength(200);
+            b.HasIndex(x => new { x.OwnerId, x.Context, x.Status });
+        });
+
+        modelBuilder.Entity<AiInsight>(b =>
+        {
+            b.Property(x => x.ContextHash).HasMaxLength(64).IsRequired();
+            b.Property(x => x.Observations).HasMaxLength(4000);
+            b.Property(x => x.Hypotheses).HasMaxLength(4000);
+            b.HasIndex(x => new { x.OwnerId, x.Feature, x.GeneratedUtc });
+        });
+
+        modelBuilder.Entity<AiCallLog>(b =>
+        {
+            b.Property(x => x.Status).HasMaxLength(30);
+            b.HasIndex(x => new { x.OwnerId, x.OccurredUtc });
+        });
+
+        modelBuilder.Entity<AiRetroMessage>(b =>
+        {
+            b.Property(x => x.Content).HasMaxLength(4000).IsRequired();
+            b.Property(x => x.Observations).HasMaxLength(4000);
+            b.Property(x => x.Hypotheses).HasMaxLength(4000);
+            b.HasIndex(x => new { x.RetroId, x.CreatedUtc });
+        });
+
+        modelBuilder.Entity<NotificationPreference>(b => b.HasIndex(x => x.OwnerId).IsUnique());
+
+        modelBuilder.Entity<ScheduledNotification>(b =>
+        {
+            b.Property(x => x.DedupeKey).HasMaxLength(150).IsRequired();
+            b.Property(x => x.Title).HasMaxLength(100).IsRequired();
+            b.Property(x => x.Body).HasMaxLength(300).IsRequired();
+            b.Property(x => x.Url).HasMaxLength(100);
+            // The same reminder for the same period can exist only once per owner.
+            b.HasIndex(x => new { x.OwnerId, x.DedupeKey }).IsUnique();
+            b.HasIndex(x => new { x.Status, x.ScheduledForUtc });
+        });
+
+        modelBuilder.Entity<NotificationDelivery>(b =>
+        {
+            b.Property(x => x.Error).HasMaxLength(300);
+            b.HasIndex(x => x.NotificationId);
+        });
+
+        modelBuilder.Entity<PushSubscription>(b =>
+        {
+            b.Property(x => x.Endpoint).HasMaxLength(1000).IsRequired();
+            b.Property(x => x.P256dh).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Auth).HasMaxLength(100).IsRequired();
+            b.Property(x => x.UserAgent).HasMaxLength(300);
+            b.HasIndex(x => x.Endpoint).IsUnique();
         });
 
         // Deliberately no foreign keys: the audit trail stands on its own and is never touched by other deletes.

@@ -3,10 +3,10 @@
 Personal life management: goals, weekly sprints, habits and AI-assisted retrospectives.
 .NET 10 · Blazor Web App (Interactive Server) · MudBlazor · EF Core + SQLite. UI language: Swedish.
 
-**Status: Phase 2 (organize and execute) on top of the Phase 1 foundation.** Goals, habits, retrospectives, AI and
-notifications arrive in Phases 3–6 (see `LifeOS_Codex_MVP_Brief.md`).
+**Status: Phases 1–5 (foundation, organize and execute, goals and habits, retrospectives, AI and notifications).**
+Phase 6 is polish (see `LifeOS_Codex_MVP_Brief.md`).
 
-## What works today (Phase 2)
+## What works today
 
 | Area | What you can do |
 |---|---|
@@ -23,6 +23,9 @@ notifications arrive in Phases 3–6 (see `LifeOS_Codex_MVP_Brief.md`).
 | **Mål** (`/goals`) | Year, quarter and month goals, parent and child goals, four ways to measure progress (a value that can go up or down, milestones, linked tasks, or your own estimate), a progress history chart, and links from projects, tasks and habits. |
 | **Vanor** (`/habits`) | Flexible targets (for example 3 per week), one-tap logging, encouraging consistency, optional sprint tasks for the week without duplicates, and contribution to numeric goals. |
 | **Retron** (`/retros`) | Weekly (optional), monthly, quarterly and annual reflections that can be started any time, saved as drafts and completed without AI. Period facts, guided questions, optional well-being, actions and experiments that are followed up in later retros. |
+| **AI coach** (optional, off by default) | In a retro: a coach that reads what you saved, separates *what the data shows* from *tentative interpretations*, asks one follow-up question and can suggest actions. Also: help formulating a goal, sprint suggestions from the backlog, and an on-demand overview insight. The AI **only proposes**; nothing is saved until you press *Godkänn*. Everything works without it. |
+| **Notiser** (optional, nothing sent by default) | Web Push (PWA) reminders for due tasks, a weekly goal check-in and retro invitations, with a send time and quiet hours. Optional extra channel: ntfy. Texts are generic and never contain your titles or answers. |
+| **Inställningar** (`/settings`) | Time zone, AI on/off and coach style (with what is shared), notification categories, this device's push registration, a test notification and recent deliveries. |
 
 Dates and "today" use the owner's time zone (`Europe/Stockholm` by default); weeks start on Monday.
 
@@ -60,7 +63,24 @@ Configuration (environment variables use `__`):
 | `LifeOS__Ingress__Enabled` | `false` (HA app: `true`) | honor `X-Ingress-Path` / `X-Forwarded-*` from trusted peers |
 | `LifeOS__Ingress__TrustedProxyAddresses__0` | `172.30.32.2` | HA Supervisor ingress gateway |
 
+| `LifeOS__Ai__OpenAi__ApiKey` | empty (AI unavailable) | OpenAI key, server side only (HA app option `openai_api_key`) |
+| `LifeOS__Ai__OpenAi__Model` | `gpt-4o-mini` | model name (HA option `openai_model`) |
+| `LifeOS__Ai__DailyLimit` | `30` | most AI calls per day |
+| `LifeOS__Notifications__WebPush__Subject` | project URL | VAPID contact, `mailto:` or `https:` (HA option `push_subject`) |
+| `LifeOS__Notifications__Ntfy__Url` / `Topic` / `Token` | empty (ntfy off) | optional extra channel (HA options `ntfy_url`, `ntfy_topic`, `ntfy_token`) |
+
 Health: `GET /health` (anonymous, returns `Healthy`/`Unhealthy`, no details).
+
+### AI and privacy
+
+* AI is **off by default**, per owner, and only usable when an API key is configured on the server. The key never reaches the browser.
+* Only the minimum for the feature you use is sent: numbers and summaries, your own retro answers when you ask the coach to read a retro, and task titles only for sprint suggestions. Never notes, account data or passwords.
+* The AI cannot create or change anything. Its suggestions are *proposals* you accept or reject; accepting runs the normal validation.
+* Answers are cached and rate limited; failures never change data and the app keeps working.
+
+### Notifications and HTTPS
+
+Web Push needs a secure context: open LifeOS over **HTTPS** (for example through Home Assistant Cloud/Nabu Casa, or a TLS reverse proxy) and enable push per device under **Inställningar**. VAPID keys are generated on first use in `/data/vapid.json` and included in backups. Plain `http://localhost` also works for testing. Without HTTPS the settings page explains this and ntfy can be used instead.
 
 ## Docker / Compose (standalone, e.g. NAS)
 

@@ -1,0 +1,332 @@
+@page "/settings"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using System.Globalization
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Ai
+@using LifeOS.Application.Notifications
+@using LifeOS.Domain.Ai
+@using LifeOS.Domain.Notifications
+@using LifeOS.Infrastructure.Notifications
+@inject PreferenceService Prefs
+@inject IAiCoachService Coach
+@inject NotificationService Notifications
+@inject PushSubscriptionService Subscriptions
+@inject VapidKeyStore Vapid
+@inject IEnumerable<INotificationSender> Senders
+@inject IUserClock Clock
+@inject IJSRuntime Js
+
+<PageTitle>@L["Nav_Settings"] – @L["App_Title"]</PageTitle>
+
+<MudText Typo="Typo.h5" Tag="@("h1")">@L["Nav_Settings"]</MudText>
+<MudText Color="Color.Secondary" Class="mb-3">@L["Settings_Intro"]</MudText>
+
+@if (_notif is null || _ai is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    @* ---- time zone ---- *@
+    <section class="settings-card tone-card tone-sky">
+        <h2 class="card-title">@L["Settings_TimeZone"]</h2>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_TimeZoneHint"]</MudText>
+        <MudAutocomplete T="string" Value="_zone" ValueChanged="SaveZoneAsync" SearchFunc="SearchZones" Label="@L["Settings_TimeZone"]"
+                         CoerceText="false" CoerceValue="false" ResetValueOnEmptyText="false" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </section>
+
+    @* ---- AI ---- *@
+    <section class="settings-card tone-card tone-lavender">
+        <h2 class="card-title">@L["Settings_Ai"]</h2>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_AiHint"]</MudText>
+        @if (!_availability!.ProviderConfigured)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="false">@L["Settings_AiNotConfigured"]</MudAlert>
+        }
+        <MudSwitch T="bool" Value="_ai.Enabled" ValueChanged="v => SaveAiAsync(v, _ai.Mode)" Color="Color.Primary"
+                   Label="@L["Settings_AiEnable"]" Disabled="@(!_availability.ProviderConfigured)" />
+        <MudSelect T="AiCoachMode" Value="_ai.Mode" ValueChanged="m => SaveAiAsync(_ai.Enabled, m)" Label="@L["Ai_Mode"]"
+                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2" Style="max-width:20rem">
+            @foreach (var mode in Enum.GetValues<AiCoachMode>())
+            {
+                <MudSelectItem T="AiCoachMode" Value="@mode">@AiUi.ModeLabel(L, mode)</MudSelectItem>
+            }
+        </MudSelect>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">@L["AiModeHint_" + _ai.Mode]</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">@L["Ai_CallsToday", _availability.CallsToday, _availability.DailyLimit]</MudText>
+
+        <MudText Typo="Typo.subtitle2" Class="mt-3">@L["Settings_AiShared"]</MudText>
+        <ul class="shared-list">
+            <li>@L["Settings_AiShared1"]</li>
+            <li>@L["Settings_AiShared2"]</li>
+            <li>@L["Settings_AiShared3"]</li>
+            <li>@L["Settings_AiShared4"]</li>
+        </ul>
+    </section>
+
+    @* ---- notifications ---- *@
+    <section class="settings-card tone-card tone-butter">
+        <h2 class="card-title">@L["Settings_Notifications"]</h2>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_NotifHint"]</MudText>
+        <div class="settings-switches">
+            <MudSwitch T="bool" Value="_notif.TasksEnabled" ValueChanged="v => SaveNotifAsync(_notif with { TasksEnabled = v })" Color="Color.Primary" Label="@L["Settings_NotifTasks"]" />
+            <MudSwitch T="bool" Value="_notif.GoalsEnabled" ValueChanged="v => SaveNotifAsync(_notif with { GoalsEnabled = v })" Color="Color.Primary" Label="@L["Settings_NotifGoals"]" />
+            <MudSwitch T="bool" Value="_notif.RetrosEnabled" ValueChanged="v => SaveNotifAsync(_notif with { RetrosEnabled = v })" Color="Color.Primary" Label="@L["Settings_NotifRetros"]" />
+        </div>
+
+        <MudGrid Spacing="2" Class="mt-1">
+            <MudItem xs="12" sm="4">
+                <MudTimePicker Time="_notif.SendTime.ToTimeSpan()" TimeChanged="t => SaveNotifAsync(_notif with { SendTime = ToTime(t, _notif.SendTime) })"
+                               Label="@L["Settings_SendTime"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <MudTimePicker Time="_notif.QuietStart.ToTimeSpan()" TimeChanged="t => SaveNotifAsync(_notif with { QuietStart = ToTime(t, _notif.QuietStart) })"
+                               Label="@L["Settings_QuietStart"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <MudTimePicker Time="_notif.QuietEnd.ToTimeSpan()" TimeChanged="t => SaveNotifAsync(_notif with { QuietEnd = ToTime(t, _notif.QuietEnd) })"
+                               Label="@L["Settings_QuietEnd"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">@L["Settings_QuietHint"]</MudText>
+
+        @* -- this device -- *@
+        <MudText Typo="Typo.subtitle2" Class="mt-4">@L["Settings_Push"]</MudText>
+        @if (!_pushChecked)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (_support is null || !_support.Supported)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" ShowCloseIcon="false">@L["Settings_PushUnsupported"]</MudAlert>
+        }
+        else if (!_support.Secure)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" ShowCloseIcon="false">@L["Settings_PushInsecure"]</MudAlert>
+        }
+        else
+        {
+            @if (_thisEndpoint is null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_PushOff"]</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="EnablePushAsync" Disabled="_pushBusy">@L["Settings_PushEnable"]</MudButton>
+                @if (_support.Permission == "denied")
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block mt-1">@L["Settings_PushDenied"]</MudText>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="mb-2">@L["Settings_PushOn"]</MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="DisablePushAsync" Disabled="_pushBusy">@L["Settings_PushDisable"]</MudButton>
+            }
+        }
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">
+            @L["Settings_PushDevices", _devices.Count(d => d.IsActive)]
+        </MudText>
+
+        @* -- ntfy (optional) -- *@
+        @if (_ntfyAvailable)
+        {
+            <MudSwitch T="bool" Value="_notif.NtfyEnabled" ValueChanged="v => SaveNotifAsync(_notif with { NtfyEnabled = v })" Color="Color.Primary"
+                       Label="@L["Settings_Ntfy"]" Class="mt-2" />
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-2">@L["Settings_NtfyNotConfigured"]</MudText>
+        }
+
+        <div class="d-flex flex-wrap align-center gap-2 mt-3">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.NotificationsActive" OnClick="TestAsync" Disabled="_testing">@L["Settings_Test"]</MudButton>
+            @if (!string.IsNullOrEmpty(_testResult))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_testResult</MudText>
+            }
+        </div>
+
+        @* -- recent -- *@
+        <MudText Typo="Typo.subtitle2" Class="mt-4">@L["Settings_Recent"]</MudText>
+        @if (_recent.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Settings_RecentNone"]</MudText>
+        }
+        @foreach (var n in _recent)
+        {
+            <div class="notif-row">
+                <div>
+                    <strong>@n.Title</strong>
+                    <span class="notif-body">@n.Body</span>
+                    <span class="notif-meta">
+                        @TimeZoneInfo.ConvertTime(n.ScheduledForUtc, Clock.Zone).ToString("d MMM HH:mm", CultureInfo.CurrentCulture)
+                        · @L["NotifStatus_" + n.Status]
+                        @foreach (var d in n.Deliveries)
+                        {
+                            <text> · @L["Channel_" + d.Channel]: @L["Delivery_" + d.Status]</text>
+                        }
+                    </span>
+                </div>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    private NotificationPreferenceView? _notif;
+    private AiPreferenceView? _ai;
+    private AiAvailability? _availability;
+    private string _zone = string.Empty;
+    private IReadOnlyList<NotificationView> _recent = [];
+    private IReadOnlyList<PushSubscriptionView> _devices = [];
+    private bool _ntfyAvailable;
+    private bool _pushChecked, _pushBusy, _testing;
+    private PushSupport? _support;
+    private string? _thisEndpoint;
+    private string? _testResult;
+
+    private sealed record PushSupport(bool Supported, bool Secure, string Permission);
+
+    private sealed record PushSubscriptionResult(string? Endpoint, string? P256dh, string? Auth, string? UserAgent, string? Error);
+
+    private static readonly string[] Zones = TimeZoneInfo.GetSystemTimeZones().Select(z => z.Id).Order().ToArray();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _notif = await Prefs.GetNotificationsAsync();
+        _ai = await Prefs.GetAiAsync();
+        _availability = await Coach.GetAvailabilityAsync();
+        _zone = await Prefs.GetTimeZoneAsync();
+        _ntfyAvailable = Senders.Any(s => s.Channel == NotificationChannel.Ntfy && s.IsAvailable);
+        await LoadListsAsync();
+    }
+
+    private async Task LoadListsAsync()
+    {
+        _recent = await Notifications.RecentAsync(10);
+        _devices = await Subscriptions.ListAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _support = await Js.InvokeAsync<PushSupport>("lifeosPush.support");
+                _thisEndpoint = _support.Supported && _support.Secure ? await Js.InvokeAsync<string?>("lifeosPush.current") : null;
+            }
+            catch (JSException)
+            {
+                _support = null;
+            }
+
+            _pushChecked = true;
+            StateHasChanged();
+        }
+    }
+
+    private static TimeOnly ToTime(TimeSpan? value, TimeOnly fallback) => value is { } t ? TimeOnly.FromTimeSpan(t) : fallback;
+
+    private Task<IEnumerable<string>> SearchZones(string? text, CancellationToken ct) =>
+        Task.FromResult(Zones.Where(z => string.IsNullOrWhiteSpace(text) || z.Contains(text, StringComparison.OrdinalIgnoreCase)).Take(30));
+
+    private async Task SaveZoneAsync(string? zone)
+    {
+        if (string.IsNullOrWhiteSpace(zone))
+        {
+            return;
+        }
+
+        if (await RunAsync(() => Prefs.SetTimeZoneAsync(zone)))
+        {
+            _zone = zone;
+            Snackbar.Add(L["Settings_Saved"], Severity.Success);
+        }
+    }
+
+    private async Task SaveAiAsync(bool enabled, AiCoachMode mode)
+    {
+        await Prefs.SetAiAsync(enabled, mode);
+        _ai = await Prefs.GetAiAsync();
+        _availability = await Coach.GetAvailabilityAsync();
+        Snackbar.Add(L["Settings_Saved"], Severity.Success);
+    }
+
+    private async Task SaveNotifAsync(NotificationPreferenceView view)
+    {
+        await Prefs.SetNotificationsAsync(view);
+        _notif = await Prefs.GetNotificationsAsync();
+        Snackbar.Add(L["Settings_Saved"], Severity.Success);
+    }
+
+    private async Task EnablePushAsync()
+    {
+        _pushBusy = true;
+        try
+        {
+            var result = await Js.InvokeAsync<PushSubscriptionResult>("lifeosPush.subscribe", Vapid.PublicKey);
+            if (result.Error is not null || result.Endpoint is null)
+            {
+                Snackbar.Add(result.Error == "denied" ? L["Settings_PushDenied"] : L["Settings_PushFailed"], Severity.Warning);
+                _support = await Js.InvokeAsync<PushSupport>("lifeosPush.support");
+                return;
+            }
+
+            if (await RunAsync(() => Subscriptions.SaveAsync(result.Endpoint, result.P256dh ?? string.Empty, result.Auth ?? string.Empty, result.UserAgent)))
+            {
+                _thisEndpoint = result.Endpoint;
+                await LoadListsAsync();
+                Snackbar.Add(L["Settings_PushEnabledMsg"], Severity.Success);
+            }
+        }
+        catch (JSException)
+        {
+            Snackbar.Add(L["Settings_PushFailed"], Severity.Warning);
+        }
+        finally
+        {
+            _pushBusy = false;
+        }
+    }
+
+    private async Task DisablePushAsync()
+    {
+        _pushBusy = true;
+        try
+        {
+            var endpoint = await Js.InvokeAsync<string?>("lifeosPush.unsubscribe");
+            if (endpoint is not null)
+            {
+                await Subscriptions.RemoveAsync(endpoint);
+            }
+
+            _thisEndpoint = null;
+            await LoadListsAsync();
+        }
+        catch (JSException)
+        {
+            Snackbar.Add(L["Settings_PushFailed"], Severity.Warning);
+        }
+        finally
+        {
+            _pushBusy = false;
+        }
+    }
+
+    private async Task TestAsync()
+    {
+        _testing = true;
+        _testResult = null;
+        StateHasChanged();
+        await Notifications.SendTestAsync();
+        await LoadListsAsync();
+        var latest = _recent.FirstOrDefault();
+        _testResult = latest?.Status switch
+        {
+            NotificationStatus.Sent => L["Settings_TestSent"],
+            NotificationStatus.Suppressed => L["Settings_TestNowhere"],
+            _ => L["Settings_TestFailed"],
+        };
+        _testing = false;
+    }
+}

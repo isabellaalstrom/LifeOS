@@ -1,6 +1,8 @@
+using LifeOS.Domain.Ai;
 using LifeOS.Domain.Goals;
 using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
+using LifeOS.Domain.Notifications;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Projects;
 using LifeOS.Domain.Retros;
@@ -45,6 +47,24 @@ public interface IAppDbContext : IAsyncDisposable
     DbSet<RetroAction> RetroActions { get; }
 
     DbSet<RetroActionFollowUp> RetroActionFollowUps { get; }
+
+    DbSet<UserPreference> UserPreferences { get; }
+
+    DbSet<AiProposal> AiProposals { get; }
+
+    DbSet<AiInsight> AiInsights { get; }
+
+    DbSet<AiCallLog> AiCallLogs { get; }
+
+    DbSet<AiRetroMessage> AiRetroMessages { get; }
+
+    DbSet<NotificationPreference> NotificationPreferences { get; }
+
+    DbSet<ScheduledNotification> ScheduledNotifications { get; }
+
+    DbSet<NotificationDelivery> NotificationDeliveries { get; }
+
+    DbSet<PushSubscription> PushSubscriptions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

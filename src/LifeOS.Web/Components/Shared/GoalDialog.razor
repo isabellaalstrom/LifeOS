@@ -6,6 +6,7 @@
 @inject GoalService Goals
 @inject LifeAreaService Areas
 @inject LifeOS.Application.Abstractions.IUserClock Clock
+@inject LifeOS.Application.Ai.IAiCoachService Coach
 
 <MudDialog>
     <DialogContent>
@@ -16,6 +17,24 @@
         else
         {
             <MudTextField @bind-Value="_title" Label="@L["Task_Title"]" Required="true" Immediate="true" AutoFocus="true" MaxLength="200" Class="mb-2" />
+            @* Optional help for a new goal: fills in the form below, saves nothing until the owner presses Save. *@
+            @if (GoalId is null && _ai is { ProviderConfigured: true, EnabledByOwner: true })
+            {
+                <div class="d-flex align-center flex-wrap gap-2 mb-2">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.AutoAwesome"
+                               Disabled="@(_aiBusy || !_ai.CanUse || string.IsNullOrWhiteSpace(_title))" OnClick="FormulateAsync">@L["Ai_FormulateGoal"]</MudButton>
+                    @if (_aiBusy) { <MudProgressCircular Indeterminate="true" Size="Size.Small" /> }
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Ai_FormulateHint"]</MudText>
+                </div>
+                @if (!string.IsNullOrEmpty(_aiNotice))
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="false">@_aiNotice</MudAlert>
+                }
+                @if (_milestoneIdeas.Count > 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Ai_MilestoneIdeas"]: @string.Join(" · ", _milestoneIdeas)</MudText>
+                }
+            }
             <MudTextField @bind-Value="_description" Label="@L["Project_Description"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="4000" Class="mb-2" />
 
             <MudGrid Spacing="2">
@@ -101,6 +120,10 @@
     private decimal? _target;
     private decimal? _current;
     private string? _unit;
+    private LifeOS.Application.Ai.AiAvailability? _ai;
+    private bool _aiBusy;
+    private string? _aiNotice;
+    private IReadOnlyList<string> _milestoneIdeas = [];
 
     private DateOnly PeriodStart => GoalPeriods.Start(_horizon, _periodDate);
 
@@ -124,6 +147,7 @@
         _allGoals = await Goals.ListAsync(includeClosed: false);
         _horizon = DefaultHorizon;
         _periodDate = DefaultPeriodStart ?? Clock.Today;
+        _ai = GoalId is null ? await Coach.GetAvailabilityAsync() : null;
 
         if (GoalId is { } id)
         {
@@ -149,6 +173,32 @@
         }
 
         _loading = false;
+    }
+
+    private async Task FormulateAsync()
+    {
+        _aiBusy = true;
+        _aiNotice = null;
+        StateHasChanged();
+        var result = await Coach.FormulateGoalAsync(string.IsNullOrWhiteSpace(_description) ? _title : _title + ". " + _description, _horizon);
+        if (result.Ok && result.Value is { } s)
+        {
+            _title = s.Title;
+            _description = s.Description ?? _description;
+            _mode = s.Mode == GoalProgressMode.Milestones || s.Mode == GoalProgressMode.LinkedTasks ? GoalProgressMode.Manual : s.Mode;
+            _start = s.Start;
+            _target = s.Target;
+            _unit = s.Unit;
+            _milestoneIdeas = s.Milestones;
+            _aiNotice = L["Ai_FormulateDone"];
+        }
+        else
+        {
+            _aiNotice = AiUi.StatusText(L, result.Status);
+        }
+
+        _ai = await Coach.GetAvailabilityAsync();
+        _aiBusy = false;
     }
 
     private void OnHorizonChanged(GoalHorizon horizon)

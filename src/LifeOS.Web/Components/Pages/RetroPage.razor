@@ -159,6 +159,9 @@ else if (_detail is not null)
         </div>
     }
 
+    @* ---- optional AI coach: reads what is saved here, suggests, never changes anything by itself ---- *@
+    <AiRetroCoach RetroId="Id" IsDraft="isDraft" BeforeCall="PersistAsync" OnAccepted="ReloadAsync" />
+
     @* ---- actions and experiments ---- *@
     <div class="d-flex align-center mt-4 mb-1">
         <MudText Typo="Typo.h6">@L["Retro_Actions"]</MudText>

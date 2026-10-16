@@ -1,0 +1,176 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Ai
+@using LifeOS.Domain.Ai
+@inject IAiCoachService Coach
+
+<div class="ai-box">
+    <p class="card-eyebrow">@L["Ai_Coach"]</p>
+    @if (_availability is null)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (!_availability.ProviderConfigured || !_availability.EnabledByOwner)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @(!_availability.ProviderConfigured ? L["Ai_Status_NotConfigured"] : L["Ai_Status_Disabled"])
+            <a href="settings">@L["Nav_Settings"]</a>
+        </MudText>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Ai_CoachHint"]</MudText>
+
+        @foreach (var m in _messages)
+        {
+            @if (m.IsUser)
+            {
+                <div class="chat chat-user">@m.Content</div>
+            }
+            else
+            {
+                <div class="chat chat-coach">
+                    @if (m.Observations.Count > 0)
+                    {
+                        <p class="chat-label">@L["Ai_Observations"]</p>
+                        <ul>
+                            @foreach (var o in m.Observations)
+                            {
+                                <li>@o</li>
+                            }
+                        </ul>
+                    }
+                    @if (m.Hypotheses.Count > 0)
+                    {
+                        <p class="chat-label">@L["Ai_Hypotheses"]</p>
+                        <ul>
+                            @foreach (var h in m.Hypotheses)
+                            {
+                                <li>@h</li>
+                            }
+                        </ul>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(m.Content))
+                    {
+                        <p class="chat-question">@m.Content</p>
+                    }
+                </div>
+            }
+        }
+
+        @if (!string.IsNullOrEmpty(_notice))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="my-2" ShowCloseIcon="false">@_notice</MudAlert>
+        }
+
+        @if (IsDraft)
+        {
+            @if (_messages.Count > 0)
+            {
+                <MudTextField T="string" @bind-Value="_reply" Label="@L["Ai_YourAnswer"]" Lines="2" Sizing="InputSizing.Auto"
+                              Variant="Variant.Outlined" MaxLength="1500" Class="mt-2" Disabled="_busy" />
+            }
+
+            <div class="d-flex flex-wrap align-center gap-2 mt-2">
+                <MudSelect T="AiCoachMode" Value="_mode" ValueChanged="m => _mode = m" Label="@L["Ai_Mode"]" Dense="true"
+                           Style="max-width:12rem" Disabled="_busy">
+                    @foreach (var mode in Enum.GetValues<AiCoachMode>())
+                    {
+                        <MudSelectItem T="AiCoachMode" Value="@mode">@AiUi.ModeLabel(L, mode)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@(_busy || !_availability.CanUse)" OnClick="AskAsync">
+                    @(_messages.Count == 0 ? L["Ai_AskCoach"] : L["Ai_SendAnswer"])
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_busy || !_availability.CanUse)" OnClick="SuggestAsync">@L["Ai_SuggestActions"]</MudButton>
+                @if (_busy)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                }
+            </div>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">
+                @L["Ai_CallsToday", _availability.CallsToday, _availability.DailyLimit]
+            </MudText>
+            <AiProposals @ref="_proposals" Context="@ProposalContext.Retro(RetroId)" OnAccepted="OnAccepted" />
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid RetroId { get; set; }
+
+    [Parameter] public bool IsDraft { get; set; }
+
+    /// <summary>Saves what the owner has typed so far, so the coach reads the current text. Returns false if saving failed.</summary>
+    [Parameter] public Func<Task<bool>>? BeforeCall { get; set; }
+
+    [Parameter] public EventCallback OnAccepted { get; set; }
+
+    private AiAvailability? _availability;
+    private IReadOnlyList<RetroChatMessage> _messages = [];
+    private AiProposals? _proposals;
+    private AiCoachMode _mode = AiCoachMode.Balanced;
+    private string? _reply;
+    private string? _notice;
+    private bool _busy;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _availability = await Coach.GetAvailabilityAsync();
+        _messages = await Coach.GetRetroChatAsync(RetroId);
+        _mode = _messages.LastOrDefault()?.Mode ?? _mode;
+    }
+
+    private async Task<bool> PrepareAsync()
+    {
+        _notice = null;
+        _busy = true;
+        StateHasChanged();
+        if (BeforeCall is not null && !await BeforeCall())
+        {
+            _busy = false;
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task FinishAsync(AiStatus status)
+    {
+        _notice = status == AiStatus.Ok ? null : AiUi.StatusText(L, status);
+        _availability = await Coach.GetAvailabilityAsync();
+        _messages = await Coach.GetRetroChatAsync(RetroId);
+        _busy = false;
+    }
+
+    private async Task AskAsync()
+    {
+        if (!await PrepareAsync())
+        {
+            return;
+        }
+
+        var message = string.IsNullOrWhiteSpace(_reply) ? null : _reply;
+        var result = await Coach.RetroFollowUpAsync(RetroId, _mode, message);
+        if (result.Ok)
+        {
+            _reply = null;
+        }
+
+        await FinishAsync(result.Status);
+    }
+
+    private async Task SuggestAsync()
+    {
+        if (!await PrepareAsync())
+        {
+            return;
+        }
+
+        var result = await Coach.ProposeRetroActionsAsync(RetroId, _mode);
+        await FinishAsync(result.Status);
+        if (_proposals is not null)
+        {
+            await _proposals.RefreshAsync();
+        }
+    }
+}

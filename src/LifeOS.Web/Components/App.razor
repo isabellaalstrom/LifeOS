@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     @* PathBase is "" normally and "/api/hassio_ingress/<token>" behind Home Assistant ingress. *@
     <base href="@BasePath" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#2F4A9E" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
@@ -19,6 +23,7 @@
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+    <script src="@Assets["push.js"]"></script>
 </body>
 
 </html>

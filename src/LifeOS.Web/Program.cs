@@ -23,6 +23,7 @@ if (args.Contains(HealthProbe.Argument))
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddHomeAssistantOptions();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);

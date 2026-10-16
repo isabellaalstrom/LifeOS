@@ -209,6 +209,7 @@ else
                 @L["Sprint_NewTask"]
             </MudButton>
         </div>
+        <AiSprintSuggest WeekStart="_board.WeekStart" OnAccepted="ReloadAsync" />
         <MudTextField T="string" Value="_search" ValueChanged="SearchAsync" Placeholder="@L["Backlog_Filter_Text"]" Immediate="true"
                       DebounceInterval="250" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />

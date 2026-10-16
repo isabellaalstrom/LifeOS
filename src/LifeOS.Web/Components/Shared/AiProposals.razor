@@ -1,0 +1,68 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Ai
+@using LifeOS.Domain.Ai
+@inject AiProposalService Proposals
+
+@* Everything the AI suggests lands here first. Nothing exists in the owner's data until it is accepted. *@
+@if (_items.Count > 0)
+{
+    <div class="ai-box" role="region" aria-label="@L["Ai_Proposals"]">
+        <p class="card-eyebrow">@L["Ai_Proposals"]</p>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Ai_ProposalsHint"]</MudText>
+        @foreach (var p in _items)
+        {
+            var proposal = p;
+            <div class="proposal">
+                <div class="proposal-text">
+                    <strong>@proposal.Summary</strong>
+                    @if (!string.IsNullOrWhiteSpace(proposal.Rationale))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@proposal.Rationale</MudText>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(proposal.LastError))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Warning">@ErrorText(proposal.LastError)</MudText>
+                    }
+                </div>
+                <div class="proposal-actions">
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => AcceptAsync(proposal)">@L["Ai_Accept"]</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => RejectAsync(proposal)">@L["Ai_Reject"]</MudButton>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Context { get; set; } = string.Empty;
+
+    /// <summary>Raised after a proposal was accepted, so the page can reload what changed.</summary>
+    [Parameter] public EventCallback OnAccepted { get; set; }
+
+    private IReadOnlyList<ProposalView> _items = [];
+
+    protected override async Task OnParametersSetAsync() => _items = await Proposals.ListAsync(Context);
+
+    public async Task RefreshAsync()
+    {
+        _items = await Proposals.ListAsync(Context);
+        StateHasChanged();
+    }
+
+    private async Task AcceptAsync(ProposalView proposal)
+    {
+        var ok = await RunAsync(() => Proposals.AcceptAsync(proposal.Id));
+        await RefreshAsync();
+        if (ok)
+        {
+            Snackbar.Add(L["Ai_Accepted"], Severity.Success);
+            await OnAccepted.InvokeAsync();
+        }
+    }
+
+    private async Task RejectAsync(ProposalView proposal)
+    {
+        await RunAsync(() => Proposals.RejectAsync(proposal.Id));
+        await RefreshAsync();
+    }
+}

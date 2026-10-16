@@ -1,0 +1,60 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Ai
+@inject IAiCoachService Coach
+
+@* Shown only when the owner has switched AI on and a provider exists. Suggestions are proposals the owner accepts one by one. *@
+@if (_availability is { ProviderConfigured: true, EnabledByOwner: true })
+{
+    <div class="ai-box mb-3">
+        <div class="d-flex align-center flex-wrap gap-2">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.AutoAwesome"
+                       Disabled="@(_busy || !_availability.CanUse)" OnClick="SuggestAsync">@L["Ai_SuggestSprint"]</MudButton>
+            @if (_busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Ai_SuggestSprintHint"]</MudText>
+        </div>
+        @if (!string.IsNullOrEmpty(_notice))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2" ShowCloseIcon="false">@_notice</MudAlert>
+        }
+        <AiProposals @ref="_proposals" Context="@ProposalContext.Sprint(WeekStart)" OnAccepted="OnAccepted" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public DateOnly WeekStart { get; set; }
+
+    [Parameter] public EventCallback OnAccepted { get; set; }
+
+    private AiAvailability? _availability;
+    private AiProposals? _proposals;
+    private string? _notice;
+    private bool _busy;
+
+    protected override async Task OnParametersSetAsync() => _availability = await Coach.GetAvailabilityAsync();
+
+    private async Task SuggestAsync()
+    {
+        _busy = true;
+        _notice = null;
+        StateHasChanged();
+        var result = await Coach.SuggestSprintAsync(WeekStart);
+        if (result.Ok && result.Value is { Count: 0 })
+        {
+            _notice = L["Ai_NoSprintSuggestions"];
+        }
+        else if (!result.Ok)
+        {
+            _notice = AiUi.StatusText(L, result.Status);
+        }
+
+        _availability = await Coach.GetAvailabilityAsync();
+        _busy = false;
+        if (_proposals is not null)
+        {
+            await _proposals.RefreshAsync();
+        }
+    }
+}

@@ -17,6 +17,245 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("LifeOS.Domain.Ai.AiCallLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Feature")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("OccurredUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "OccurredUtc");
+
+                    b.ToTable("AiCallLogs");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Ai.AiInsight", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContextHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Feature")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("GeneratedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Hypotheses")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Observations")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "Feature", "GeneratedUtc");
+
+                    b.ToTable("AiInsights");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Ai.AiProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AppliedEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Context")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("DecidedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rationale")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "Context", "Status");
+
+                    b.ToTable("AiProposals");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Ai.AiRetroMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Hypotheses")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsUser")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Observations")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RetroId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("RetroId", "CreatedUtc");
+
+                    b.ToTable("AiRetroMessages");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Ai.UserPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("AiEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AiMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("UserPreferences");
+                });
+
             modelBuilder.Entity("LifeOS.Domain.Goals.Goal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -341,6 +580,227 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.HasIndex("OwnerId", "SortOrder");
 
                     b.ToTable("LifeAreas");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("AttemptedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("NotificationDeliveries");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Notifications.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("GoalsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("HabitsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("NtfyEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly>("QuietEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly>("QuietStart")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("RetrosEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<TimeOnly>("SendTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("TasksEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationPreferences");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Notifications.PushSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("LastSuccessUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("PushSubscriptions");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Notifications.ScheduledNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DedupeKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("LockedUntilUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("NextAttemptUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ScheduledForUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("SentUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "DedupeKey")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ScheduledForUtc");
+
+                    b.ToTable("ScheduledNotifications");
                 });
 
             modelBuilder.Entity("LifeOS.Domain.Planning.Sprint", b =>

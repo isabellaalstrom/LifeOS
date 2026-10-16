@@ -188,13 +188,9 @@ else
             </div>
         </MudItem>
 
-        @* ---- AI insights (phase 5) ---- *@
+        @* ---- AI insight: on demand, cached ---- *@
         <MudItem xs="12" md="6">
-            <div class="tone-card tone-paper">
-                <p class="card-eyebrow">AI</p>
-                <h2 class="card-title">@L["Overview_Insights"]</h2>
-                <MudText Color="Color.Secondary">@L["Coming", 5]</MudText>
-            </div>
+            <AiInsightCard />
         </MudItem>
     </MudGrid>
 }

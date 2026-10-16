@@ -110,6 +110,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     [InlineData("/goals", "Nytt mål")]
     [InlineData("/habits", "Ny vana")]
     [InlineData("/retros", "Starta en återblick")]
+    [InlineData("/settings", "AI-coach")]
     public async Task Planning_pages_render_for_the_signed_in_owner(string path, string expectedText)
     {
         await _factory.EnsureOwnerAsync();
@@ -128,7 +129,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     {
         await _factory.EnsureOwnerAsync();
         var client = _factory.CreateBrowserClient();
-        foreach (var path in new[] { "/today", "/planning/inbox", "/planning/backlog", "/areas", "/goals", "/habits", "/retros", $"/retros/{Guid.NewGuid()}", $"/goals/{Guid.NewGuid()}", $"/habits/{Guid.NewGuid()}", $"/projects/{Guid.NewGuid()}" })
+        foreach (var path in new[] { "/today", "/planning/inbox", "/planning/backlog", "/areas", "/goals", "/habits", "/retros", "/settings", $"/retros/{Guid.NewGuid()}", $"/goals/{Guid.NewGuid()}", $"/habits/{Guid.NewGuid()}", $"/projects/{Guid.NewGuid()}" })
         {
             var response = await client.GetAsync(path);
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -151,6 +152,30 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
         {
             Assert.Contains(section, html);
         }
+    }
+
+    [Theory]
+    [InlineData("/manifest.webmanifest")]
+    [InlineData("/sw.js")]
+    [InlineData("/push.js")]
+    [InlineData("/icons/icon-192.png")]
+    [InlineData("/icons/icon-512.png")]
+    [InlineData("/icons/apple-touch-icon.png")]
+    public async Task Pwa_files_are_served_without_signing_in(string path)
+    {
+        // The browser fetches the manifest and the service worker without credentials, so they must not redirect to login.
+        await _factory.EnsureOwnerAsync();
+        var response = await _factory.CreateBrowserClient().GetAsync(path);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pages_link_the_manifest_and_icons_relative_to_the_base_path()
+    {
+        await _factory.EnsureOwnerAsync();
+        var html = await _factory.CreateBrowserClient().GetStringAsync("/login");
+        Assert.Contains("rel=\"manifest\" href=\"manifest.webmanifest\"", html);
+        Assert.Contains("apple-touch-icon", html);
     }
 
     private static async Task<HttpResponseMessage> PostLoginAsync(HttpClient client, string password)

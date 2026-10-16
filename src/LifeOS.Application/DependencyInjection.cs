@@ -23,6 +23,16 @@ public static class DependencyInjection
         services.AddScoped<HabitService>();
         services.AddScoped<RetroStatsService>();
         services.AddScoped<RetroService>();
+        services.AddScoped<LifeOS.Application.Ai.PreferenceService>();
+        services.AddScoped<LifeOS.Application.Ai.AiContextBuilder>();
+        services.AddScoped<LifeOS.Application.Ai.AiProposalService>();
+        services.AddScoped<LifeOS.Application.Ai.IAiCoachService, LifeOS.Application.Ai.AiCoachService>();
+        services.AddScoped<LifeOS.Application.Notifications.PushSubscriptionService>();
+        services.AddScoped<LifeOS.Application.Notifications.NotificationPlanner>();
+        services.AddScoped<LifeOS.Application.Notifications.NotificationDispatcher>();
+        services.AddScoped<LifeOS.Application.Notifications.NotificationRunner>();
+        services.AddScoped<LifeOS.Application.Notifications.NotificationService>();
+        services.AddScoped<LifeOS.Application.Notifications.OwnerOverride>();
         return services;
     }
 }
