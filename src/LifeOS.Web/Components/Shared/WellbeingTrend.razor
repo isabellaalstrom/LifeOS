@@ -1,0 +1,110 @@
+@using System.Globalization
+@using LifeOS.Application.Retros
+@using LifeOS.Domain.Retros
+@inject IStringLocalizer<SharedResource> L
+
+@* The owner's own optional 1-5 ratings from completed retros of one type, oldest to newest. Plain SVG, no scripts.
+   Missing ratings leave gaps; nothing is estimated. A text table follows for screen readers and for exact values. *@
+@if (_points.Count >= 2)
+{
+    <div class="tone-card tone-lavender my-3">
+        <p class="card-eyebrow">@L["Trend_Eyebrow"]</p>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Trend_Hint"]</MudText>
+        <svg class="wellbeing-chart" viewBox="0 0 @Width @Height" preserveAspectRatio="none" role="img" aria-label="@L["Trend_Eyebrow"]">
+            <title>@L["Trend_Eyebrow"]</title>
+            @foreach (var v in new[] { 1, 2, 3, 4, 5 })
+            {
+                <line x1="0" x2="@Width" y1="@Y(v)" y2="@Y(v)" class="chart-grid" vector-effect="non-scaling-stroke" />
+            }
+            @foreach (var (name, index) in Series.Select((s, i) => (s, i)))
+            {
+                @foreach (var segment in Segments(name))
+                {
+                    <path d="@segment" class="wb-line wb-@index" fill="none" vector-effect="non-scaling-stroke" />
+                }
+            }
+        </svg>
+        <div class="wb-legend">
+            @foreach (var (name, index) in Series.Select((s, i) => (s, i)))
+            {
+                <span><i class="wb-dot wb-bg-@index"></i>@L["Wellbeing_" + name]</span>
+            }
+        </div>
+        <table class="visually-hidden">
+            <caption>@L["Trend_Eyebrow"]</caption>
+            <thead>
+                <tr><th scope="col">@L["Trend_Period"]</th>@foreach (var s in Series) { <th scope="col">@L["Wellbeing_" + s]</th> }</tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _points)
+                {
+                    <tr>
+                        <th scope="row">@Fmt.RetroPeriod(L, p.Type, p.PeriodStart)</th>
+                        @foreach (var s in Series) { <td>@(Value(p, s)?.ToString(CultureInfo.InvariantCulture) ?? "–")</td> }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private const int Width = 600;
+    private const int Height = 140;
+    private const int Pad = 8;
+
+    private static readonly string[] Series = ["Energy", "Balance", "Stress", "Satisfaction"];
+
+    [Parameter, EditorRequired] public IReadOnlyList<RetroView> Retros { get; set; } = [];
+
+    [Parameter] public RetroType Type { get; set; } = RetroType.Monthly;
+
+    private List<RetroView> _points = [];
+
+    protected override void OnParametersSet() =>
+        _points = Retros
+            .Where(r => r.Type == Type && r.Status == RetroStatus.Completed
+                        && (r.Energy is not null || r.Balance is not null || r.Stress is not null || r.Satisfaction is not null))
+            .OrderBy(r => r.PeriodStart)
+            .TakeLast(12)
+            .ToList();
+
+    private static int? Value(RetroView r, string name) => name switch
+    {
+        "Energy" => r.Energy,
+        "Balance" => r.Balance,
+        "Stress" => r.Stress,
+        _ => r.Satisfaction,
+    };
+
+    private double X(int index) => Pad + (Width - 2 * Pad) * (_points.Count == 1 ? 0.5 : index / (double)(_points.Count - 1));
+
+    private double Y(double value) => Pad + (Height - 2 * Pad) * (1 - (value - 1) / 4.0);
+
+    /// <summary>Continuous pieces of the line; a missing rating ends a piece instead of being bridged.</summary>
+    private IEnumerable<string> Segments(string name)
+    {
+        static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+        var current = new System.Text.StringBuilder();
+        var count = 0;
+        for (var i = 0; i < _points.Count; i++)
+        {
+            if (Value(_points[i], name) is { } v)
+            {
+                current.Append(count == 0 ? "M" : " L").Append(F(X(i))).Append(',').Append(F(Y(v)));
+                count++;
+            }
+            else if (count > 0)
+            {
+                if (count > 1) { yield return current.ToString(); }
+                current.Clear();
+                count = 0;
+            }
+        }
+
+        if (count > 1)
+        {
+            yield return current.ToString();
+        }
+    }
+}

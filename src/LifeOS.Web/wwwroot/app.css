@@ -1013,3 +1013,47 @@ a {
     .ai-box { background: #232637; }
     .chat-user { background: var(--lo-soft); }
 }
+
+/* ---- Phase 6: accessibility ---- */
+.skip-link {
+    position: absolute;
+    left: 8px;
+    top: -48px;
+    z-index: 3000;
+    padding: 8px 14px;
+    border-radius: var(--lo-radius-sm);
+    background: var(--lo-accent);
+    color: var(--lo-accent-ink);
+    text-decoration: none;
+}
+
+.skip-link:focus { top: 8px; }
+
+:focus-visible {
+    outline: 3px solid var(--lo-accent);
+    outline-offset: 2px;
+}
+
+.main-content:focus { outline: none; }
+
+.onboarding-steps { margin: 4px 0 0; padding-left: 20px; color: var(--lo-ink-2); }
+.onboarding-steps li { margin: 3px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.wellbeing-chart { width: 100%; height: 140px; display: block; }
+.wb-line { stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.wb-0, .wb-bg-0 { stroke: #C98A1B; background: #C98A1B; }
+.wb-1, .wb-bg-1 { stroke: #3F7F5A; background: #3F7F5A; }
+.wb-2, .wb-bg-2 { stroke: #B4533F; background: #B4533F; }
+.wb-3, .wb-bg-3 { stroke: #2F4A9E; background: #2F4A9E; }
+.wb-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; font-size: .85rem; color: var(--lo-ink-2); }
+.wb-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

@@ -170,6 +170,42 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     }
 
     [Fact]
+    public async Task Responses_carry_conservative_security_headers_but_allow_same_origin_embedding_in_home_assistant()
+    {
+        await _factory.EnsureOwnerAsync();
+        var response = await _factory.CreateBrowserClient().GetAsync("/login");
+
+        Assert.Equal("nosniff", response.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Equal("same-origin", response.Headers.GetValues("Referrer-Policy").Single());
+        Assert.Contains("camera=()", response.Headers.GetValues("Permissions-Policy").Single());
+        // HA shows the app in an iframe on its own origin (ingress), so same-origin framing must stay allowed.
+        if (response.Headers.TryGetValues("X-Frame-Options", out var frame))
+        {
+            Assert.Equal("SAMEORIGIN", frame.Single());
+        }
+
+        if (response.Headers.TryGetValues("Content-Security-Policy", out var csp))
+        {
+            Assert.DoesNotContain("frame-ancestors 'none'", string.Join(';', csp));
+        }
+    }
+
+    [Fact]
+    public async Task A_new_owner_without_goals_sees_the_onboarding_card_and_a_skip_link()
+    {
+        await _factory.EnsureOwnerAsync();
+        var client = _factory.CreateBrowserClient();
+        await PostLoginAsync(client, WebAppFactory.OwnerPassword);
+
+        var html = DecodeHtml(await client.GetStringAsync("/"));
+        Assert.Contains("Börja med något litet", html);
+        Assert.Contains("class=\"skip-link\"", html);
+        Assert.Contains("id=\"main\"", html);
+    }
+
+    private static string DecodeHtml(string html) => WebUtility.HtmlDecode(html);
+
+    [Fact]
     public async Task Pages_link_the_manifest_and_icons_relative_to_the_base_path()
     {
         await _factory.EnsureOwnerAsync();

@@ -106,6 +106,9 @@
 
     [Parameter] public DateOnly? DefaultPeriodStart { get; set; }
 
+    /// <summary>Pre-filled title when starting from an example (onboarding).</summary>
+    [Parameter] public string? DefaultTitle { get; set; }
+
     private bool _loading = true;
     private IReadOnlyList<LifeAreaView> _areas = [];
     private IReadOnlyList<GoalView> _allGoals = [];
@@ -148,6 +151,10 @@
         _horizon = DefaultHorizon;
         _periodDate = DefaultPeriodStart ?? Clock.Today;
         _ai = GoalId is null ? await Coach.GetAvailabilityAsync() : null;
+        if (GoalId is null && !string.IsNullOrWhiteSpace(DefaultTitle))
+        {
+            _title = DefaultTitle;
+        }
 
         if (GoalId is { } id)
         {

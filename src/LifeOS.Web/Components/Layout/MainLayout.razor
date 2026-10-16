@@ -3,11 +3,15 @@
 @inject IDialogService DialogService
 @inject LifeOS.Web.Services.AppEvents Events
 @inject LifeOS.Application.Abstractions.IUserClock Clock
+@inject NavigationManager Navigation
 
 <MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+
+@* The page has a <base href>, so the skip link must carry the full current address. *@
+<a class="skip-link" href="@(Navigation.Uri.Split('#')[0] + "#main")">@L["SkipToContent"]</a>
 
 <MudLayout>
     <MudAppBar Elevation="0" Dense="true" Class="app-bar">
@@ -43,7 +47,7 @@
         <NavLink href="retros"><MudIcon Icon="@Icons.Material.Outlined.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
     </nav>
 
-    <MudMainContent Class="main-content">
+    <MudMainContent Class="main-content" id="main" tabindex="-1">
         <MudContainer MaxWidth="MaxWidth.Large" Class="page-container">
             @Body
         </MudContainer>

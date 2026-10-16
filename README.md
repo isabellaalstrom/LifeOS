@@ -3,8 +3,8 @@
 Personal life management: goals, weekly sprints, habits and AI-assisted retrospectives.
 .NET 10 · Blazor Web App (Interactive Server) · MudBlazor · EF Core + SQLite. UI language: Swedish.
 
-**Status: Phases 1–5 (foundation, organize and execute, goals and habits, retrospectives, AI and notifications).**
-Phase 6 is polish (see `LifeOS_Codex_MVP_Brief.md`).
+**Status: MVP feature-complete (Phases 1–6): foundation, organize and execute, goals and habits, retrospectives, AI and
+notifications, polish.** See `LifeOS_Codex_MVP_Brief.md`, `docs/decisions.md` and `docs/security-review.md`.
 
 ## What works today
 
@@ -25,6 +25,8 @@ Phase 6 is polish (see `LifeOS_Codex_MVP_Brief.md`).
 | **Retron** (`/retros`) | Weekly (optional), monthly, quarterly and annual reflections that can be started any time, saved as drafts and completed without AI. Period facts, guided questions, optional well-being, actions and experiments that are followed up in later retros. |
 | **AI coach** (optional, off by default) | In a retro: a coach that reads what you saved, separates *what the data shows* from *tentative interpretations*, asks one follow-up question and can suggest actions. Also: help formulating a goal, sprint suggestions from the backlog, and an on-demand overview insight. The AI **only proposes**; nothing is saved until you press *Godkänn*. Everything works without it. |
 | **Notiser** (optional, nothing sent by default) | Web Push (PWA) reminders for due tasks, a weekly goal check-in and retro invitations, with a send time and quiet hours. Optional extra channel: ntfy. Texts are generic and never contain your titles or answers. |
+| **Kom igång** | A new owner without goals gets a short onboarding card on the overview: pick an example goal or write your own. |
+| **Trend** | On the retros page, your own optional 1–5 ratings from completed monthly retros as a small chart (gaps stay gaps) with a table for screen readers. |
 | **Inställningar** (`/settings`) | Time zone, AI on/off and coach style (with what is shared), notification categories, this device's push registration, a test notification and recent deliveries. |
 
 Dates and "today" use the owner's time zone (`Europe/Stockholm` by default); weeks start on Monday.
@@ -93,6 +95,10 @@ Data lives in the `lifeos-data` volume (`/data`). Run **one** replica only. For 
 `compose.yaml` and put a TLS reverse proxy in front (needed later for Web Push notifications).
 
 ### Backup and restore
+
+Backups cover everything in `/data`: the SQLite database, Data Protection keys and the VAPID keys. In Home Assistant the app is backed up *cold* (stopped during the backup) so the database file is consistent; restoring an HA backup restores all of it, including push registrations.
+Restore is verified by tests: a `VACUUM INTO` copy opens, migrates and reads back all data (`DatabaseTests`).
+
 
 The app takes an automatic `VACUUM INTO` backup in `/data/backups` before applying a migration to an existing database.
 For a manual backup, stop the container so the SQLite files are consistent, copy the volume, start again:

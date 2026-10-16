@@ -52,6 +52,11 @@ else
         </svg>
     </section>
 
+    @if (!_hasAnyGoal)
+    {
+        <OnboardingCard OnGoalCreated="ReloadAsync" />
+    }
+
     @if (_retroSuggestion is { } suggestion)
     {
         <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" ShowCloseIcon="false">
@@ -200,6 +205,7 @@ else
     private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
     private IReadOnlyList<LifeOS.Application.Habits.HabitView> _habits = [];
     private LifeOS.Application.Retros.RetroSuggestion? _retroSuggestion;
+    private bool _hasAnyGoal = true;
 
     [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
 
@@ -228,6 +234,7 @@ else
     {
         _view = await TodayService.GetOverviewAsync();
         _goals = await GoalsApi.ListCurrentAsync();
+        _hasAnyGoal = _goals.Count > 0 || (await GoalsApi.ListAsync(includeClosed: true)).Count > 0;
         _habits = (await HabitsApi.ListAsync()).Take(5).ToList();
         _retroSuggestion = (await RetrosApi.SuggestionsAsync()).FirstOrDefault();
     }

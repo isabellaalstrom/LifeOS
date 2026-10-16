@@ -43,6 +43,7 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<AppEvents>();
 
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, RevalidatingAuthenticationStateProvider>();
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies(cookies => cookies.ApplicationCookie!.Configure(o =>
     {
@@ -100,6 +101,17 @@ if (ingress.Enabled)
 
     app.UseForwardedHeaders(forwarded);
 }
+
+// Conservative headers. Framing is not blocked beyond ASP.NET's own same-origin rule: Home Assistant ingress serves the app
+// from HA's origin inside an iframe.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["Referrer-Policy"] = "same-origin";
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+    await next();
+});
 
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("sv-SE")

@@ -1,0 +1,44 @@
+@inherits PlanningComponentBase
+@using LifeOS.Domain.Goals
+@inject LifeOS.Application.Abstractions.IUserClock Clock
+
+@* Shown on the overview until the first goal exists. Nothing is created without the owner saving the dialog. *@
+<section class="tone-card tone-sage onboarding" aria-labelledby="onboarding-title">
+    <p class="card-eyebrow">@L["Onboarding_Eyebrow"]</p>
+    <h2 class="card-title" id="onboarding-title">@L["Onboarding_Title"]</h2>
+    <MudText Color="Color.Secondary" Class="mb-2">@L["Onboarding_Intro"]</MudText>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        @foreach (var key in Examples)
+        {
+            var title = L["Onboarding_Ex_" + key].Value;
+            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" OnClick="() => StartGoalAsync(title)">@title</MudChip>
+        }
+        <MudChip T="string" Variant="Variant.Text" OnClick="() => StartGoalAsync(null)">@L["Onboarding_Own"]</MudChip>
+    </div>
+    <ol class="onboarding-steps">
+        <li>@L["Onboarding_Step1"]</li>
+        <li><a href="areas">@L["Onboarding_Step2"]</a></li>
+        <li>@L["Onboarding_Step3"]</li>
+        <li><a href="planning">@L["Onboarding_Step4"]</a></li>
+    </ol>
+</section>
+
+@code {
+    private static readonly string[] Examples = ["move", "home", "learn", "rest"];
+
+    [Parameter] public EventCallback OnGoalCreated { get; set; }
+
+    private async Task StartGoalAsync(string? title)
+    {
+        var parameters = new DialogParameters<GoalDialog>
+        {
+            { x => x.DefaultHorizon, GoalHorizon.Quarter },
+            { x => x.DefaultPeriodStart, Clock.Today },
+            { x => x.DefaultTitle, title },
+        };
+        if (await ShowDialogAsync<GoalDialog>(L["Goals_New"], parameters) is not null)
+        {
+            await OnGoalCreated.InvokeAsync();
+        }
+    }
+}

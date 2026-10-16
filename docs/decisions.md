@@ -100,3 +100,13 @@
 | 57 | Delivery is restart-safe: a notification is claimed (`Sending` + 5 min lock), a dead worker's lock expires and it is retried; failures retry after 5 min, 30 min, 2 h and then become `Failed`; nowhere to send (no device) is `Suppressed`, not an error. Quiet hours (local, wrapping midnight) delay instead of drop; a category switched off after planning suppresses. | At-least-once without duplicates in the common cases; no endless retries |
 | 58 | Web Push (PWA) is the primary channel; ntfy is an optional extra (JSON publish, token in config only). VAPID keys are generated on first use into `/data/vapid.json` (restricted permissions, included in backups); gone subscriptions (404/410) are deactivated. The service worker only shows generic push text and opens the app; it caches nothing. Push needs HTTPS (or localhost); the settings page says so. | User choice in the brief; secrets stay out of the repository |
 | 59 | Background work runs per owner through `OwnerScopeRunner` + `OwnerOverride` (`CurrentUser` honors it), so the global owner query filter and stamping still apply. | The worker cannot read or write across owners |
+
+# Decisions (Phase 6: polish)
+
+| # | Decision | Why |
+|---|---|---|
+| 60 | Onboarding is one card on the overview while the owner has no goals at all: example goals pre-fill the normal goal dialog, nothing is created until saved, and the card disappears by itself. | Gentle start without a wizard or forced steps |
+| 61 | The well-being trend uses only the owner's own optional ratings from completed monthly retros, draws gaps as gaps (nothing estimated), and ships a visually hidden table. | Brief: do not read missing data as failure; accessibility without scripts |
+| 62 | Accessibility baseline: skip link (full URL because of `<base href>`), visible focus outlines, reduced-motion support, labelled icon buttons, chart alternatives as text. | Keyboard and screen reader users get the same app |
+| 63 | Circuits re-validate the security stamp every 30 minutes (`RevalidatingAuthenticationStateProvider`). | An open circuit no longer outlives a removed user or a changed stamp |
+| 64 | Security review is kept in `docs/security-review.md` with accepted risks (HTTP on the LAN, no password-change UI yet, no script CSP). | Risks are explicit and revisitable |

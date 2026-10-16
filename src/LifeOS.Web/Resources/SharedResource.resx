@@ -529,4 +529,20 @@
   <data name="Err_InvalidTimeZone" xml:space="preserve"><value>Tidszonen finns inte.</value></data>
   <data name="Err_InvalidProposal" xml:space="preserve"><value>Förslaget gick inte att läsa.</value></data>
   <data name="Err_ProposalDecided" xml:space="preserve"><value>Förslaget är redan hanterat.</value></data>
-  <data name="Err_InvalidSubscription" xml:space="preserve"><value>Enheten kunde inte registreras för push-notiser.</value></data></root>
+  <data name="Err_InvalidSubscription" xml:space="preserve"><value>Enheten kunde inte registreras för push-notiser.</value></data>
+  <data name="Onboarding_Eyebrow" xml:space="preserve"><value>Kom igång</value></data>
+  <data name="Onboarding_Title" xml:space="preserve"><value>Börja med något litet</value></data>
+  <data name="Onboarding_Intro" xml:space="preserve"><value>Ett mål behöver inte vara perfekt. Välj ett exempel som utgångspunkt eller skriv ditt eget, så kan du justera det senare.</value></data>
+  <data name="Onboarding_Own" xml:space="preserve"><value>Skriv eget mål</value></data>
+  <data name="Onboarding_Ex_move" xml:space="preserve"><value>Röra på mig mer</value></data>
+  <data name="Onboarding_Ex_home" xml:space="preserve"><value>Få ordning i hemmet</value></data>
+  <data name="Onboarding_Ex_learn" xml:space="preserve"><value>Lära mig något nytt</value></data>
+  <data name="Onboarding_Ex_rest" xml:space="preserve"><value>Få mer återhämtning</value></data>
+  <data name="Onboarding_Step1" xml:space="preserve"><value>Sätt ett första mål för året eller kvartalet.</value></data>
+  <data name="Onboarding_Step2" xml:space="preserve"><value>Lägg till livsområden om du vill gruppera saker (valfritt).</value></data>
+  <data name="Onboarding_Step3" xml:space="preserve"><value>Fånga uppgifter med plusknappen längst upp – de hamnar i Inkorgen.</value></data>
+  <data name="Onboarding_Step4" xml:space="preserve"><value>Planera veckan och se vad som får plats.</value></data>
+  <data name="SkipToContent" xml:space="preserve"><value>Hoppa till innehållet</value></data>
+  <data name="Trend_Eyebrow" xml:space="preserve"><value>Hur du mått över tid</value></data>
+  <data name="Trend_Hint" xml:space="preserve"><value>Dina egna skattningar (1–5) från avslutade månadsåterblickar. Luckor betyder att du inte skattade.</value></data>
+  <data name="Trend_Period" xml:space="preserve"><value>Period</value></data></root>

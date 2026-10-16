@@ -65,6 +65,11 @@ else
     }
 }
 
+@if (_retros is not null)
+{
+    <WellbeingTrend Retros="_retros" Type="RetroType.Monthly" />
+}
+
 <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Retros_OpenActions"]</MudText>
 @if (_actions.Count == 0)
 {
