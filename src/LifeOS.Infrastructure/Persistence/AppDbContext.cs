@@ -1,5 +1,7 @@
 using LifeOS.Application.Abstractions;
 using LifeOS.Domain.Common;
+using LifeOS.Domain.Goals;
+using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Projects;
@@ -35,6 +37,26 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
 
     public DbSet<SprintScopeChange> ScopeChanges => Set<SprintScopeChange>();
 
+    public DbSet<Goal> Goals => Set<Goal>();
+
+    public DbSet<GoalMilestone> GoalMilestones => Set<GoalMilestone>();
+
+    public DbSet<GoalProgressEntry> GoalProgressEntries => Set<GoalProgressEntry>();
+
+    public DbSet<Habit> Habits => Set<Habit>();
+
+    public DbSet<HabitCompletion> HabitCompletions => Set<HabitCompletion>();
+
+    public async Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) =>
+        new EfTransaction(await Database.BeginTransactionAsync(cancellationToken));
+
+    private sealed class EfTransaction(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction inner) : IAppTransaction
+    {
+        public Task CommitAsync(CancellationToken cancellationToken = default) => inner.CommitAsync(cancellationToken);
+
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
     // Evaluated per context instance by EF; null (anonymous) matches no rows because OwnerId is never null.
     private string? CurrentOwnerId => _currentUser.UserId;
 
@@ -50,6 +72,11 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
         configurationBuilder.Properties<TaskPriority>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<ScopeChangeKind>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<ScopeChangeReason>().HaveConversion<string>().HaveMaxLength(30);
+        configurationBuilder.Properties<GoalHorizon>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<GoalStatus>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<GoalProgressMode>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<GoalProgressSource>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<HabitPeriod>().HaveConversion<string>().HaveMaxLength(20);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -101,6 +128,64 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
             b.Ignore(x => x.IsActive);
             b.HasIndex(x => new { x.SprintId, x.TaskItemId }).IsUnique();
             b.HasIndex(x => x.TaskItemId);
+        });
+
+        modelBuilder.Entity<Goal>(b =>
+        {
+            b.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Description).HasMaxLength(4000);
+            b.Property(x => x.Unit).HasMaxLength(30);
+            b.HasOne(x => x.LifeArea).WithMany().HasForeignKey(x => x.LifeAreaId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Parent).WithMany(x => x.Children).HasForeignKey(x => x.ParentGoalId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.OwnerId, x.Horizon, x.PeriodStart });
+            b.HasIndex(x => x.ParentGoalId);
+        });
+
+        modelBuilder.Entity<GoalMilestone>(b =>
+        {
+            b.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            b.Ignore(x => x.IsDone);
+            b.HasOne(x => x.Goal).WithMany(x => x.Milestones).HasForeignKey(x => x.GoalId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.GoalId, x.SortOrder });
+        });
+
+        // History is plain rows keyed by goal; no navigation so it can be written without loading the goal.
+        modelBuilder.Entity<GoalProgressEntry>(b =>
+        {
+            b.Property(x => x.Note).HasMaxLength(500);
+            b.HasIndex(x => new { x.GoalId, x.RecordedUtc });
+        });
+
+        modelBuilder.Entity<Habit>(b =>
+        {
+            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            b.Property(x => x.Notes).HasMaxLength(2000);
+            b.HasOne(x => x.LifeArea).WithMany().HasForeignKey(x => x.LifeAreaId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Goal).WithMany().HasForeignKey(x => x.GoalId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.OwnerId, x.IsArchived });
+        });
+
+        modelBuilder.Entity<HabitCompletion>(b =>
+        {
+            b.Property(x => x.Note).HasMaxLength(500);
+            b.HasOne(x => x.Habit).WithMany().HasForeignKey(x => x.HabitId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.HabitId, x.Date });
+            // One completion per generated task, ever: finishing/reopening a task can never be counted twice.
+            b.HasIndex(x => x.TaskItemId).IsUnique();
+        });
+
+        modelBuilder.Entity<TaskItem>(b =>
+        {
+            b.HasOne(x => x.Goal).WithMany().HasForeignKey(x => x.GoalId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Habit).WithMany().HasForeignKey(x => x.HabitId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.OwnerId, x.GoalId });
+            // At most one generated task per habit, week and occurrence number (NULLs are distinct, so normal tasks are unaffected).
+            b.HasIndex(x => new { x.HabitId, x.GeneratedForPeriodStart, x.GeneratedIndex }).IsUnique();
+        });
+
+        modelBuilder.Entity<Project>(b =>
+        {
+            b.HasOne(x => x.Goal).WithMany().HasForeignKey(x => x.GoalId).OnDelete(DeleteBehavior.Restrict);
         });
 
         // Deliberately no foreign keys: the audit trail stands on its own and is never touched by other deletes.

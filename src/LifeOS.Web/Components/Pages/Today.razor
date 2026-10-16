@@ -6,6 +6,8 @@
 @using LifeOS.Domain.Tasks
 @inject TodayService TodayService
 @inject TaskService Tasks
+@inject NavigationManager Navigation
+@inject LifeOS.Application.Habits.HabitService HabitsApi
 
 <PageTitle>@L["Today_Title"] – @L["App_Title"]</PageTitle>
 <PlanningTabs />
@@ -44,6 +46,30 @@ else
         </TaskRow>
     }
 
+    @* ---- habits ---- *@
+    @if (_habits.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Habit_Today"]</MudText>
+        @foreach (var h in _habits)
+        {
+            <div class="task-row @(h.TargetMet ? "is-done" : null)">
+                <div class="task-main" role="link" tabindex="0" @onclick='() => Navigation.NavigateTo($"habits/{h.Id}")'>
+                    <span class="task-title">@h.Name</span>
+                    <span class="task-meta">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["Habit_Progress", h.CountInPeriod, h.TargetCount] · @L["Habit_Every_" + h.Period, h.TargetCount]</MudChip>
+                        @if (h.Streak > 0)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.LocalFireDepartment">@L["Habit_Streak_" + h.Period, h.Streak]</MudChip>
+                        }
+                    </span>
+                </div>
+                <div class="task-actions">
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="() => LogHabitAsync(h)">@L["Habit_Log"]</MudButton>
+                </div>
+            </div>
+        }
+    }
+
     @* ---- due / overdue ---- *@
     @if (_view.DueOrOverdue.Count > 0)
     {
@@ -76,10 +102,21 @@ else
 
 @code {
     private TodayView? _view;
+    private IReadOnlyList<LifeOS.Application.Habits.HabitView> _habits = [];
 
     protected override async Task OnInitializedAsync() => await ReloadAsync();
 
-    private async Task ReloadAsync() => _view = await TodayService.GetTodayAsync();
+    private async Task ReloadAsync()
+    {
+        _view = await TodayService.GetTodayAsync();
+        _habits = await HabitsApi.ListAsync();
+    }
+
+    private async Task LogHabitAsync(LifeOS.Application.Habits.HabitView habit)
+    {
+        await RunAsync(() => HabitsApi.LogAsync(habit.Id));
+        await ReloadAsync();
+    }
 
     private async Task SetFocusAsync(TaskView task, bool focus)
     {

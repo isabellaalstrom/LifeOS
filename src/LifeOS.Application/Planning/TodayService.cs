@@ -27,7 +27,7 @@ public sealed class TodayService(IAppDbContextFactory dbFactory, IUserClock cloc
         var due = await db.Tasks
             .Where(t => (t.Status == TaskItemStatus.ToDo || t.Status == TaskItemStatus.InProgress)
                         && t.DueDate != null && t.DueDate <= today && !focusIds.Contains(t.Id))
-            .OrderBy(t => t.DueDate).ThenByDescending(t => t.Priority)
+            .OrderBy(t => t.DueDate).ThenByDescending(EnumOrdering.PriorityRank)
             .ToView(db.SprintTasks)
             .ToListAsync(ct);
 
@@ -71,7 +71,7 @@ public sealed class TodayService(IAppDbContextFactory dbFactory, IUserClock cloc
         var deadlines = await db.Tasks
             .Where(t => (t.Status == TaskItemStatus.ToDo || t.Status == TaskItemStatus.InProgress)
                         && t.DueDate != null && t.DueDate <= horizon)
-            .OrderBy(t => t.DueDate).ThenByDescending(t => t.Priority)
+            .OrderBy(t => t.DueDate).ThenByDescending(EnumOrdering.PriorityRank)
             .Take(8)
             .ToView(db.SprintTasks)
             .ToListAsync(ct);

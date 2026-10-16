@@ -10,6 +10,8 @@
 @inject TodayService TodayService
 @inject TaskService Tasks
 @inject IUserClock Clock
+@inject LifeOS.Application.Goals.GoalService GoalsApi
+@inject LifeOS.Application.Habits.HabitService HabitsApi
 
 <PageTitle>@L["Nav_Overview"] – @L["App_Title"]</PageTitle>
 
@@ -111,12 +113,43 @@ else
             </div>
         </MudItem>
 
-        @* ---- goals (phase 3) ---- *@
+        @* ---- goals ---- *@
         <MudItem xs="12" md="6">
             <div class="tone-card tone-lavender">
                 <p class="card-eyebrow">@L["Nav_Goals"]</p>
                 <h2 class="card-title">@L["Overview_Goals"]</h2>
-                <MudText Color="Color.Secondary">@L["Coming", 3]</MudText>
+                @if (_goals.Count == 0)
+                {
+                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_GoalsEmpty"]</MudText>
+                }
+                @foreach (var g in _goals)
+                {
+                    <a href="@($"goals/{g.Id}")" class="mini-progress">
+                        <span class="mini-progress-head"><span>@g.Title</span><span>@g.Percent.ToString("0") %</span></span>
+                        <MudProgressLinear Value="@((double)g.Percent)" Color="Color.Primary" Rounded="true" />
+                    </a>
+                }
+                <MudButton Href="goals" Variant="Variant.Text" Size="Size.Small" Class="mt-1">@L["Overview_OpenGoals"]</MudButton>
+            </div>
+        </MudItem>
+
+        @* ---- habits ---- *@
+        <MudItem xs="12" md="6">
+            <div class="tone-card tone-sage">
+                <p class="card-eyebrow">@L["Nav_Habits"]</p>
+                <h2 class="card-title">@L["Habit_Overview"]</h2>
+                @if (_habits.Count == 0)
+                {
+                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_HabitsEmpty"]</MudText>
+                }
+                @foreach (var h in _habits)
+                {
+                    <a href="@($"habits/{h.Id}")" class="mini-progress">
+                        <span class="mini-progress-head"><span>@h.Name</span><span>@L["Habit_Progress", h.CountInPeriod, h.TargetCount]</span></span>
+                        <MudProgressLinear Value="@(Math.Min(100.0, h.CountInPeriod * 100.0 / h.TargetCount))" Color="Color.Primary" Rounded="true" />
+                    </a>
+                }
+                <MudButton Href="habits" Variant="Variant.Text" Size="Size.Small" Class="mt-1">@L["Overview_OpenHabits"]</MudButton>
             </div>
         </MudItem>
 
@@ -159,6 +192,8 @@ else
 
 @code {
     private OverviewView? _view;
+    private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
+    private IReadOnlyList<LifeOS.Application.Habits.HabitView> _habits = [];
 
     [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
 
@@ -183,7 +218,12 @@ else
         await ReloadAsync();
     }
 
-    private async Task ReloadAsync() => _view = await TodayService.GetOverviewAsync();
+    private async Task ReloadAsync()
+    {
+        _view = await TodayService.GetOverviewAsync();
+        _goals = await GoalsApi.ListCurrentAsync();
+        _habits = (await HabitsApi.ListAsync()).Take(5).ToList();
+    }
 
     private async Task OnInboxChangedAsync()
     {

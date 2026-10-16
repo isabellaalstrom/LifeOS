@@ -1,4 +1,6 @@
 using LifeOS.Domain.Common;
+using LifeOS.Domain.Goals;
+using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Projects;
 
@@ -65,6 +67,19 @@ public class TaskItem : OwnedEntity
     public TaskItem? Parent { get; set; }
 
     public ICollection<TaskItem> Subtasks { get; set; } = new List<TaskItem>();
+
+    public Guid? GoalId { get; set; }
+
+    public Goal? Goal { get; set; }
+
+    /// <summary>Set for tasks generated from a habit. With the two fields below it forms a unique key (no duplicates).</summary>
+    public Guid? HabitId { get; set; }
+
+    public Habit? Habit { get; set; }
+
+    public DateOnly? GeneratedForPeriodStart { get; set; }
+
+    public int? GeneratedIndex { get; set; }
 
     public DateTimeOffset? CompletedUtc { get; set; }
 

@@ -1,4 +1,5 @@
 using LifeOS.Application.Abstractions;
+using LifeOS.Application.Goals;
 using LifeOS.Application.Planning;
 using LifeOS.Domain.Projects;
 using LifeOS.Domain.Tasks;
@@ -6,14 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LifeOS.Application.Organize;
 
-public sealed class ProjectService(IAppDbContextFactory dbFactory)
+public sealed class ProjectService(IAppDbContextFactory dbFactory, GoalProgressRecorder goals)
 {
     public async Task<IReadOnlyList<ProjectView>> ListAsync(bool includeClosed = false, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
         return await ToView(db, db.Projects
                 .Where(p => includeClosed || p.Status == ProjectStatus.Active || p.Status == ProjectStatus.OnHold)
-                .OrderBy(p => p.Status).ThenBy(p => p.Name))
+                .OrderBy(EnumOrdering.ProjectStatusRank).ThenBy(p => p.Name))
             .ToListAsync(ct);
     }
 
@@ -27,14 +28,18 @@ public sealed class ProjectService(IAppDbContextFactory dbFactory)
     {
         var name = RequireName(input.Name);
         await using var db = dbFactory.Create();
+        await using var tx = await db.BeginTransactionAsync(ct);
         var project = new Project
         {
             Name = name,
             Description = Clean(input.Description),
             LifeAreaId = input.LifeAreaId,
+            GoalId = input.GoalId,
         };
         db.Projects.Add(project);
         await db.SaveChangesAsync(ct);
+        await goals.RecordTaskChangeAsync(db, [input.GoalId], ct);
+        await tx.CommitAsync(ct);
         return project.Id;
     }
 
@@ -42,12 +47,18 @@ public sealed class ProjectService(IAppDbContextFactory dbFactory)
     {
         var name = RequireName(input.Name);
         await using var db = dbFactory.Create();
+        await using var tx = await db.BeginTransactionAsync(ct);
         var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == id, ct)
                       ?? throw new PlanningException(PlanningException.Codes.NotFound);
+        var previousGoal = project.GoalId;
         project.Name = name;
         project.Description = Clean(input.Description);
         project.LifeAreaId = input.LifeAreaId;
+        project.GoalId = input.GoalId;
         await db.SaveChangesAsync(ct);
+        // The project's tasks count towards its goal, so a changed link changes progress for both goals.
+        await goals.RecordTaskChangeAsync(db, [previousGoal, input.GoalId], ct);
+        await tx.CommitAsync(ct);
     }
 
     public async Task SetStatusAsync(Guid id, ProjectStatus status, CancellationToken ct = default)
@@ -70,7 +81,9 @@ public sealed class ProjectService(IAppDbContextFactory dbFactory)
             p.Status,
             db.Tasks.Count(t => t.ProjectId == p.Id && t.ParentTaskId == null
                                 && (t.Status == TaskItemStatus.ToDo || t.Status == TaskItemStatus.InProgress)),
-            db.Tasks.Count(t => t.ProjectId == p.Id && t.ParentTaskId == null && t.Status == TaskItemStatus.Done)));
+            db.Tasks.Count(t => t.ProjectId == p.Id && t.ParentTaskId == null && t.Status == TaskItemStatus.Done),
+            p.GoalId,
+            p.Goal != null ? p.Goal.Title : null));
 
     private static string RequireName(string? name)
     {

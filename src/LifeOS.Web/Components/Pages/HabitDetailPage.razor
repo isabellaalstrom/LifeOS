@@ -1,0 +1,138 @@
+@page "/habits/{Id:guid}"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using System.Globalization
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Habits
+@using LifeOS.Domain.Habits
+@inject HabitService HabitsApi
+@inject IUserClock Clock
+
+@if (_loaded && _detail is null)
+{
+    <MudAlert Severity="Severity.Warning">@L["Err_NotFound"]</MudAlert>
+    <MudButton Href="habits" Class="mt-2">@L["Habit_Back"]</MudButton>
+}
+else if (_detail is not null)
+{
+    var h = _detail.Habit;
+    <PageTitle>@h.Name – @L["App_Title"]</PageTitle>
+
+    <MudButton Href="habits" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-2">@L["Habit_Back"]</MudButton>
+
+    <div class="d-flex align-center flex-wrap gap-2">
+        <MudText Typo="Typo.h4" Tag="@("h1")">@h.Name</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditAsync">@L["Edit"]</MudButton>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ToggleArchiveAsync">@(h.IsArchived ? L["Habit_Restore"] : L["Habit_Archive"])</MudButton>
+    </div>
+    <MudText Color="Color.Secondary" Class="mb-2">@L["Habit_Every_" + h.Period, h.TargetCount]</MudText>
+    @if (!string.IsNullOrWhiteSpace(h.Notes))
+    {
+        <MudText Class="mb-2" Style="white-space:pre-wrap">@h.Notes</MudText>
+    }
+
+    <HabitCard Habit="h" OnOpen="_ => Task.CompletedTask" OnChanged="ReloadAsync" />
+
+    @* ---- recent periods ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Habit_Recent"]</MudText>
+    <div class="habit-bars" role="img" aria-label="@L["Habit_Recent"]">
+        @foreach (var p in _detail.RecentPeriods)
+        {
+            var ratio = p.Target <= 0 ? 0 : Math.Min(1.0, (double)p.Count / p.Target);
+            <div class="habit-bar-col" title="@PeriodTitle(h.Period, p.PeriodStart): @p.Count / @p.Target">
+                <div class="habit-bar-track"><div class="habit-bar @(p.Met ? "is-met" : null)" style="height:@((ratio * 100).ToString("0", CultureInfo.InvariantCulture))%"></div></div>
+                <span class="habit-bar-label">@PeriodTitle(h.Period, p.PeriodStart)</span>
+            </div>
+        }
+    </div>
+
+    @* ---- completions ---- *@
+    <div class="d-flex align-center mt-4 mb-1">
+        <MudText Typo="Typo.h6">@L["Habit_Completions"]</MudText>
+        <MudSpacer />
+        @if (!h.IsArchived)
+        {
+            <MudDatePicker Date="Fmt.ToDateTime(_otherDay)" DateChanged="d => _otherDay = Fmt.ToDateOnly(d)" MaxDate="Clock.Today.ToDateTime(TimeOnly.MinValue)"
+                           Label="@L["Habit_LogOtherDay"]" Editable="false" Style="max-width:240px" />
+            <MudButton Class="ml-2" Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_otherDay is null)" OnClick="LogOtherDayAsync">@L["Habit_Log"]</MudButton>
+        }
+    </div>
+    @if (_detail.Completions.Count == 0)
+    {
+        <MudText Color="Color.Secondary">@L["Habit_NoCompletions"]</MudText>
+    }
+    @foreach (var c in _detail.Completions)
+    {
+        <div class="task-row">
+            <div class="task-main">
+                <span class="task-title">@c.Date.ToString("dddd d MMMM", CultureInfo.CurrentCulture)</span>
+                <span class="task-meta">
+                    @if (c.FromTask)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.TaskAlt">@L["Habit_FromTask"]</MudChip>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(c.Note))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@c.Note</MudText>
+                    }
+                </span>
+            </div>
+            <div class="task-actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@L["Delete"]" OnClick="() => UnlogAsync(c)" />
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private HabitDetail? _detail;
+    private bool _loaded;
+    private DateOnly? _otherDay;
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _detail = await HabitsApi.GetAsync(Id);
+        _loaded = true;
+    }
+
+    private static string PeriodTitle(HabitPeriod period, DateOnly start) => period switch
+    {
+        HabitPeriod.Day => start.ToString("d/M", CultureInfo.CurrentCulture),
+        HabitPeriod.Week => "v" + ISOWeek.GetWeekOfYear(start.ToDateTime(TimeOnly.MinValue)),
+        _ => start.ToString("MMM", CultureInfo.CurrentCulture),
+    };
+
+    private async Task EditAsync()
+    {
+        if (await ShowDialogAsync<HabitDialog>(L["Habits_Edit"], new DialogParameters<HabitDialog> { { x => x.HabitId, Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ToggleArchiveAsync()
+    {
+        await RunAsync(() => HabitsApi.SetArchivedAsync(Id, !_detail!.Habit.IsArchived));
+        await ReloadAsync();
+    }
+
+    private async Task LogOtherDayAsync()
+    {
+        if (_otherDay is { } day && await RunAsync(() => HabitsApi.LogAsync(Id, day)))
+        {
+            _otherDay = null;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task UnlogAsync(HabitCompletionView completion)
+    {
+        await RunAsync(() => HabitsApi.UnlogAsync(Id, completion.Date));
+        await ReloadAsync();
+    }
+}

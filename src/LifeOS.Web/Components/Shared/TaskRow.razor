@@ -19,6 +19,10 @@
             {
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Folder">@Item.ProjectName</MudChip>
             }
+            @if (ShowGoal && Item.GoalTitle is not null)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Flag">@Item.GoalTitle</MudChip>
+            }
             @if (Item.DueDate is { } due)
             {
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
@@ -62,6 +66,8 @@
     [Parameter] public bool ShowProject { get; set; } = true;
 
     [Parameter] public bool ShowPlanned { get; set; }
+
+    [Parameter] public bool ShowGoal { get; set; } = true;
 
     [Parameter] public EventCallback<TaskView> OnOpen { get; set; }
 

@@ -1,0 +1,51 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Goals
+@using LifeOS.Domain.Goals
+
+<div class="goal-card tone-paper" role="link" tabindex="0" @onclick="() => OnOpen.InvokeAsync(Goal)" @onkeydown="OnKeyDown">
+    <div class="goal-card-head">
+        <span class="goal-card-title">@Goal.Title</span>
+        <span class="goal-card-percent">@Goal.Percent.ToString("0.#") %</span>
+    </div>
+    <MudProgressLinear Value="@((double)Goal.Percent)" Color="@(Goal.Status == GoalStatus.Achieved ? Color.Success : Color.Primary)" Rounded="true" Class="my-2" />
+    <div class="task-meta">
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@Detail</MudChip>
+        @if (Goal.LifeAreaName is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@Goal.LifeAreaName</MudChip>
+        }
+        @if (Goal.Status != GoalStatus.Active)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@(Goal.Status == GoalStatus.Achieved ? Color.Success : Color.Default)">@L["GoalStatus_" + Goal.Status]</MudChip>
+        }
+        @if (Goal.IsBeyondTarget)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success" Icon="@Icons.Material.Filled.Celebration">@L["Goal_BeyondTarget"]</MudChip>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GoalView Goal { get; set; } = default!;
+
+    [Parameter] public EventCallback<GoalView> OnOpen { get; set; }
+
+    private string Detail => Goal.Mode switch
+    {
+        GoalProgressMode.Numeric => $"{Format(Goal.CurrentValue)} / {Format(Goal.TargetValue)} {Goal.Unit}".Trim(),
+        GoalProgressMode.Milestones => L["Goal_MilestoneCount", Goal.MilestonesDone, Goal.MilestonesTotal],
+        GoalProgressMode.LinkedTasks => L["Goal_TaskCount", Goal.TasksDone, Goal.TasksTotal],
+        _ => L["Mode_Manual"],
+    };
+
+    private static string Format(decimal? value) =>
+        value is null ? "–" : value.Value.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            await OnOpen.InvokeAsync(Goal);
+        }
+    }
+}

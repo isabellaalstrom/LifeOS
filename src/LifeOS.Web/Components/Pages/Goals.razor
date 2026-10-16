@@ -1,5 +1,116 @@
 @page "/goals"
 @attribute [Authorize]
-@inject IStringLocalizer<SharedResource> L
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Goals
+@using LifeOS.Domain.Goals
+@inject GoalService GoalsApi
+@inject IUserClock Clock
+@inject NavigationManager Navigation
 
-<PagePlaceholder Title="@L["Nav_Goals"]" Description="@L["Goals_Description"]" Phase="3" />
+<PageTitle>@L["Nav_Goals"] – @L["App_Title"]</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-3">
+    <MudText Typo="Typo.h5" Tag="@("h1")">@L["Nav_Goals"]</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="NewAsync">@L["Goals_New"]</MudButton>
+</div>
+
+<div class="subnav" role="tablist">
+    @foreach (var h in Enum.GetValues<GoalHorizon>())
+    {
+        var horizon = h;
+        <button type="button" role="tab" aria-selected="@(_horizon == horizon)" class="@(_horizon == horizon ? "active" : null)"
+                @onclick="() => SetHorizonAsync(horizon)">@L["Horizon_" + horizon]</button>
+    }
+</div>
+
+<div class="sprint-header">
+    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" aria-label="@L["Goals_PeriodPrev"]" OnClick="() => ShiftAsync(-1)" />
+    <div class="sprint-title">
+        <MudText Typo="Typo.h5">@GoalDialog.PeriodText(_horizon, _periodStart)</MudText>
+    </div>
+    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" aria-label="@L["Goals_PeriodNext"]" OnClick="() => ShiftAsync(1)" />
+    @if (_periodStart != GoalPeriods.Start(_horizon, Clock.Today))
+    {
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="TodayAsync">@L["Sprint_ThisWeek"]</MudButton>
+    }
+</div>
+
+<MudSwitch T="bool" Value="_showClosed" ValueChanged="ShowClosedChangedAsync" Label="@L["Goals_ShowClosed"]" Color="Color.Primary" Class="mb-2" />
+
+@if (_goals is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_goals.Count == 0)
+{
+    <MudPaper Outlined="true" Class="pa-6 text-center">
+        <MudText Color="Color.Secondary">@L["Goals_Empty"]</MudText>
+    </MudPaper>
+}
+else
+{
+    <div class="goal-list">
+        @foreach (var g in _goals)
+        {
+            <GoalCard Goal="g" OnOpen="Open" />
+        }
+    </div>
+}
+
+@code {
+    private GoalHorizon _horizon = GoalHorizon.Quarter;
+    private DateOnly _periodStart;
+    private bool _showClosed;
+    private IReadOnlyList<GoalView>? _goals;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _periodStart = GoalPeriods.Start(_horizon, Clock.Today);
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync() => _goals = await GoalsApi.ListAsync(_horizon, _periodStart, _showClosed);
+
+    private async Task SetHorizonAsync(GoalHorizon horizon)
+    {
+        _horizon = horizon;
+        _periodStart = GoalPeriods.Start(horizon, Clock.Today);
+        await ReloadAsync();
+    }
+
+    private async Task ShiftAsync(int periods)
+    {
+        _periodStart = GoalPeriods.Shift(_horizon, _periodStart, periods);
+        await ReloadAsync();
+    }
+
+    private async Task TodayAsync()
+    {
+        _periodStart = GoalPeriods.Start(_horizon, Clock.Today);
+        await ReloadAsync();
+    }
+
+    private async Task ShowClosedChangedAsync(bool value)
+    {
+        _showClosed = value;
+        await ReloadAsync();
+    }
+
+    private void Open(GoalView goal) => Navigation.NavigateTo($"goals/{goal.Id}");
+
+    private async Task NewAsync()
+    {
+        var parameters = new DialogParameters<GoalDialog>
+        {
+            { x => x.DefaultHorizon, _horizon },
+            { x => x.DefaultPeriodStart, _periodStart },
+        };
+        var result = await ShowDialogAsync<GoalDialog>(L["Goals_New"], parameters);
+        if (result?.Data is Guid id)
+        {
+            Navigation.NavigateTo($"goals/{id}");
+        }
+    }
+}

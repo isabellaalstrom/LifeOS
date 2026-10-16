@@ -1,11 +1,17 @@
 using LifeOS.Application.Abstractions;
+using LifeOS.Application.Goals;
+using LifeOS.Application.Habits;
 using LifeOS.Application.Planning;
 using LifeOS.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace LifeOS.Application.Organize;
 
-public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock)
+public sealed class TaskService(
+    IAppDbContextFactory dbFactory,
+    IUserClock clock,
+    GoalProgressRecorder goals,
+    HabitCompletionRecorder habits)
 {
     public const int MaxTitleLength = 300;
     public const int MaxEstimateMinutes = 10_000;
@@ -24,19 +30,27 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
     public async Task<Guid> CreateAsync(TaskInput input, TaskTriage triage = TaskTriage.Backlog, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
+        await using var tx = await db.BeginTransactionAsync(ct);
         var task = new TaskItem { Triage = triage };
         Apply(task, input);
         db.Tasks.Add(task);
         await db.SaveChangesAsync(ct);
+        await goals.RecordTaskChangeAsync(db, await GoalIdsAsync(db, task, ct), ct);
+        await tx.CommitAsync(ct);
         return task.Id;
     }
 
     public async Task UpdateAsync(Guid id, TaskInput input, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
+        await using var tx = await db.BeginTransactionAsync(ct);
         var task = await Load(db, id, ct);
+        var before = await GoalIdsAsync(db, task, ct);
         Apply(task, input);
         await db.SaveChangesAsync(ct);
+        var after = await GoalIdsAsync(db, task, ct);
+        await goals.RecordTaskChangeAsync(db, before.Concat(after), ct);
+        await tx.CommitAsync(ct);
     }
 
     public async Task<Guid> AddSubtaskAsync(Guid parentId, string title, CancellationToken ct = default)
@@ -62,9 +76,17 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
         return sub.Id;
     }
 
-    public async Task SetStatusAsync(Guid id, TaskItemStatus status, CancellationToken ct = default)
+    public Task SetStatusAsync(Guid id, TaskItemStatus status, CancellationToken ct = default) =>
+        SetStatusCoreAsync(id, status, completedOn: null, ct);
+
+    /// <summary>Finishes a task and, for generated habit tasks, records the habit completion on the given user-local day.</summary>
+    public Task CompleteAsync(Guid id, DateOnly completedOn, CancellationToken ct = default) =>
+        SetStatusCoreAsync(id, TaskItemStatus.Done, completedOn, ct);
+
+    private async Task SetStatusCoreAsync(Guid id, TaskItemStatus status, DateOnly? completedOn, CancellationToken ct)
     {
         await using var db = dbFactory.Create();
+        await using var tx = await db.BeginTransactionAsync(ct);
         var task = await Load(db, id, ct);
         if (task.Status == status)
         {
@@ -74,6 +96,39 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
         task.Status = status;
         task.CompletedUtc = status == TaskItemStatus.Done ? clock.UtcNow : null;
         await db.SaveChangesAsync(ct);
+
+        // A generated habit task is exactly one habit completion: finishing adds it, reopening removes it (never twice).
+        if (task.HabitId is { } habitId)
+        {
+            var habit = await db.Habits.FirstOrDefaultAsync(h => h.Id == habitId, ct);
+            var existing = await db.HabitCompletions.FirstOrDefaultAsync(c => c.TaskItemId == task.Id, ct);
+            if (habit is not null)
+            {
+                if (status == TaskItemStatus.Done && existing is null)
+                {
+                    await habits.AddAsync(db, habit, completedOn ?? clock.Today, task.Id, null, ct);
+                }
+                else if (status != TaskItemStatus.Done && existing is not null)
+                {
+                    await habits.RemoveAsync(db, habit, existing, ct);
+                }
+            }
+        }
+
+        await goals.RecordTaskChangeAsync(db, await GoalIdsAsync(db, task, ct), ct);
+        await tx.CommitAsync(ct);
+    }
+
+    /// <summary>The goals a task counts towards: its own link and its project's.</summary>
+    private static async Task<List<Guid?>> GoalIdsAsync(IAppDbContext db, TaskItem task, CancellationToken ct)
+    {
+        var ids = new List<Guid?> { task.GoalId };
+        if (task.ProjectId is { } projectId)
+        {
+            ids.Add(await db.Projects.Where(p => p.Id == projectId).Select(p => p.GoalId).FirstOrDefaultAsync(ct));
+        }
+
+        return ids;
     }
 
     public async Task SetTriageAsync(Guid id, TaskTriage triage, CancellationToken ct = default)
@@ -97,7 +152,9 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
     public async Task<DeleteOutcome> DeleteAsync(Guid id, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
+        await using var tx = await db.BeginTransactionAsync(ct);
         var task = await Load(db, id, ct);
+        var goalIds = await GoalIdsAsync(db, task, ct);
         var ids = await db.Tasks.Where(t => t.Id == id || t.ParentTaskId == id).Select(t => t.Id).ToListAsync(ct);
 
         var hasHistory = await db.SprintTasks.AnyAsync(st => ids.Contains(st.TaskItemId), ct)
@@ -114,6 +171,8 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
             }
 
             await db.SaveChangesAsync(ct);
+            await goals.RecordTaskChangeAsync(db, goalIds, ct);
+            await tx.CommitAsync(ct);
             return DeleteOutcome.Cancelled;
         }
 
@@ -121,6 +180,8 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
         await db.SaveChangesAsync(ct);
         db.Tasks.Remove(task);
         await db.SaveChangesAsync(ct);
+        await goals.RecordTaskChangeAsync(db, goalIds, ct);
+        await tx.CommitAsync(ct);
         return DeleteOutcome.Deleted;
     }
 
@@ -165,7 +226,7 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
                                         && (t.Status == TaskItemStatus.ToDo || t.Status == TaskItemStatus.InProgress));
         query = ApplyFilter(query, filter);
         return await query
-            .OrderByDescending(t => t.Priority).ThenBy(t => t.DueDate == null).ThenBy(t => t.DueDate).ThenBy(t => t.CreatedUtc)
+            .OrderByDescending(EnumOrdering.PriorityRank).ThenBy(t => t.DueDate == null).ThenBy(t => t.DueDate).ThenBy(t => t.CreatedUtc)
             .ToView(db.SprintTasks)
             .ToListAsync(ct);
     }
@@ -182,7 +243,7 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
         await using var db = dbFactory.Create();
         return await db.Tasks
             .Where(t => t.ProjectId == projectId && t.ParentTaskId == null && t.Status != TaskItemStatus.Cancelled)
-            .OrderBy(t => t.Status == TaskItemStatus.Done).ThenByDescending(t => t.Priority).ThenBy(t => t.CreatedUtc)
+            .OrderBy(t => t.Status == TaskItemStatus.Done).ThenByDescending(EnumOrdering.PriorityRank).ThenBy(t => t.CreatedUtc)
             .ToView(db.SprintTasks)
             .ToListAsync(ct);
     }
@@ -228,6 +289,7 @@ public sealed class TaskService(IAppDbContextFactory dbFactory, IUserClock clock
         task.ScheduledTime = input.ScheduledDate is null ? null : input.ScheduledTime;
         task.LifeAreaId = input.LifeAreaId;
         task.ProjectId = input.ProjectId;
+        task.GoalId = input.GoalId;
     }
 
     private static string RequireTitle(string? title)

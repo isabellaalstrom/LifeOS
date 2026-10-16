@@ -9,6 +9,7 @@
 @inject SprintService Sprints
 @inject TaskService Tasks
 @inject IUserClock Clock
+@inject LifeOS.Application.Habits.HabitService HabitsApi
 @inject NavigationManager Navigation
 
 <PageTitle>@L["Nav_Planning"] – @L["App_Title"]</PageTitle>
@@ -121,6 +122,10 @@ else
         @if (_board.SprintId is not null)
         {
             <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.History" OnClick="ShowLogAsync">@L["Sprint_Log"]</MudButton>
+        }
+        @if (_hasGeneratingHabits && !_board.IsClosed)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Repeat" OnClick="GenerateHabitsAsync">@L["Habit_GenerateWeek"]</MudButton>
         }
         @if (_board.SprintId is not null && !_board.IsClosed)
         {
@@ -236,6 +241,7 @@ else
     private string? _goal;
     private double? _capacityHours;
     private string? _search;
+    private bool _hasGeneratingHabits;
     private int _version;
     private DateOnly _requestedWeek;
 
@@ -271,6 +277,7 @@ else
         _cards = _board.ActiveTasks.Where(t => t.Task.Status != TaskItemStatus.Cancelled).ToList();
         _left = _board.Tasks.Where(t => !t.IsActive).ToList();
         _pastToClose = await Sprints.ListPastSprintsToCloseAsync();
+        _hasGeneratingHabits = (await HabitsApi.ListAsync()).Any(h => h.GenerateSprintTasks);
         _plannable = _board.IsClosed ? [] : await Tasks.ListPlannableAsync(new TaskFilter(Text: _search));
         _version++;
     }
@@ -290,6 +297,21 @@ else
         _capacityHours = hours;
         int? minutes = hours is > 0 ? (int)Math.Round(hours.Value * 60) : null;
         await RunAsync(() => Sprints.SetCapacityAsync(_requestedWeek, minutes));
+        await ReloadAsync();
+    }
+
+    private async Task GenerateHabitsAsync()
+    {
+        LifeOS.Application.Habits.GenerateHabitTasksResult? result = null;
+        if (await RunAsync(async () => result = await HabitsApi.GenerateWeekTasksAsync(_requestedWeek)))
+        {
+            Snackbar.Add(
+                result is { Created: > 0 } or { AddedToSprint: > 0 }
+                    ? L["Habit_Generated", result.Created, result.AddedToSprint]
+                    : L["Habit_GeneratedNone"],
+                Severity.Success);
+        }
+
         await ReloadAsync();
     }
 

@@ -13,7 +13,8 @@ public sealed record TaskInput(
     DateOnly? ScheduledDate = null,
     TimeOnly? ScheduledTime = null,
     Guid? LifeAreaId = null,
-    Guid? ProjectId = null);
+    Guid? ProjectId = null,
+    Guid? GoalId = null);
 
 public sealed record TaskView(
     Guid Id,
@@ -36,7 +37,10 @@ public sealed record TaskView(
     int SubtaskTotal,
     int SubtaskDone,
     DateOnly? PlannedWeekStart,
-    DateTimeOffset? CompletedUtc)
+    DateTimeOffset? CompletedUtc,
+    Guid? GoalId = null,
+    string? GoalTitle = null,
+    Guid? HabitId = null)
 {
     public bool IsOpen => Status is TaskItemStatus.ToDo or TaskItemStatus.InProgress;
 }
@@ -53,7 +57,7 @@ public enum DeleteOutcome
     Cancelled,
 }
 
-public sealed record ProjectInput(string Name, string? Description = null, Guid? LifeAreaId = null);
+public sealed record ProjectInput(string Name, string? Description = null, Guid? LifeAreaId = null, Guid? GoalId = null);
 
 public sealed record ProjectView(
     Guid Id,
@@ -63,7 +67,9 @@ public sealed record ProjectView(
     string? LifeAreaName,
     ProjectStatus Status,
     int OpenTasks,
-    int DoneTasks);
+    int DoneTasks,
+    Guid? GoalId = null,
+    string? GoalTitle = null);
 
 public enum CarryDecision
 {

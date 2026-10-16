@@ -31,5 +31,8 @@ internal static class TaskProjection
                 .Where(st => st.TaskItemId == t.Id && st.LeftUtc == null && st.Sprint.ClosedUtc == null)
                 .Select(st => (DateOnly?)st.Sprint.WeekStart)
                 .FirstOrDefault(),
-            t.CompletedUtc));
+            t.CompletedUtc,
+            t.GoalId,
+            t.Goal != null ? t.Goal.Title : null,
+            t.HabitId));
 }

@@ -1,4 +1,5 @@
 using LifeOS.Domain.Common;
+using LifeOS.Domain.Goals;
 using LifeOS.Domain.LifeAreas;
 
 namespace LifeOS.Domain.Projects;
@@ -20,6 +21,10 @@ public class Project : OwnedEntity
     public Guid? LifeAreaId { get; set; }
 
     public LifeArea? LifeArea { get; set; }
+
+    public Guid? GoalId { get; set; }
+
+    public Goal? Goal { get; set; }
 
     public ProjectStatus Status { get; set; } = ProjectStatus.Active;
 }

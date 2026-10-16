@@ -4,6 +4,7 @@
 @inject TaskService Tasks
 @inject LifeAreaService Areas
 @inject ProjectService Projects
+@inject LifeOS.Application.Goals.GoalService Goals
 
 <MudDialog>
     <DialogContent>
@@ -46,6 +47,17 @@
                         }
                     </MudSelect>
                 </MudItem>
+                @if (_goals.Count > 0)
+                {
+                    <MudItem xs="12">
+                        <MudSelect T="Guid?" @bind-Value="_goalId" Label="@L["Task_Goal"]" Clearable="true">
+                            @foreach (var g in _goals)
+                            {
+                                <MudSelectItem T="Guid?" Value="@((Guid?)g.Id)">@g.Title</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
                 <MudItem xs="12" sm="4">
                     <MudDatePicker Date="_due" DateChanged="d => _due = d" Label="@L["Task_Due"]"
                                    Clearable="true" Editable="false" />
@@ -107,6 +119,8 @@
 
     [Parameter] public Guid? DefaultAreaId { get; set; }
 
+    [Parameter] public Guid? DefaultGoalId { get; set; }
+
     /// <summary>Where a newly created task goes. Inbox for quick capture, Backlog otherwise.</summary>
     [Parameter] public TaskTriage NewTaskTriage { get; set; } = TaskTriage.Backlog;
 
@@ -115,6 +129,8 @@
     private TaskDetail? _detail;
     private IReadOnlyList<LifeAreaView> _areas = [];
     private IReadOnlyList<ProjectView> _projects = [];
+    private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
+    private Guid? _goalId;
 
     private string _title = string.Empty;
     private string? _notes;
@@ -131,6 +147,7 @@
     {
         _areas = await Areas.ListAsync();
         _projects = await Projects.ListAsync();
+        _goals = await Goals.ListAsync(includeClosed: false);
 
         if (TaskId is { } id)
         {
@@ -148,6 +165,7 @@
             _estimate = t.EstimateMinutes;
             _areaId = t.LifeAreaId;
             _projectId = t.ProjectId;
+            _goalId = t.GoalId;
             _due = Fmt.ToDateTime(t.DueDate);
             _scheduled = Fmt.ToDateTime(t.ScheduledDate);
             _time = Fmt.ToTimeSpan(t.ScheduledTime);
@@ -156,6 +174,7 @@
         {
             _projectId = DefaultProjectId;
             _areaId = DefaultAreaId;
+            _goalId = DefaultGoalId;
         }
 
         _loading = false;
@@ -163,7 +182,7 @@
 
     private TaskInput Input() => new(
         _title, _notes, _priority, _estimate, Fmt.ToDateOnly(_due), Fmt.ToDateOnly(_scheduled),
-        Fmt.ToTimeOnly(_time), _areaId, _projectId);
+        Fmt.ToTimeOnly(_time), _areaId, _projectId, _goalId);
 
     private async Task SaveAsync()
     {

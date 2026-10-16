@@ -2,6 +2,7 @@
 @using LifeOS.Application.Organize
 @inject ProjectService Projects
 @inject LifeAreaService Areas
+@inject LifeOS.Application.Goals.GoalService Goals
 
 <MudDialog>
     <DialogContent>
@@ -14,6 +15,15 @@
                 <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
             }
         </MudSelect>
+        @if (_goals.Count > 0)
+        {
+            <MudSelect T="Guid?" @bind-Value="_goalId" Label="@L["Task_Goal"]" Clearable="true" Class="mt-2">
+                @foreach (var g in _goals)
+                {
+                    <MudSelectItem T="Guid?" Value="@((Guid?)g.Id)">@g.Title</MudSelectItem>
+                }
+            </MudSelect>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
@@ -31,15 +41,19 @@
     private string _name = string.Empty;
     private string? _description;
     private Guid? _areaId;
+    private Guid? _goalId;
+    private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
 
     protected override async Task OnInitializedAsync()
     {
         _areas = await Areas.ListAsync();
+        _goals = await Goals.ListAsync(includeClosed: false);
         if (ProjectId is { } id && await Projects.GetAsync(id) is { } p)
         {
             _name = p.Name;
             _description = p.Description;
             _areaId = p.LifeAreaId;
+            _goalId = p.GoalId;
         }
     }
 
@@ -48,7 +62,7 @@
         Guid? result = ProjectId;
         var ok = await RunAsync(async () =>
         {
-            var input = new ProjectInput(_name, _description, _areaId);
+            var input = new ProjectInput(_name, _description, _areaId, _goalId);
             if (ProjectId is { } id)
             {
                 await Projects.UpdateAsync(id, input);

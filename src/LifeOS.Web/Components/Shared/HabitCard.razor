@@ -1,0 +1,86 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Habits
+@using LifeOS.Domain.Habits
+@inject HabitService Habits
+@inject IUserClock Clock
+
+@* A habit with this period's progress and one-tap logging. Wording stays encouraging: an unfinished period is not a failure. *@
+<div class="habit-card tone-card @(Habit.TargetMet ? "tone-sage" : "tone-paper")">
+    <div class="goal-card-head">
+        <span class="goal-card-title" role="link" tabindex="0" @onclick="() => OnOpen.InvokeAsync(Habit)">@Habit.Name</span>
+        <span class="goal-card-percent">@L["Habit_Progress", Habit.CountInPeriod, Habit.TargetCount]</span>
+    </div>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Habit_Every_" + Habit.Period, Habit.TargetCount]</MudText>
+
+    @if (Habit.TargetCount <= 10)
+    {
+        <div class="habit-dots my-2" aria-hidden="true">
+            @for (var i = 0; i < Habit.TargetCount; i++)
+            {
+                <span class="habit-dot @(i < Habit.CountInPeriod ? "is-on" : null)"></span>
+            }
+        </div>
+    }
+    else
+    {
+        <MudProgressLinear Value="@(Math.Min(100.0, Habit.CountInPeriod * 100.0 / Habit.TargetCount))" Color="Color.Primary" Rounded="true" Class="my-2" />
+    }
+
+    <div class="task-meta mb-2">
+        @if (Habit.Streak > 0)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.LocalFireDepartment">@L["Habit_Streak_" + Habit.Period, Habit.Streak]</MudChip>
+        }
+        @if (Habit.TargetMet)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">@L["Habit_Met"]</MudChip>
+        }
+        @if (Habit.LifeAreaName is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@Habit.LifeAreaName</MudChip>
+        }
+        @if (Habit.GoalTitle is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Flag">@Habit.GoalTitle</MudChip>
+        }
+        @if (Habit.IsArchived)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled">@L["Areas_Archived"]</MudChip>
+        }
+    </div>
+
+    @if (!Habit.IsArchived)
+    {
+        <div class="d-flex gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="LogAsync">@L["Habit_Log"]</MudButton>
+            <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="@(Habit.LoggedToday == 0)" OnClick="UndoAsync">@L["Habit_Undo"]</MudButton>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public HabitView Habit { get; set; } = default!;
+
+    [Parameter] public EventCallback<HabitView> OnOpen { get; set; }
+
+    /// <summary>Called after a log/undo so the parent can reload its list.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private async Task LogAsync()
+    {
+        if (await RunAsync(() => Habits.LogAsync(Habit.Id)))
+        {
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    /// <summary>Takes back today's latest log. Earlier days are removed on the habit's detail page.</summary>
+    private async Task UndoAsync()
+    {
+        if (await RunAsync(() => Habits.UnlogAsync(Habit.Id, Clock.Today)))
+        {
+            await OnChanged.InvokeAsync();
+        }
+    }
+}

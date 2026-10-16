@@ -107,6 +107,8 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     [InlineData("/planning/backlog", "Backlog")]
     [InlineData("/projects", "Projekt")]
     [InlineData("/areas", "Livsområden")]
+    [InlineData("/goals", "Nytt mål")]
+    [InlineData("/habits", "Ny vana")]
     public async Task Planning_pages_render_for_the_signed_in_owner(string path, string expectedText)
     {
         await _factory.EnsureOwnerAsync();
@@ -125,7 +127,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     {
         await _factory.EnsureOwnerAsync();
         var client = _factory.CreateBrowserClient();
-        foreach (var path in new[] { "/today", "/planning/inbox", "/planning/backlog", "/areas", $"/projects/{Guid.NewGuid()}" })
+        foreach (var path in new[] { "/today", "/planning/inbox", "/planning/backlog", "/areas", "/goals", "/habits", $"/goals/{Guid.NewGuid()}", $"/habits/{Guid.NewGuid()}", $"/projects/{Guid.NewGuid()}" })
         {
             var response = await client.GetAsync(path);
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);

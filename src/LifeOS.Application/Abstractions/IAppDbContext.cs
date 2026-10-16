@@ -1,3 +1,5 @@
+using LifeOS.Domain.Goals;
+using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Projects;
@@ -25,7 +27,25 @@ public interface IAppDbContext : IAsyncDisposable
 
     DbSet<SprintScopeChange> ScopeChanges { get; }
 
+    DbSet<Goal> Goals { get; }
+
+    DbSet<GoalMilestone> GoalMilestones { get; }
+
+    DbSet<GoalProgressEntry> GoalProgressEntries { get; }
+
+    DbSet<Habit> Habits { get; }
+
+    DbSet<HabitCompletion> HabitCompletions { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Groups several saves into one atomic unit (e.g. a task change plus the goal progress it causes).</summary>
+    Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+}
+
+public interface IAppTransaction : IAsyncDisposable
+{
+    Task CommitAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IAppDbContextFactory

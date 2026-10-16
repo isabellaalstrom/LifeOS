@@ -1,5 +1,65 @@
 @page "/habits"
 @attribute [Authorize]
-@inject IStringLocalizer<SharedResource> L
+@inherits PlanningComponentBase
+@using LifeOS.Application.Habits
+@using LifeOS.Domain.Habits
+@inject HabitService HabitsApi
+@inject NavigationManager Navigation
 
-<PagePlaceholder Title="@L["Nav_Habits"]" Description="@L["Habits_Description"]" Phase="3" />
+<PageTitle>@L["Nav_Habits"] – @L["App_Title"]</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-3">
+    <MudText Typo="Typo.h5" Tag="@("h1")">@L["Nav_Habits"]</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="NewAsync">@L["Habits_New"]</MudButton>
+</div>
+
+<MudSwitch T="bool" Value="_showArchived" ValueChanged="ShowArchivedChangedAsync" Label="@L["Habits_ShowArchived"]" Color="Color.Primary" Class="mb-2" />
+
+@if (_habits is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_habits.Count == 0)
+{
+    <MudPaper Outlined="true" Class="pa-6 text-center">
+        <MudText Color="Color.Secondary">@L["Habits_Empty"]</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var h in _habits)
+        {
+            <MudItem xs="12" md="6">
+                <HabitCard Habit="h" OnOpen="Open" OnChanged="ReloadAsync" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private IReadOnlyList<HabitView>? _habits;
+    private bool _showArchived;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync() => _habits = await HabitsApi.ListAsync(_showArchived);
+
+    private async Task ShowArchivedChangedAsync(bool value)
+    {
+        _showArchived = value;
+        await ReloadAsync();
+    }
+
+    private void Open(HabitView habit) => Navigation.NavigateTo($"habits/{habit.Id}");
+
+    private async Task NewAsync()
+    {
+        var result = await ShowDialogAsync<HabitDialog>(L["Habits_New"]);
+        if (result?.Data is Guid id)
+        {
+            Navigation.NavigateTo($"habits/{id}");
+        }
+    }
+}

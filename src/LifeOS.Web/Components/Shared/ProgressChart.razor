@@ -1,0 +1,62 @@
+@using LifeOS.Application.Goals
+@using System.Globalization
+
+@* Step chart of a goal's progress over time (it holds its value until the next update). Plain SVG, no scripts. *@
+<svg class="progress-chart" viewBox="0 0 @Width @Height" preserveAspectRatio="none" role="img" aria-label="@Label">
+    <title>@Label</title>
+    @foreach (var y in new[] { 0, 25, 50, 75, 100 })
+    {
+        <line x1="0" x2="@Width" y1="@Y(y)" y2="@Y(y)" class="chart-grid" vector-effect="non-scaling-stroke" />
+    }
+    @if (_line.Length > 0)
+    {
+        <path d="@_area" class="chart-area" />
+        <path d="@_line" class="chart-line" fill="none" vector-effect="non-scaling-stroke" />
+    }
+</svg>
+
+@code {
+    private const int Width = 600;
+    private const int Height = 160;
+    private const int Pad = 6;
+
+    [Parameter, EditorRequired] public IReadOnlyList<GoalHistoryPoint> Points { get; set; } = [];
+
+    /// <summary>The line continues flat up to this instant (normally now).</summary>
+    [Parameter] public DateTimeOffset? Until { get; set; }
+
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    private string _line = string.Empty;
+    private string _area = string.Empty;
+
+    private double Y(double percent) => Pad + (Height - 2 * Pad) * (1 - percent / 100.0);
+
+    protected override void OnParametersSet()
+    {
+        if (Points.Count == 0)
+        {
+            _line = _area = string.Empty;
+            return;
+        }
+
+        var start = Points[0].RecordedUtc;
+        var end = Until is { } u && u > Points[^1].RecordedUtc ? u : Points[^1].RecordedUtc;
+        var span = Math.Max(1.0, (end - start).TotalSeconds);
+        double X(DateTimeOffset t) => Pad + (Width - 2 * Pad) * ((t - start).TotalSeconds / span);
+        string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+
+        var path = new System.Text.StringBuilder();
+        path.Append($"M{F(X(Points[0].RecordedUtc))},{F(Y((double)Points[0].Percent))}");
+        for (var i = 1; i < Points.Count; i++)
+        {
+            var x = X(Points[i].RecordedUtc);
+            path.Append($" L{F(x)},{F(Y((double)Points[i - 1].Percent))}");
+            path.Append($" L{F(x)},{F(Y((double)Points[i].Percent))}");
+        }
+
+        path.Append($" L{F(X(end))},{F(Y((double)Points[^1].Percent))}");
+        _line = path.ToString();
+        _area = $"{_line} L{F(X(end))},{F(Y(0))} L{F(X(Points[0].RecordedUtc))},{F(Y(0))} Z";
+    }
+}

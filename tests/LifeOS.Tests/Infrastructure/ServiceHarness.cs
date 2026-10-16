@@ -1,4 +1,6 @@
 using LifeOS.Application.Abstractions;
+using LifeOS.Application.Goals;
+using LifeOS.Application.Habits;
 using LifeOS.Application.Organize;
 using LifeOS.Application.Planning;
 using LifeOS.Domain.Time;
@@ -39,10 +41,14 @@ public sealed class ServiceHarness : IDisposable
         Clock = new FakeClock(DateTimeOffset.Parse(now, null, System.Globalization.DateTimeStyles.AssumeUniversal));
         Factory = new TestDbContextFactory(Db, User);
         Areas = new LifeAreaService(Factory);
-        Projects = new ProjectService(Factory);
-        Tasks = new TaskService(Factory, Clock);
+        GoalRecorder = new GoalProgressRecorder(Clock);
+        HabitRecorder = new HabitCompletionRecorder(Clock, GoalRecorder);
+        Projects = new ProjectService(Factory, GoalRecorder);
+        Tasks = new TaskService(Factory, Clock, GoalRecorder, HabitRecorder);
         Sprints = new SprintService(Factory, Clock);
         Today = new TodayService(Factory, Clock, Sprints, Tasks);
+        Goals = new GoalService(Factory, Clock, GoalRecorder);
+        Habits = new HabitService(Factory, Clock, HabitRecorder, Tasks, Sprints);
     }
 
     public TestDatabase Db { get; }
@@ -63,14 +69,26 @@ public sealed class ServiceHarness : IDisposable
 
     public TodayService Today { get; }
 
+    public GoalProgressRecorder GoalRecorder { get; }
+
+    public HabitCompletionRecorder HabitRecorder { get; }
+
+    public GoalService Goals { get; }
+
+    public HabitService Habits { get; }
+
     /// <summary>A second set of services for another owner against the same database.</summary>
     public ServiceHarnessView ForUser(string userId)
     {
         var user = new FakeCurrentUser(userId);
         var factory = new TestDbContextFactory(Db, user);
-        var tasks = new TaskService(factory, Clock);
+        var goalRecorder = new GoalProgressRecorder(Clock);
+        var habitRecorder = new HabitCompletionRecorder(Clock, goalRecorder);
+        var tasks = new TaskService(factory, Clock, goalRecorder, habitRecorder);
         var sprints = new SprintService(factory, Clock);
-        return new ServiceHarnessView(tasks, sprints, new LifeAreaService(factory), new ProjectService(factory));
+        return new ServiceHarnessView(
+            tasks, sprints, new LifeAreaService(factory), new ProjectService(factory, goalRecorder),
+            new GoalService(factory, Clock, goalRecorder), new HabitService(factory, Clock, habitRecorder, tasks, sprints));
     }
 
     public async Task<Guid> NewPlannableTaskAsync(string title, int? estimate = null) =>
@@ -79,4 +97,5 @@ public sealed class ServiceHarness : IDisposable
     public void Dispose() => Db.Dispose();
 }
 
-public sealed record ServiceHarnessView(TaskService Tasks, SprintService Sprints, LifeAreaService Areas, ProjectService Projects);
+public sealed record ServiceHarnessView(
+    TaskService Tasks, SprintService Sprints, LifeAreaService Areas, ProjectService Projects, GoalService Goals, HabitService Habits);

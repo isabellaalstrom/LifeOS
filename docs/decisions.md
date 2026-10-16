@@ -55,3 +55,19 @@
 | 27 | System fonts only: a serif stack for headings and the system sans for text. No web fonts, no external requests. | Works offline on a NAS; no third-party calls |
 | 28 | The palette exists twice: as MudBlazor theme (`Theming/LifeOsTheme.cs`) and as CSS variables in `app.css`. The CSS variables follow `prefers-color-scheme` and override Mud's palette from `body`. | Correct light/dark colors on first paint, before the Blazor circuit starts (no flash) |
 | 29 | Light and dark follow the system setting; there is no manual toggle yet. | Fewer settings; revisit with a settings page |
+
+# Decisions (Phase 3: goals and habits)
+
+| # | Decision | Why |
+|---|---|---|
+| 30 | Goals belong to a calendar period (year, quarter, month) identified by its first day. A child must have a shorter horizon and lie inside the parent's period. | Matches the brief's planning horizons; makes cycles impossible and the hierarchy meaningful |
+| 31 | Four progress modes (numeric, milestones, linked tasks, manual) computed by `GoalProgressCalculator`. Numeric works in both directions, is clamped to 0-100, and a zero-distance goal is complete only when the value equals the target. | Safe arithmetic: no division by zero, target changes and overshoot handled |
+| 32 | Progress history (`GoalProgressEntry`) is written by one component (`GoalProgressRecorder`) only when something changed, inside the same transaction as the change. Each point stores value, percent and the target at the time. | Consistent history for graphs and retro comparisons; changing a target never rewrites the past |
+| 33 | "Achieved" is always set by the owner. 100% only suggests it. | The owner decides what counts as done |
+| 34 | Tasks, projects and habits link to a goal with a nullable `GoalId`. A task counts for a goal directly or through its project; subtasks never count (their parent does). | Simple model, no many-to-many; no double counting |
+| 35 | Habit = target count per period (day, week, month). Weekly habits can generate sprint tasks on request; the unique key (habit, week, index) in the database stops duplicates, and completions already logged this week reduce how many tasks are generated. | Idempotent generation; safe to press the button repeatedly |
+| 36 | A generated task is exactly one completion: finishing adds it, reopening removes it (unique `TaskItemId`). Logging a habit that has an open generated task finishes that task instead. | Never counted twice, whichever way the owner records it |
+| 37 | A habit adds its increment to a linked **numeric** goal only. Goals driven by linked tasks count the generated tasks themselves. | A completion can never contribute twice to the same goal |
+| 38 | A completion counts in the period of the day it was done, also for a task generated for a later week that was finished early. | Consistency measures what was done when; simple and predictable |
+| 39 | An unfinished current period never breaks a streak; wording is encouraging, never shaming. | Brief: do not interpret incomplete metrics as failure |
+| 40 | Enum ordering uses explicit rank expressions (`EnumOrdering`), because enums are stored as text and ORDER BY would be alphabetical. | Found as a real bug: backlog priority was sorted None, Medium, Low, High |

@@ -215,4 +215,116 @@
   <data name="Hero_Afternoon" xml:space="preserve"><value>God eftermiddag.</value></data>
   <data name="Hero_Evening" xml:space="preserve"><value>God kväll.</value></data>
   <data name="Hero_Night" xml:space="preserve"><value>God natt.</value></data>
-  <data name="Hero_Tagline" xml:space="preserve"><value>Ett steg i taget.</value></data></root>
+  <data name="Hero_Tagline" xml:space="preserve"><value>Ett steg i taget.</value></data>
+  <data name="Goals_New" xml:space="preserve"><value>Nytt mål</value></data>
+  <data name="Goals_Edit" xml:space="preserve"><value>Redigera mål</value></data>
+  <data name="Goals_Empty" xml:space="preserve"><value>Inga mål i den här perioden än. Börja med ett litet och tydligt.</value></data>
+  <data name="Goals_ShowClosed" xml:space="preserve"><value>Visa avslutade</value></data>
+  <data name="Goals_Back" xml:space="preserve"><value>Alla mål</value></data>
+  <data name="Goals_PeriodPrev" xml:space="preserve"><value>Föregående period</value></data>
+  <data name="Goals_PeriodNext" xml:space="preserve"><value>Nästa period</value></data>
+  <data name="Horizon_Year" xml:space="preserve"><value>År</value></data>
+  <data name="Horizon_Quarter" xml:space="preserve"><value>Kvartal</value></data>
+  <data name="Horizon_Month" xml:space="preserve"><value>Månad</value></data>
+  <data name="Goal_Horizon" xml:space="preserve"><value>Horisont</value></data>
+  <data name="Goal_Period" xml:space="preserve"><value>Period (välj ett datum i perioden)</value></data>
+  <data name="Goal_Parent" xml:space="preserve"><value>Överordnat mål</value></data>
+  <data name="Goal_Mode" xml:space="preserve"><value>Så mäter du framsteg</value></data>
+  <data name="Goal_Start" xml:space="preserve"><value>Startvärde</value></data>
+  <data name="Goal_Target" xml:space="preserve"><value>Målvärde</value></data>
+  <data name="Goal_Current" xml:space="preserve"><value>Nuvarande värde</value></data>
+  <data name="Goal_Unit" xml:space="preserve"><value>Enhet (till exempel W eller kg)</value></data>
+  <data name="Goal_UpdateValue" xml:space="preserve"><value>Nytt värde</value></data>
+  <data name="Goal_Note" xml:space="preserve"><value>Anteckning (valfri)</value></data>
+  <data name="Goal_SaveValue" xml:space="preserve"><value>Spara värde</value></data>
+  <data name="Goal_BeyondTarget" xml:space="preserve"><value>Över målet. Bra jobbat!</value></data>
+  <data name="Goal_Percent" xml:space="preserve"><value>{0} %</value></data>
+  <data name="Goal_Milestones" xml:space="preserve"><value>Delmål</value></data>
+  <data name="Goal_AddMilestone" xml:space="preserve"><value>Nytt delmål</value></data>
+  <data name="Goal_MilestoneCount" xml:space="preserve"><value>{0} av {1} delmål</value></data>
+  <data name="Goal_TaskCount" xml:space="preserve"><value>{0} av {1} uppgifter</value></data>
+  <data name="Goal_NewLinkedTask" xml:space="preserve"><value>Ny uppgift för målet</value></data>
+  <data name="Goal_NoLinkedTasks" xml:space="preserve"><value>Inga kopplade uppgifter än.</value></data>
+  <data name="Goal_NoMilestones" xml:space="preserve"><value>Inga delmål än.</value></data>
+  <data name="Goal_History" xml:space="preserve"><value>Utveckling</value></data>
+  <data name="Goal_HistoryEmpty" xml:space="preserve"><value>Ingen historik än.</value></data>
+  <data name="Goal_Children" xml:space="preserve"><value>Underordnade mål</value></data>
+  <data name="Goal_Projects" xml:space="preserve"><value>Kopplade projekt</value></data>
+  <data name="Goal_Habits" xml:space="preserve"><value>Kopplade vanor</value></data>
+  <data name="Goal_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Goal_MarkAchieved" xml:space="preserve"><value>Markera som uppnått</value></data>
+  <data name="Goal_SuggestAchieved" xml:space="preserve"><value>Du har nått målet. Vill du markera det som uppnått?</value></data>
+  <data name="Goal_DeleteConfirm" xml:space="preserve"><value>Ta bort målet? Delmål och historik tas bort och kopplingar rensas.</value></data>
+  <data name="Goal_ManualPercent" xml:space="preserve"><value>Hur långt har du kommit?</value></data>
+  <data name="Goal_SaveManual" xml:space="preserve"><value>Spara</value></data>
+  <data name="Goal_ParentOf" xml:space="preserve"><value>del av {0}</value></data>
+  <data name="Mode_Numeric" xml:space="preserve"><value>Mätvärde</value></data>
+  <data name="Mode_Milestones" xml:space="preserve"><value>Delmål</value></data>
+  <data name="Mode_LinkedTasks" xml:space="preserve"><value>Kopplade uppgifter</value></data>
+  <data name="Mode_Manual" xml:space="preserve"><value>Egen bedömning</value></data>
+  <data name="ModeHint_Numeric" xml:space="preserve"><value>Ett värde som ändras över tid, till exempel watt eller kilo. Fungerar åt båda hållen.</value></data>
+  <data name="ModeHint_Milestones" xml:space="preserve"><value>Framsteg är hur många delmål som är klara.</value></data>
+  <data name="ModeHint_LinkedTasks" xml:space="preserve"><value>Framsteg är hur många uppgifter som är klara, även uppgifter i kopplade projekt.</value></data>
+  <data name="ModeHint_Manual" xml:space="preserve"><value>Du anger själv hur långt du har kommit.</value></data>
+  <data name="GoalStatus_Active" xml:space="preserve"><value>Pågår</value></data>
+  <data name="GoalStatus_Achieved" xml:space="preserve"><value>Uppnått</value></data>
+  <data name="GoalStatus_Paused" xml:space="preserve"><value>Pausat</value></data>
+  <data name="GoalStatus_Dropped" xml:space="preserve"><value>Släppt</value></data>
+  <data name="Source_Created" xml:space="preserve"><value>Skapat</value></data>
+  <data name="Source_Manual" xml:space="preserve"><value>Uppdaterat</value></data>
+  <data name="Source_TaskChanged" xml:space="preserve"><value>Uppgift ändrad</value></data>
+  <data name="Source_Milestone" xml:space="preserve"><value>Delmål</value></data>
+  <data name="Source_Habit" xml:space="preserve"><value>Vana</value></data>
+  <data name="Source_TargetChanged" xml:space="preserve"><value>Mål ändrat</value></data>
+  <data name="Task_Goal" xml:space="preserve"><value>Mål</value></data>
+  <data name="Habits_New" xml:space="preserve"><value>Ny vana</value></data>
+  <data name="Habits_Edit" xml:space="preserve"><value>Redigera vana</value></data>
+  <data name="Habits_Empty" xml:space="preserve"><value>Inga vanor än. En liten vana är ett bra första steg.</value></data>
+  <data name="Habits_ShowArchived" xml:space="preserve"><value>Visa arkiverade</value></data>
+  <data name="Habit_Period" xml:space="preserve"><value>Period</value></data>
+  <data name="Habit_Target" xml:space="preserve"><value>Antal per period</value></data>
+  <data name="Habit_Increment" xml:space="preserve"><value>Bidrag till målet per gång</value></data>
+  <data name="Habit_Estimate" xml:space="preserve"><value>Tid per tillfälle (minuter)</value></data>
+  <data name="Habit_Generate" xml:space="preserve"><value>Skapa sprintuppgifter för veckan</value></data>
+  <data name="Habit_GenerateHint" xml:space="preserve"><value>Skapar en uppgift per tillfälle när du ber om det, aldrig dubbletter.</value></data>
+  <data name="Habit_Every_Day" xml:space="preserve"><value>{0} per dag</value></data>
+  <data name="Habit_Every_Week" xml:space="preserve"><value>{0} per vecka</value></data>
+  <data name="Habit_Every_Month" xml:space="preserve"><value>{0} per månad</value></data>
+  <data name="Habit_Progress" xml:space="preserve"><value>{0} av {1}</value></data>
+  <data name="Habit_Log" xml:space="preserve"><value>Logga</value></data>
+  <data name="Habit_Undo" xml:space="preserve"><value>Ångra</value></data>
+  <data name="Habit_Streak_Day" xml:space="preserve"><value>{0} dagar i rad</value></data>
+  <data name="Habit_Streak_Week" xml:space="preserve"><value>{0} veckor i rad</value></data>
+  <data name="Habit_Streak_Month" xml:space="preserve"><value>{0} månader i rad</value></data>
+  <data name="Habit_Met" xml:space="preserve"><value>Klart för perioden</value></data>
+  <data name="Habit_Recent" xml:space="preserve"><value>Senaste perioderna</value></data>
+  <data name="Habit_Completions" xml:space="preserve"><value>Registreringar</value></data>
+  <data name="Habit_LogOtherDay" xml:space="preserve"><value>Logga för en annan dag</value></data>
+  <data name="Habit_FromTask" xml:space="preserve"><value>från uppgift</value></data>
+  <data name="Habit_Archive" xml:space="preserve"><value>Arkivera</value></data>
+  <data name="Habit_Restore" xml:space="preserve"><value>Återställ</value></data>
+  <data name="Habit_GenerateWeek" xml:space="preserve"><value>Lägg till veckans vanor</value></data>
+  <data name="Habit_Generated" xml:space="preserve"><value>Skapade {0} uppgifter och planerade {1}.</value></data>
+  <data name="Habit_GeneratedNone" xml:space="preserve"><value>Allt är redan på plats för veckan.</value></data>
+  <data name="Habit_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="Habit_Back" xml:space="preserve"><value>Alla vanor</value></data>
+  <data name="Habit_Today" xml:space="preserve"><value>Vanor</value></data>
+  <data name="Habit_Overview" xml:space="preserve"><value>Vanor den här veckan</value></data>
+  <data name="Habit_Linked" xml:space="preserve"><value>Mål</value></data>
+  <data name="Habit_NoCompletions" xml:space="preserve"><value>Inga registreringar än.</value></data>
+  <data name="Overview_GoalsEmpty" xml:space="preserve"><value>Inga mål för den här perioden än.</value></data>
+  <data name="Overview_OpenGoals" xml:space="preserve"><value>Öppna mål</value></data>
+  <data name="Overview_OpenHabits" xml:space="preserve"><value>Öppna vanor</value></data>
+  <data name="Overview_HabitsEmpty" xml:space="preserve"><value>Inga vanor än.</value></data>
+  <data name="Err_InvalidNumeric" xml:space="preserve"><value>Ange både start- och målvärde.</value></data>
+  <data name="Err_InvalidParent" xml:space="preserve"><value>Det överordnade målet måste ha längre horisont och omfatta perioden.</value></data>
+  <data name="Err_InvalidPercent" xml:space="preserve"><value>Procent måste vara mellan 0 och 100.</value></data>
+  <data name="Err_HasChildren" xml:space="preserve"><value>Målet har underordnade mål. Flytta eller ta bort dem först.</value></data>
+  <data name="Err_ModeMismatch" xml:space="preserve"><value>Det går inte med den här typen av mål.</value></data>
+  <data name="Err_FutureDate" xml:space="preserve"><value>Du kan inte logga framåt i tiden.</value></data>
+  <data name="Err_InvalidTarget" xml:space="preserve"><value>Antalet måste vara mellan 1 och 100.</value></data>
+  <data name="Err_NotGeneratable" xml:space="preserve"><value>Bara veckovanor kan skapa uppgifter.</value></data>
+  <data name="Period_Day" xml:space="preserve"><value>Dag</value></data>
+  <data name="Period_Week" xml:space="preserve"><value>Vecka</value></data>
+  <data name="Period_Month" xml:space="preserve"><value>Månad</value></data>
+  <data name="Areas_Archived" xml:space="preserve"><value>Arkiverat</value></data></root>

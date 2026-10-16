@@ -1,0 +1,365 @@
+@page "/goals/{Id:guid}"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using System.Globalization
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Goals
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Goals
+@using LifeOS.Domain.Tasks
+@inject GoalService Goals
+@inject TaskService Tasks
+@inject IUserClock Clock
+@inject NavigationManager Navigation
+
+@if (_loaded && _detail is null)
+{
+    <MudAlert Severity="Severity.Warning">@L["Err_NotFound"]</MudAlert>
+    <MudButton Href="goals" Class="mt-2">@L["Goals_Back"]</MudButton>
+}
+else if (_detail is not null)
+{
+    var g = _detail.Goal;
+    <PageTitle>@g.Title – @L["App_Title"]</PageTitle>
+
+    <MudButton Href="goals" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-2">@L["Goals_Back"]</MudButton>
+
+    <div class="d-flex align-center flex-wrap gap-2">
+        <MudText Typo="Typo.h4" Tag="@("h1")">@g.Title</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Edit" OnClick="EditAsync">@L["Edit"]</MudButton>
+        <MudMenu Label="@L["Goal_Status"]" Variant="Variant.Text" Size="Size.Small" Dense="true">
+            @foreach (var status in Enum.GetValues<GoalStatus>().Where(s => s != g.Status))
+            {
+                var target = status;
+                <MudMenuItem OnClick="() => SetStatusAsync(target)">@L["GoalStatus_" + target]</MudMenuItem>
+            }
+        </MudMenu>
+        <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Error" OnClick="DeleteAsync">@L["Delete"]</MudButton>
+    </div>
+
+    <div class="task-meta my-2">
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled">@L["Horizon_" + g.Horizon] · @GoalDialog.PeriodText(g.Horizon, g.PeriodStart)</MudChip>
+        @if (g.LifeAreaName is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@g.LifeAreaName</MudChip>
+        }
+        @if (g.Status != GoalStatus.Active)
+        {
+            <MudChip T="string" Size="Size.Small" Color="@(g.Status == GoalStatus.Achieved ? Color.Success : Color.Default)">@L["GoalStatus_" + g.Status]</MudChip>
+        }
+        @if (_parent is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.AccountTree" Href="@($"goals/{_parent.Id}")">@L["Goal_ParentOf", _parent.Title]</MudChip>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(g.Description))
+    {
+        <MudText Class="mb-3" Style="white-space:pre-wrap">@g.Description</MudText>
+    }
+
+    @* ---- progress ---- *@
+    <div class="tone-card tone-sky mb-3">
+        <div class="d-flex align-baseline gap-3">
+            <span class="goal-big-percent">@g.Percent.ToString("0.#") %</span>
+            <MudText Color="Color.Secondary">@ModeSummary(g)</MudText>
+        </div>
+        <MudProgressLinear Value="@((double)g.Percent)" Color="@(g.Status == GoalStatus.Achieved ? Color.Success : Color.Primary)" Rounded="true" Size="Size.Large" Class="my-2" />
+        @if (g.IsBeyondTarget)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Success">@L["Goal_BeyondTarget"]</MudText>
+        }
+        @if (g.Percent >= 100 && g.Status == GoalStatus.Active)
+        {
+            <div class="d-flex align-center flex-wrap gap-2 mt-1">
+                <MudText Typo="Typo.body2">@L["Goal_SuggestAchieved"]</MudText>
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" OnClick="() => SetStatusAsync(GoalStatus.Achieved)">@L["Goal_MarkAchieved"]</MudButton>
+            </div>
+        }
+    </div>
+
+    @* ---- mode specific ---- *@
+    @switch (g.Mode)
+    {
+        case GoalProgressMode.Numeric:
+            <MudPaper Outlined="true" Class="pa-3 mb-3">
+                <MudGrid Spacing="2" Class="align-end">
+                    <MudItem xs="12" sm="4">
+                        <MudNumericField T="decimal?" @bind-Value="_newValue" Label="@($"{L["Goal_UpdateValue"]} ({g.Unit})")" HideSpinButtons="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="5">
+                        <MudTextField @bind-Value="_note" Label="@L["Goal_Note"]" MaxLength="500" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="@(_newValue is null)" OnClick="SaveValueAsync">@L["Goal_SaveValue"]</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+            break;
+
+        case GoalProgressMode.Manual:
+            <MudPaper Outlined="true" Class="pa-3 mb-3">
+                <MudText Class="mb-1">@L["Goal_ManualPercent"] <strong>@_manual.ToString("0") %</strong></MudText>
+                <MudSlider T="int" @bind-Value="_manual" Min="0" Max="100" Step="5" Color="Color.Primary" />
+                <MudTextField @bind-Value="_note" Label="@L["Goal_Note"]" MaxLength="500" Class="mb-2" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveManualAsync">@L["Goal_SaveManual"]</MudButton>
+            </MudPaper>
+            break;
+
+        case GoalProgressMode.Milestones:
+            <MudText Typo="Typo.h6" Class="mb-1">@L["Goal_Milestones"]</MudText>
+            @if (_detail.Milestones.Count == 0)
+            {
+                <MudText Color="Color.Secondary" Class="mb-2">@L["Goal_NoMilestones"]</MudText>
+            }
+            @foreach (var m in _detail.Milestones)
+            {
+                <div class="task-row @(m.IsDone ? "is-done" : null)">
+                    <MudCheckBox T="bool" Value="m.IsDone" ValueChanged="done => ToggleMilestoneAsync(m, done)" Color="Color.Primary" />
+                    <div class="task-main">
+                        <span class="task-title">@m.Title</span>
+                        @if (m.DueDate is { } due)
+                        {
+                            <span class="task-meta"><MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Event">@Fmt.Day(due)</MudChip></span>
+                        }
+                    </div>
+                    <div class="task-actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@L["Delete"]" OnClick="() => DeleteMilestoneAsync(m)" />
+                    </div>
+                </div>
+            }
+            <MudTextField @bind-Value="_newMilestone" Label="@L["Goal_AddMilestone"]" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                          MaxLength="200" OnKeyDown="OnMilestoneKeyDown" Class="mt-2 mb-3" Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Add" OnAdornmentClick="AddMilestoneAsync" AdornmentAriaLabel="@L["Add"]" />
+            break;
+
+        case GoalProgressMode.LinkedTasks:
+            <div class="d-flex align-center mb-1">
+                <MudText Typo="Typo.h6">@L["Task_Tasks"]</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="NewTaskAsync">@L["Goal_NewLinkedTask"]</MudButton>
+            </div>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-2">@L["ModeHint_LinkedTasks"]</MudText>
+            @if (_detail.LinkedTasks.Count == 0)
+            {
+                <MudText Color="Color.Secondary" Class="mb-3">@L["Goal_NoLinkedTasks"]</MudText>
+            }
+            @foreach (var t in _detail.LinkedTasks)
+            {
+                <TaskRow Item="t" Today="Clock.Today" ShowGoal="false" ShowPlanned="true" OnOpen="OpenTaskAsync" OnToggle="ToggleTaskAsync" />
+            }
+            break;
+    }
+
+    @* ---- history ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Goal_History"]</MudText>
+    @if (_detail.History.Count == 0)
+    {
+        <MudText Color="Color.Secondary">@L["Goal_HistoryEmpty"]</MudText>
+    }
+    else
+    {
+        <MudPaper Outlined="true" Class="pa-3 mb-2">
+            <ProgressChart Points="_detail.History" Until="Clock.UtcNow" Label="@L["Goal_History"]" />
+        </MudPaper>
+        @foreach (var p in _detail.History.AsEnumerable().Reverse().Take(10))
+        {
+            <div class="log-row mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
+                <div>
+                    <div>
+                        @p.Percent.ToString("0.#") %
+                        @if (p.Value is { } v)
+                        {
+                            <text>· @v.ToString("0.##", CultureInfo.CurrentCulture) @g.Unit</text>
+                        }
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @L["Source_" + p.Source] · @TimeZoneInfo.ConvertTime(p.RecordedUtc, Clock.Zone).ToString("d MMM yyyy HH:mm", CultureInfo.CurrentCulture)
+                        @if (!string.IsNullOrWhiteSpace(p.Note))
+                        {
+                            <text> · @p.Note</text>
+                        }
+                    </MudText>
+                </div>
+            </div>
+        }
+    }
+
+    @* ---- relations ---- *@
+    @if (_detail.Children.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Goal_Children"]</MudText>
+        <div class="goal-list">
+            @foreach (var c in _detail.Children)
+            {
+                <GoalCard Goal="c" OnOpen="OpenGoal" />
+            }
+        </div>
+    }
+
+    @if (_detail.Projects.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Goal_Projects"]</MudText>
+        <div class="task-meta">
+            @foreach (var p in _detail.Projects)
+            {
+                <MudChip T="string" Icon="@Icons.Material.Filled.Folder" Href="@($"projects/{p.Id}")">@p.Name</MudChip>
+            }
+        </div>
+    }
+
+    @if (_detail.Habits.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Goal_Habits"]</MudText>
+        <div class="task-meta">
+            @foreach (var h in _detail.Habits)
+            {
+                <MudChip T="string" Icon="@Icons.Material.Filled.Repeat" Href="@($"habits/{h.Id}")">@h.Name</MudChip>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private GoalDetail? _detail;
+    private GoalView? _parent;
+    private bool _loaded;
+    private decimal? _newValue;
+    private string? _note;
+    private int _manual;
+    private string _newMilestone = string.Empty;
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _detail = await Goals.GetAsync(Id);
+        _parent = null;
+        if (_detail?.Goal.ParentGoalId is { } parentId)
+        {
+            _parent = (await Goals.GetAsync(parentId))?.Goal;
+        }
+
+        if (_detail is not null)
+        {
+            _manual = (int)Math.Round(_detail.Goal.ManualPercent / 5m) * 5;
+            _newValue = _detail.Goal.CurrentValue;
+        }
+
+        _loaded = true;
+    }
+
+    private string ModeSummary(GoalView g) => g.Mode switch
+    {
+        GoalProgressMode.Numeric => $"{Num(g.CurrentValue)} / {Num(g.TargetValue)} {g.Unit} (start {Num(g.StartValue)})".Replace("  ", " "),
+        GoalProgressMode.Milestones => L["Goal_MilestoneCount", g.MilestonesDone, g.MilestonesTotal],
+        GoalProgressMode.LinkedTasks => L["Goal_TaskCount", g.TasksDone, g.TasksTotal],
+        _ => L["Mode_Manual"],
+    };
+
+    private static string Num(decimal? v) => v is null ? "–" : v.Value.ToString("0.##", CultureInfo.CurrentCulture);
+
+    private async Task EditAsync()
+    {
+        if (await ShowDialogAsync<GoalDialog>(L["Goals_Edit"], new DialogParameters<GoalDialog> { { x => x.GoalId, Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task SetStatusAsync(GoalStatus status)
+    {
+        await RunAsync(() => Goals.SetStatusAsync(Id, status));
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            L["Delete"], L["Goal_DeleteConfirm"], yesText: L["Delete"], cancelText: L["Cancel"]);
+        if (confirmed == true && await RunAsync(() => Goals.DeleteAsync(Id)))
+        {
+            Navigation.NavigateTo("goals");
+        }
+    }
+
+    private async Task SaveValueAsync()
+    {
+        if (_newValue is { } value && await RunAsync(() => Goals.SetNumericValueAsync(Id, value, _note)))
+        {
+            _note = null;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task SaveManualAsync()
+    {
+        if (await RunAsync(() => Goals.SetManualPercentAsync(Id, _manual, _note)))
+        {
+            _note = null;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task AddMilestoneAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newMilestone))
+        {
+            return;
+        }
+
+        if (await RunAsync(() => Goals.AddMilestoneAsync(Id, _newMilestone)))
+        {
+            _newMilestone = string.Empty;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnMilestoneKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddMilestoneAsync();
+        }
+    }
+
+    private async Task ToggleMilestoneAsync(MilestoneView m, bool done)
+    {
+        await RunAsync(() => Goals.SetMilestoneDoneAsync(m.Id, done));
+        await ReloadAsync();
+    }
+
+    private async Task DeleteMilestoneAsync(MilestoneView m)
+    {
+        await RunAsync(() => Goals.DeleteMilestoneAsync(m.Id));
+        await ReloadAsync();
+    }
+
+    private async Task NewTaskAsync()
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_New"], new DialogParameters<TaskDialog> { { x => x.DefaultGoalId, Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OpenTaskAsync(TaskView task)
+    {
+        if (await ShowDialogAsync<TaskDialog>(L["Task_Edit"], new DialogParameters<TaskDialog> { { x => x.TaskId, task.Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ToggleTaskAsync((TaskView Item, bool Done) change)
+    {
+        await RunAsync(() => Tasks.SetStatusAsync(change.Item.Id, change.Done ? TaskItemStatus.Done : TaskItemStatus.ToDo));
+        await ReloadAsync();
+    }
+
+    private void OpenGoal(GoalView goal) => Navigation.NavigateTo($"goals/{goal.Id}");
+}

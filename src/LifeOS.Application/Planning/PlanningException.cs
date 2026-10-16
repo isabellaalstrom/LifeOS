@@ -18,5 +18,13 @@ public sealed class PlanningException(string code) : Exception(code)
         public const string SprintClosed = "SprintClosed";
         public const string InvalidEstimate = "InvalidEstimate";
         public const string InvalidCapacity = "InvalidCapacity";
+        public const string InvalidNumeric = "InvalidNumeric";
+        public const string InvalidParent = "InvalidParent";
+        public const string InvalidPercent = "InvalidPercent";
+        public const string HasChildren = "HasChildren";
+        public const string ModeMismatch = "ModeMismatch";
+        public const string FutureDate = "FutureDate";
+        public const string InvalidTarget = "InvalidTarget";
+        public const string NotGeneratable = "NotGeneratable";
     }
 }

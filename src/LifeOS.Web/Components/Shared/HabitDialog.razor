@@ -1,0 +1,151 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Goals
+@using LifeOS.Application.Habits
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Goals
+@using LifeOS.Domain.Habits
+@inject HabitService Habits
+@inject GoalService Goals
+@inject LifeAreaService Areas
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else
+        {
+            <MudTextField @bind-Value="_name" Label="@L["Project_Name"]" Required="true" Immediate="true" AutoFocus="true" MaxLength="150" Class="mb-2" />
+            <MudTextField @bind-Value="_notes" Label="@L["Task_Notes"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="2000" Class="mb-2" />
+
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudSelect T="HabitPeriod" @bind-Value="_period" Label="@L["Habit_Period"]">
+                        @foreach (var p in Enum.GetValues<HabitPeriod>())
+                        {
+                            <MudSelectItem T="HabitPeriod" Value="@p">@L["Period_" + p]</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField T="int" @bind-Value="_target" Label="@L["Habit_Target"]" Min="1" Max="@HabitService.MaxTarget" HideSpinButtons="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
+                        @foreach (var a in _areas)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="Guid?" @bind-Value="_goalId" Label="@L["Task_Goal"]" Clearable="true">
+                        @foreach (var g in _goals)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)g.Id)">@g.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                @if (SelectedGoalIsNumeric)
+                {
+                    <MudItem xs="12">
+                        <MudNumericField T="decimal" @bind-Value="_increment" Label="@L["Habit_Increment"]" HideSpinButtons="true" />
+                    </MudItem>
+                }
+                @if (_period == HabitPeriod.Week)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField T="int?" @bind-Value="_estimate" Label="@L["Habit_Estimate"]" Min="1" Max="@TaskService.MaxEstimateMinutes" HideSpinButtons="true" Clearable="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSwitch T="bool" @bind-Value="_generate" Label="@L["Habit_Generate"]" Color="Color.Primary" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Habit_GenerateHint"]</MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync"
+                   Disabled="@(_loading || string.IsNullOrWhiteSpace(_name))">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid? HabitId { get; set; }
+
+    [Parameter] public Guid? DefaultGoalId { get; set; }
+
+    private bool _loading = true;
+    private IReadOnlyList<LifeAreaView> _areas = [];
+    private IReadOnlyList<GoalView> _goals = [];
+    private string _name = string.Empty;
+    private string? _notes;
+    private HabitPeriod _period = HabitPeriod.Week;
+    private int _target = 3;
+    private Guid? _areaId;
+    private Guid? _goalId;
+    private decimal _increment = 1m;
+    private int? _estimate;
+    private bool _generate;
+
+    private bool SelectedGoalIsNumeric => _goals.Any(g => g.Id == _goalId && g.Mode == GoalProgressMode.Numeric);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _areas = await Areas.ListAsync();
+        _goals = await Goals.ListAsync(includeClosed: false);
+        _goalId = DefaultGoalId;
+
+        if (HabitId is { } id)
+        {
+            var detail = await Habits.GetAsync(id);
+            if (detail is null)
+            {
+                MudDialog.Cancel();
+                return;
+            }
+
+            var h = detail.Habit;
+            _name = h.Name;
+            _notes = h.Notes;
+            _period = h.Period;
+            _target = h.TargetCount;
+            _areaId = h.LifeAreaId;
+            _goalId = h.GoalId;
+            _increment = h.GoalIncrement;
+            _estimate = h.EstimateMinutes;
+            _generate = h.GenerateSprintTasks;
+        }
+
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        var input = new HabitInput(_name, _period, _target, _notes, _areaId, _goalId, _increment, _estimate, _generate);
+        Guid? result = HabitId;
+        var ok = await RunAsync(async () =>
+        {
+            if (HabitId is { } id)
+            {
+                await Habits.UpdateAsync(id, input);
+            }
+            else
+            {
+                result = await Habits.CreateAsync(input);
+            }
+        });
+
+        if (ok)
+        {
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+    }
+}

@@ -17,6 +17,291 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("LifeOS.Domain.Goals.Goal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("AchievedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("CurrentValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Horizon")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("LifeAreaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ManualPercent")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentGoalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("StartValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("TargetValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LifeAreaId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ParentGoalId");
+
+                    b.HasIndex("OwnerId", "Horizon", "PeriodStart");
+
+                    b.ToTable("Goals");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Goals.GoalMilestone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("CompletedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("GoalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("GoalId", "SortOrder");
+
+                    b.ToTable("GoalMilestones");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Goals.GoalProgressEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("GoalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Percent")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("RecordedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Target")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("GoalId", "RecordedUtc");
+
+                    b.ToTable("GoalProgressEntries");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Habits.Habit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("EstimateMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("GenerateSprintTasks")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("GoalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("GoalIncrement")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("LifeAreaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TargetCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GoalId");
+
+                    b.HasIndex("LifeAreaId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "IsArchived");
+
+                    b.ToTable("Habits");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Habits.HabitCompletion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CompletedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("HabitId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TaskItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("TaskItemId")
+                        .IsUnique();
+
+                    b.HasIndex("HabitId", "Date");
+
+                    b.ToTable("HabitCompletions");
+                });
+
             modelBuilder.Entity("LifeOS.Domain.LifeAreas.LifeArea", b =>
                 {
                     b.Property<Guid>("Id")
@@ -220,6 +505,9 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("GoalId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("LifeAreaId")
                         .HasColumnType("TEXT");
 
@@ -242,6 +530,8 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GoalId");
 
                     b.HasIndex("LifeAreaId");
 
@@ -271,6 +561,18 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateOnly?>("FocusDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("GeneratedForPeriodStart")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("GeneratedIndex")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("GoalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("HabitId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("LifeAreaId")
@@ -322,6 +624,8 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GoalId");
+
                     b.HasIndex("LifeAreaId");
 
                     b.HasIndex("OwnerId");
@@ -334,9 +638,14 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OwnerId", "FocusDate");
 
+                    b.HasIndex("OwnerId", "GoalId");
+
                     b.HasIndex("OwnerId", "ProjectId");
 
                     b.HasIndex("OwnerId", "ScheduledDate");
+
+                    b.HasIndex("HabitId", "GeneratedForPeriodStart", "GeneratedIndex")
+                        .IsUnique();
 
                     b.HasIndex("OwnerId", "Triage", "Status");
 
@@ -539,6 +848,62 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("LifeOS.Domain.Goals.Goal", b =>
+                {
+                    b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
+                        .WithMany()
+                        .HasForeignKey("LifeAreaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LifeOS.Domain.Goals.Goal", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentGoalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("LifeArea");
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Goals.GoalMilestone", b =>
+                {
+                    b.HasOne("LifeOS.Domain.Goals.Goal", "Goal")
+                        .WithMany("Milestones")
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Goal");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Habits.Habit", b =>
+                {
+                    b.HasOne("LifeOS.Domain.Goals.Goal", "Goal")
+                        .WithMany()
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
+                        .WithMany()
+                        .HasForeignKey("LifeAreaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Goal");
+
+                    b.Navigation("LifeArea");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Habits.HabitCompletion", b =>
+                {
+                    b.HasOne("LifeOS.Domain.Habits.Habit", "Habit")
+                        .WithMany()
+                        .HasForeignKey("HabitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Habit");
+                });
+
             modelBuilder.Entity("LifeOS.Domain.Planning.SprintTask", b =>
                 {
                     b.HasOne("LifeOS.Domain.Planning.Sprint", "Sprint")
@@ -560,16 +925,33 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("LifeOS.Domain.Projects.Project", b =>
                 {
+                    b.HasOne("LifeOS.Domain.Goals.Goal", "Goal")
+                        .WithMany()
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
                         .WithMany()
                         .HasForeignKey("LifeAreaId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Goal");
 
                     b.Navigation("LifeArea");
                 });
 
             modelBuilder.Entity("LifeOS.Domain.Tasks.TaskItem", b =>
                 {
+                    b.HasOne("LifeOS.Domain.Goals.Goal", "Goal")
+                        .WithMany()
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LifeOS.Domain.Habits.Habit", "Habit")
+                        .WithMany()
+                        .HasForeignKey("HabitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
                         .WithMany()
                         .HasForeignKey("LifeAreaId")
@@ -584,6 +966,10 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Goal");
+
+                    b.Navigation("Habit");
 
                     b.Navigation("LifeArea");
 
@@ -641,6 +1027,13 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Goals.Goal", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("Milestones");
                 });
 
             modelBuilder.Entity("LifeOS.Domain.Planning.Sprint", b =>

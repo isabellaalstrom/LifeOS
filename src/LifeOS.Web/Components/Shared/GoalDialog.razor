@@ -1,0 +1,204 @@
+@inherits PlanningComponentBase
+@using System.Globalization
+@using LifeOS.Application.Goals
+@using LifeOS.Application.Organize
+@using LifeOS.Domain.Goals
+@inject GoalService Goals
+@inject LifeAreaService Areas
+@inject LifeOS.Application.Abstractions.IUserClock Clock
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else
+        {
+            <MudTextField @bind-Value="_title" Label="@L["Task_Title"]" Required="true" Immediate="true" AutoFocus="true" MaxLength="200" Class="mb-2" />
+            <MudTextField @bind-Value="_description" Label="@L["Project_Description"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="4000" Class="mb-2" />
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="5">
+                    <MudSelect T="GoalHorizon" Value="_horizon" ValueChanged="OnHorizonChanged" Label="@L["Goal_Horizon"]">
+                        @foreach (var h in Enum.GetValues<GoalHorizon>())
+                        {
+                            <MudSelectItem T="GoalHorizon" Value="@h">@L["Horizon_" + h]</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="7">
+                    <MudDatePicker Date="Fmt.ToDateTime(_periodDate)" DateChanged="d => OnPeriodChanged(Fmt.ToDateOnly(d))"
+                                   Label="@L["Goal_Period"]" HelperText="@PeriodLabel" Editable="false" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
+                        @foreach (var a in _areas)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="Guid?" @bind-Value="_parentId" Label="@L["Goal_Parent"]" Clearable="true">
+                        @foreach (var p in ParentCandidates)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.Title (@PeriodText(p.Horizon, p.PeriodStart))</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudSelect T="GoalProgressMode" @bind-Value="_mode" Label="@L["Goal_Mode"]" Class="mt-3" HelperText="@L["ModeHint_" + _mode]">
+                @foreach (var m in Enum.GetValues<GoalProgressMode>())
+                {
+                    <MudSelectItem T="GoalProgressMode" Value="@m">@L["Mode_" + m]</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (_mode == GoalProgressMode.Numeric)
+            {
+                <MudGrid Spacing="2" Class="mt-1">
+                    <MudItem xs="4"><MudNumericField T="decimal?" @bind-Value="_start" Label="@L["Goal_Start"]" HideSpinButtons="true" /></MudItem>
+                    <MudItem xs="4"><MudNumericField T="decimal?" @bind-Value="_target" Label="@L["Goal_Target"]" HideSpinButtons="true" /></MudItem>
+                    <MudItem xs="4"><MudTextField @bind-Value="_unit" Label="@L["Goal_Unit"]" MaxLength="30" /></MudItem>
+                    @if (GoalId is not null)
+                    {
+                        <MudItem xs="12"><MudNumericField T="decimal?" @bind-Value="_current" Label="@L["Goal_Current"]" HideSpinButtons="true" /></MudItem>
+                    }
+                </MudGrid>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync"
+                   Disabled="@(_loading || string.IsNullOrWhiteSpace(_title))">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid? GoalId { get; set; }
+
+    /// <summary>Pre-selected period when creating from the goals list.</summary>
+    [Parameter] public GoalHorizon DefaultHorizon { get; set; } = GoalHorizon.Quarter;
+
+    [Parameter] public DateOnly? DefaultPeriodStart { get; set; }
+
+    private bool _loading = true;
+    private IReadOnlyList<LifeAreaView> _areas = [];
+    private IReadOnlyList<GoalView> _allGoals = [];
+    private string _title = string.Empty;
+    private string? _description;
+    private GoalHorizon _horizon;
+    private DateOnly _periodDate;
+    private Guid? _areaId;
+    private Guid? _parentId;
+    private GoalProgressMode _mode = GoalProgressMode.Manual;
+    private decimal? _start;
+    private decimal? _target;
+    private decimal? _current;
+    private string? _unit;
+
+    private DateOnly PeriodStart => GoalPeriods.Start(_horizon, _periodDate);
+
+    private string PeriodLabel => PeriodText(_horizon, PeriodStart);
+
+    private IEnumerable<GoalView> ParentCandidates => _allGoals.Where(g =>
+        g.Id != GoalId
+        && GoalPeriods.IsValidParentHorizon(g.Horizon, _horizon)
+        && GoalPeriods.IsInside(g.Horizon, g.PeriodStart, _horizon, PeriodStart));
+
+    public static string PeriodText(GoalHorizon horizon, DateOnly start) => horizon switch
+    {
+        GoalHorizon.Year => start.Year.ToString(CultureInfo.InvariantCulture),
+        GoalHorizon.Quarter => $"Q{((start.Month - 1) / 3) + 1} {start.Year}",
+        _ => start.ToString("MMMM yyyy", CultureInfo.CurrentCulture),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _areas = await Areas.ListAsync();
+        _allGoals = await Goals.ListAsync(includeClosed: false);
+        _horizon = DefaultHorizon;
+        _periodDate = DefaultPeriodStart ?? Clock.Today;
+
+        if (GoalId is { } id)
+        {
+            var detail = await Goals.GetAsync(id);
+            if (detail is null)
+            {
+                MudDialog.Cancel();
+                return;
+            }
+
+            var g = detail.Goal;
+            _title = g.Title;
+            _description = g.Description;
+            _horizon = g.Horizon;
+            _periodDate = g.PeriodStart;
+            _areaId = g.LifeAreaId;
+            _parentId = g.ParentGoalId;
+            _mode = g.Mode;
+            _start = g.StartValue;
+            _target = g.TargetValue;
+            _current = g.CurrentValue;
+            _unit = g.Unit;
+        }
+
+        _loading = false;
+    }
+
+    private void OnHorizonChanged(GoalHorizon horizon)
+    {
+        _horizon = horizon;
+        DropInvalidParent();
+    }
+
+    private void OnPeriodChanged(DateOnly? date)
+    {
+        if (date is { } d)
+        {
+            _periodDate = d;
+            DropInvalidParent();
+        }
+    }
+
+    private void DropInvalidParent()
+    {
+        if (_parentId is { } p && ParentCandidates.All(c => c.Id != p))
+        {
+            _parentId = null;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        var input = new GoalInput(
+            _title, _horizon, PeriodStart, _mode, _description, _areaId, _parentId,
+            _mode == GoalProgressMode.Numeric ? _start : null,
+            _mode == GoalProgressMode.Numeric ? _target : null,
+            _mode == GoalProgressMode.Numeric ? _current : null,
+            _unit);
+
+        Guid? result = GoalId;
+        var ok = await RunAsync(async () =>
+        {
+            if (GoalId is { } id)
+            {
+                await Goals.UpdateAsync(id, input);
+            }
+            else
+            {
+                result = await Goals.CreateAsync(input);
+            }
+        });
+
+        if (ok)
+        {
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+    }
+}
