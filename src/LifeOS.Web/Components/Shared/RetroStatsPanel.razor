@@ -1,0 +1,70 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Retros
+
+@* Facts about the period. No judgement, no red/green: incomplete numbers are not failures. *@
+<div class="stat-grid">
+    <div class="stat-tile">
+        <span class="stat-value">@Stats.TasksCompleted</span>
+        <span class="stat-label">@L["Retro_TasksDone"]</span>
+        @if (Stats.TasksCompletedMinutes > 0)
+        {
+            <span class="stat-sub">@L["Retro_TimeDone"]: @Fmt.Duration(L, Stats.TasksCompletedMinutes)</span>
+        }
+    </div>
+
+    <div class="stat-tile">
+        @if (Stats.Sprints.SprintCount == 0)
+        {
+            <span class="stat-label">@L["Retro_Sprints"]</span>
+            <span class="stat-sub">@L["Retro_NoSprints"]</span>
+        }
+        else
+        {
+            <span class="stat-value">@Stats.Sprints.Completed</span>
+            <span class="stat-label">@L["Retro_SprintsDone"] (@Stats.Sprints.SprintCount @L["Retro_Sprints"].Value.ToLowerInvariant())</span>
+            <span class="stat-sub">
+                @L["Retro_SprintsPlanned"] @Stats.Sprints.Planned · @L["Retro_SprintsAdded"] @Stats.Sprints.AddedAfterStart ·
+                @L["Retro_SprintsRemoved"] @Stats.Sprints.Removed · @L["Retro_SprintsCarried"] @Stats.Sprints.CarriedOut ·
+                @L["Retro_SprintsCarriedIn"] @Stats.Sprints.CarriedIn
+            </span>
+        }
+    </div>
+</div>
+
+<MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["Retro_Goals"]</MudText>
+@if (Stats.Goals.Count == 0)
+{
+    <MudText Color="Color.Secondary">@L["Retro_NoGoals"]</MudText>
+}
+@foreach (var g in Stats.Goals)
+{
+    <a href="@($"goals/{g.GoalId}")" class="mini-progress">
+        <span class="mini-progress-head">
+            <span>@g.Title @if (g.AchievedInPeriod) { <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["Retro_GoalAchieved"]</MudChip> }</span>
+            <span>
+                @if (g.StartPercent is { } s) { <text>@s.ToString("0") % → </text> } else { <text>(@L["Retro_GoalNew"]) → </text> }
+                @g.EndPercent.ToString("0") %
+            </span>
+        </span>
+        <MudProgressLinear Value="@((double)g.EndPercent)" Color="Color.Primary" Rounded="true" />
+    </a>
+}
+
+<MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["Retro_Habits"]</MudText>
+@if (Stats.Habits.Count == 0)
+{
+    <MudText Color="Color.Secondary">@L["Retro_NoHabits"]</MudText>
+}
+@foreach (var h in Stats.Habits)
+{
+    <div class="mini-progress-head">
+        <a href="@($"habits/{h.HabitId}")">@h.Name</a>
+        <span>
+            @(h.PeriodsTotal == 0 ? L["Retro_HabitTooEarly"] : L["Retro_HabitMet", h.PeriodsMet, h.PeriodsTotal]) · @L["Retro_Completions", h.Completions]
+        </span>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public RetroStats Stats { get; set; } = default!;
+}

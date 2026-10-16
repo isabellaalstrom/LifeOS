@@ -26,5 +26,8 @@ public sealed class PlanningException(string code) : Exception(code)
         public const string FutureDate = "FutureDate";
         public const string InvalidTarget = "InvalidTarget";
         public const string NotGeneratable = "NotGeneratable";
+        public const string RetroCompleted = "RetroCompleted";
+        public const string InvalidWellbeing = "InvalidWellbeing";
+        public const string InvalidQuestion = "InvalidQuestion";
     }
 }

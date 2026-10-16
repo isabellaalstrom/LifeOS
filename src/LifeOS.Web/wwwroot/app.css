@@ -851,3 +851,110 @@ a {
 .chart-area {
     fill: color-mix(in srgb, var(--lo-accent) 14%, transparent);
 }
+
+/* ---------- Retrospectives ---------- */
+.stat-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+    .stat-grid {
+        grid-template-columns: 1fr 2fr;
+    }
+}
+
+.stat-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 16px;
+    border-radius: var(--lo-radius-sm);
+    background: color-mix(in srgb, var(--lo-card) 75%, transparent);
+}
+
+.stat-value {
+    font-family: var(--lo-serif);
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-weight: 600;
+}
+
+.stat-sub {
+    font-size: 0.85rem;
+    color: var(--lo-ink-2);
+}
+
+.action-card {
+    margin-bottom: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--lo-line);
+    border-radius: var(--lo-radius-sm);
+    background: var(--lo-card);
+}
+
+.action-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.action-title {
+    font-family: var(--lo-serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--lo-line);
+}
+
+.rate-label {
+    min-width: 110px;
+    font-weight: 600;
+}
+
+.rate-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.rate-btn {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--lo-line);
+    border-radius: 50%;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--lo-ink);
+    background: var(--lo-card);
+}
+
+.rate-btn:hover:not(:disabled) {
+    border-color: var(--lo-accent);
+}
+
+.rate-btn.is-on {
+    border-color: var(--lo-accent);
+    color: var(--lo-accent-ink);
+    background: var(--lo-accent);
+}
+
+.rate-btn:disabled {
+    cursor: default;
+    opacity: 0.7;
+}

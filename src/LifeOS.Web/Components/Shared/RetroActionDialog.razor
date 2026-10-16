@@ -1,0 +1,83 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Retros
+@using LifeOS.Domain.Retros
+@inject RetroService Retros
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_title" Label="@L["Task_Title"]" Required="true" Immediate="true" AutoFocus="true" MaxLength="200" Class="mb-2" />
+        <MudSelect T="RetroActionKind" @bind-Value="_kind" Label="@L["Action_Kind"]" Class="mb-2">
+            @foreach (var k in Enum.GetValues<RetroActionKind>())
+            {
+                <MudSelectItem T="RetroActionKind" Value="@k">@L["ActionKind_" + k]</MudSelectItem>
+            }
+        </MudSelect>
+        @if (_kind == RetroActionKind.Experiment)
+        {
+            <MudTextField @bind-Value="_hypothesis" Label="@L["Action_Hypothesis"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="1000" Class="mb-2" />
+        }
+        <MudTextField @bind-Value="_details" Label="@L["Action_Details"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="4000" Class="mb-2" />
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="4"><MudTextField @bind-Value="_owner" Label="@L["Action_Owner"]" MaxLength="100" /></MudItem>
+            <MudItem xs="6" sm="4"><MudDatePicker Date="Fmt.ToDateTime(_start)" DateChanged="d => _start = Fmt.ToDateOnly(d)" Label="@L["Action_Start"]" Clearable="true" Editable="false" /></MudItem>
+            <MudItem xs="6" sm="4"><MudDatePicker Date="Fmt.ToDateTime(_due)" DateChanged="d => _due = Fmt.ToDateOnly(d)" Label="@L["Action_Due"]" Clearable="true" Editable="false" /></MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@string.IsNullOrWhiteSpace(_title)">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>The retro the action is decided in (null for a free-standing action).</summary>
+    [Parameter] public Guid? RetroId { get; set; }
+
+    /// <summary>Edit this action instead of creating one.</summary>
+    [Parameter] public RetroActionView? Existing { get; set; }
+
+    private string _title = string.Empty;
+    private RetroActionKind _kind;
+    private string? _details;
+    private string? _owner = "Jag";
+    private string? _hypothesis;
+    private DateOnly? _start;
+    private DateOnly? _due;
+
+    protected override void OnInitialized()
+    {
+        if (Existing is { } a)
+        {
+            _title = a.Title;
+            _kind = a.Kind;
+            _details = a.Details;
+            _owner = a.OwnerName;
+            _hypothesis = a.Hypothesis;
+            _start = a.StartDate;
+            _due = a.DueDate;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        var input = new RetroActionInput(_title, _kind, _details, _owner, _start, _due, _hypothesis);
+        var ok = await RunAsync(async () =>
+        {
+            if (Existing is { } a)
+            {
+                await Retros.UpdateActionAsync(a.Id, input);
+            }
+            else
+            {
+                await Retros.AddActionAsync(RetroId, input);
+            }
+        });
+
+        if (ok)
+        {
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+}

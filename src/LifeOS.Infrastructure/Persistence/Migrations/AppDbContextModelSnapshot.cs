@@ -542,6 +542,224 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.ToTable("Projects");
                 });
 
+            modelBuilder.Entity("LifeOS.Domain.Retros.RetroAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ClosedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Hypothesis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerName")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RetroId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TaskItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("RetroId");
+
+                    b.HasIndex("OwnerId", "Status");
+
+                    b.ToTable("RetroActions");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Retros.RetroActionFollowUp", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ActionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("RecordedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("RetroId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("RetroId");
+
+                    b.HasIndex("ActionId", "RecordedUtc");
+
+                    b.ToTable("RetroActionFollowUps");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Retros.RetroResponse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("QuestionKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RetroId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("RetroId", "QuestionKey")
+                        .IsUnique();
+
+                    b.ToTable("RetroResponses");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Retros.Retrospective", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Balance")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("CompletedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Energy")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Satisfaction")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StatsSnapshotJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Stress")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(8000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "Type", "PeriodStart")
+                        .IsUnique();
+
+                    b.ToTable("Retrospectives");
+                });
+
             modelBuilder.Entity("LifeOS.Domain.Tasks.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")

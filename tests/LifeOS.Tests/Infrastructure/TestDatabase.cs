@@ -26,8 +26,8 @@ public sealed class TestDatabase : IDisposable
 
     public LifeOSOptions Options { get; }
 
-    public AppDbContext CreateContext(ICurrentUser user) =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(Options.ConnectionString).Options, user, TimeProvider.System);
+    public AppDbContext CreateContext(ICurrentUser user, TimeProvider? time = null) =>
+        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(Options.ConnectionString).Options, user, time ?? TimeProvider.System);
 
     public SqliteBackupService CreateBackupService() => new(Microsoft.Extensions.Options.Options.Create(Options));
 

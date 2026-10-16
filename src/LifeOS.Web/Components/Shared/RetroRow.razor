@@ -1,0 +1,22 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Retros
+@using LifeOS.Domain.Retros
+
+<div class="task-row">
+    <div class="task-main" role="link" tabindex="0" @onclick="() => OnOpen.InvokeAsync(Retro)">
+        <span class="task-title">@L["RetroType_" + Retro.Type] · @Fmt.RetroPeriod(L, Retro.Type, Retro.PeriodStart)</span>
+        <span class="task-meta">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(Retro.Status == RetroStatus.Completed ? Color.Success : Color.Default)">@L["RetroStatus_" + Retro.Status]</MudChip>
+            @if (Retro.AnswerCount > 0)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@Retro.AnswerCount @L["Retro_Questions"].Value.ToLowerInvariant()</MudChip>
+            }
+        </span>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RetroView Retro { get; set; } = default!;
+
+    [Parameter] public EventCallback<RetroView> OnOpen { get; set; }
+}

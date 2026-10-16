@@ -71,3 +71,18 @@
 | 38 | A completion counts in the period of the day it was done, also for a task generated for a later week that was finished early. | Consistency measures what was done when; simple and predictable |
 | 39 | An unfinished current period never breaks a streak; wording is encouraging, never shaming. | Brief: do not interpret incomplete metrics as failure |
 | 40 | Enum ordering uses explicit rank expressions (`EnumOrdering`), because enums are stored as text and ORDER BY would be alphabetical. | Found as a real bug: backlog priority was sorted None, Medium, Low, High |
+
+# Decisions (Phase 4: retrospectives without AI)
+
+| # | Decision | Why |
+|---|---|---|
+| 41 | One retro per type and period (weekly, monthly, quarterly, annual), unique in the database. Starting again resumes it. Weekly retros are optional and are never suggested. | Resumable drafts; no duplicates; no obligation |
+| 42 | A retro can be completed with nothing filled in. Guided questions, well-being (1-5), summary and actions are all optional. Drafts save on field blur and with an explicit button. | Brief: usable without AI, never mandatory, well-being only if the owner chooses |
+| 43 | Period statistics are facts in the owner's time zone: tasks completed, sprint scope (planned vs added vs carried), goal movement from the progress history, habit consistency. Missing data stays missing. | Accurate boundaries (a task done at 23:30 belongs to that day); incomplete metrics are not failures |
+| 44 | "Planned" in a period counts fresh planning only: tasks that arrived by carry-over are reported as carried in, not planned again. (`OriginalCarriedIn` in the scope stats.) | A task carried through three weeks must not look like three weeks of planning |
+| 45 | A sprint belongs to the period its Monday falls in. | Every sprint is counted exactly once, also across a month boundary |
+| 46 | Habit consistency counts only whole periods that are inside the retro period, have fully passed, and began after the habit was created. | A habit is never "missing" a week it did not exist for or that is still running |
+| 47 | Completing a retro stores a JSON snapshot of the statistics; reopening discards it. Drafts show live numbers. | A finished retro does not drift as data changes later |
+| 48 | Actions and experiments (owner, dates, hypothesis, status) outlive their retro: plain ids, no foreign keys. Open ones are offered in every later retro for follow-up; follow-ups are appended with an outcome (worked, partly, did not work, too early). | "Future retros should revisit previous actions" without losing history if a draft is deleted |
+| 49 | Larger retros show the completed smaller retros inside their period (annual: quarterly, quarterly: monthly, monthly: weekly) and the previous retro of the same type. Both may be empty. | Annual retros work with sparse history |
+| 50 | Test clock: entity timestamps follow the test clock (`FakeClock` is also the `TimeProvider`). | Tests about "when was this created" were silently using wall-clock time |

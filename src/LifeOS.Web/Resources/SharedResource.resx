@@ -327,4 +327,114 @@
   <data name="Period_Day" xml:space="preserve"><value>Dag</value></data>
   <data name="Period_Week" xml:space="preserve"><value>Vecka</value></data>
   <data name="Period_Month" xml:space="preserve"><value>Månad</value></data>
-  <data name="Areas_Archived" xml:space="preserve"><value>Arkiverat</value></data></root>
+  <data name="Areas_Archived" xml:space="preserve"><value>Arkiverat</value></data>
+  <data name="Retros_Intro" xml:space="preserve"><value>Stanna upp och se tillbaka. Du gör det när det passar och behöver inte svara på allt.</value></data>
+  <data name="Retros_Start" xml:space="preserve"><value>Starta en återblick</value></data>
+  <data name="Retros_StartHint" xml:space="preserve"><value>Du kan börja när som helst och spara som utkast. Veckoåterblick är helt valfri.</value></data>
+  <data name="Retros_Empty" xml:space="preserve"><value>Inga återblickar än. Börja när det känns rätt.</value></data>
+  <data name="Retros_Drafts" xml:space="preserve"><value>Pågående</value></data>
+  <data name="Retros_Done" xml:space="preserve"><value>Klara</value></data>
+  <data name="Retros_OpenActions" xml:space="preserve"><value>Öppna åtgärder och experiment</value></data>
+  <data name="Retros_NoOpenActions" xml:space="preserve"><value>Inga öppna åtgärder just nu.</value></data>
+  <data name="Retros_Suggest" xml:space="preserve"><value>Vill du se tillbaka på {0}?</value></data>
+  <data name="Retros_Open" xml:space="preserve"><value>Öppna</value></data>
+  <data name="RetroType_Weekly" xml:space="preserve"><value>Vecka (valfri)</value></data>
+  <data name="RetroType_Monthly" xml:space="preserve"><value>Månad</value></data>
+  <data name="RetroType_Quarterly" xml:space="preserve"><value>Kvartal</value></data>
+  <data name="RetroType_Annual" xml:space="preserve"><value>År</value></data>
+  <data name="RetroStatus_Draft" xml:space="preserve"><value>Utkast</value></data>
+  <data name="RetroStatus_Completed" xml:space="preserve"><value>Klar</value></data>
+  <data name="Retro_Back" xml:space="preserve"><value>Alla återblickar</value></data>
+  <data name="Retro_Week" xml:space="preserve"><value>Vecka {0}</value></data>
+  <data name="Retro_Numbers" xml:space="preserve"><value>Siffror för perioden</value></data>
+  <data name="Retro_NumbersNote" xml:space="preserve"><value>Det här är bara fakta, inget betyg. Ofullständiga siffror är inte misslyckanden.</value></data>
+  <data name="Retro_InProgress" xml:space="preserve"><value>Perioden pågår fortfarande, så siffrorna är hittills.</value></data>
+  <data name="Retro_Snapshot" xml:space="preserve"><value>Siffrorna är sparade så som de var när återblicken blev klar.</value></data>
+  <data name="Retro_TasksDone" xml:space="preserve"><value>Klara uppgifter</value></data>
+  <data name="Retro_TimeDone" xml:space="preserve"><value>Tid i klara uppgifter</value></data>
+  <data name="Retro_Sprints" xml:space="preserve"><value>Sprintar</value></data>
+  <data name="Retro_SprintsPlanned" xml:space="preserve"><value>Planerat från start</value></data>
+  <data name="Retro_SprintsAdded" xml:space="preserve"><value>Tillagt under veckorna</value></data>
+  <data name="Retro_SprintsRemoved" xml:space="preserve"><value>Borttaget</value></data>
+  <data name="Retro_SprintsCarried" xml:space="preserve"><value>Överfört vidare</value></data>
+  <data name="Retro_SprintsCarriedIn" xml:space="preserve"><value>Överfört hit</value></data>
+  <data name="Retro_SprintsDone" xml:space="preserve"><value>Klart i sprintarna</value></data>
+  <data name="Retro_NoSprints" xml:space="preserve"><value>Inga sprintar i perioden.</value></data>
+  <data name="Retro_Goals" xml:space="preserve"><value>Målframsteg</value></data>
+  <data name="Retro_GoalNew" xml:space="preserve"><value>ny</value></data>
+  <data name="Retro_GoalAchieved" xml:space="preserve"><value>uppnått</value></data>
+  <data name="Retro_NoGoals" xml:space="preserve"><value>Inga målrörelser i perioden.</value></data>
+  <data name="Retro_Habits" xml:space="preserve"><value>Vanor</value></data>
+  <data name="Retro_HabitMet" xml:space="preserve"><value>{0} av {1} perioder klara</value></data>
+  <data name="Retro_HabitTooEarly" xml:space="preserve"><value>För tidigt att säga</value></data>
+  <data name="Retro_Completions" xml:space="preserve"><value>Registreringar: {0}</value></data>
+  <data name="Retro_NoHabits" xml:space="preserve"><value>Inga vanor att visa.</value></data>
+  <data name="Retro_Revisit" xml:space="preserve"><value>Från tidigare återblickar</value></data>
+  <data name="Retro_RevisitNone" xml:space="preserve"><value>Inget att följa upp.</value></data>
+  <data name="Retro_FollowUp" xml:space="preserve"><value>Följ upp</value></data>
+  <data name="Retro_FollowUpNote" xml:space="preserve"><value>Anteckning (valfri)</value></data>
+  <data name="Retro_FollowUpSaved" xml:space="preserve"><value>Uppföljningen sparades.</value></data>
+  <data name="Outcome_Worked" xml:space="preserve"><value>Fungerade</value></data>
+  <data name="Outcome_Partly" xml:space="preserve"><value>Delvis</value></data>
+  <data name="Outcome_DidNotWork" xml:space="preserve"><value>Fungerade inte</value></data>
+  <data name="Outcome_TooEarly" xml:space="preserve"><value>För tidigt att säga</value></data>
+  <data name="Retro_Questions" xml:space="preserve"><value>Frågor</value></data>
+  <data name="Retro_QuestionsHint" xml:space="preserve"><value>Svara på det som känns användbart och hoppa över resten.</value></data>
+  <data name="Retro_Q_went_well" xml:space="preserve"><value>Vad gick bra den här veckan?</value></data>
+  <data name="Retro_Q_was_hard" xml:space="preserve"><value>Vad var svårt eller tog mer energi än väntat?</value></data>
+  <data name="Retro_Q_next_week" xml:space="preserve"><value>Vad vill du ta med dig till nästa vecka?</value></data>
+  <data name="Retro_Q_highlights" xml:space="preserve"><value>Vilka var månadens ljuspunkter?</value></data>
+  <data name="Retro_Q_challenges" xml:space="preserve"><value>Vad var utmanande, och vad låg bakom?</value></data>
+  <data name="Retro_Q_learned" xml:space="preserve"><value>Vad lärde du dig om dig själv eller ditt sätt att arbeta?</value></data>
+  <data name="Retro_Q_change_next" xml:space="preserve"><value>Vad vill du prova eller ändra nästa månad?</value></data>
+  <data name="Retro_Q_achievements" xml:space="preserve"><value>Vad är du nöjd med att ha åstadkommit under kvartalet?</value></data>
+  <data name="Retro_Q_goals_review" xml:space="preserve"><value>Hur gick det med målen? Behöver något justeras eller släppas?</value></data>
+  <data name="Retro_Q_patterns" xml:space="preserve"><value>Ser du några mönster, till exempel vad som ger energi och vad som tar den?</value></data>
+  <data name="Retro_Q_next_quarter" xml:space="preserve"><value>Vad är viktigast att fokusera på nästa kvartal?</value></data>
+  <data name="Retro_Q_year_story" xml:space="preserve"><value>Hur skulle du berätta om året?</value></data>
+  <data name="Retro_Q_proud_of" xml:space="preserve"><value>Vad är du stolt över?</value></data>
+  <data name="Retro_Q_learned_year" xml:space="preserve"><value>Vad har du lärt dig under året?</value></data>
+  <data name="Retro_Q_let_go" xml:space="preserve"><value>Vad vill du släppa taget om?</value></data>
+  <data name="Retro_Q_next_year" xml:space="preserve"><value>Vad vill du ska vara annorlunda nästa år?</value></data>
+  <data name="Retro_Wellbeing" xml:space="preserve"><value>Hur mår du? (valfritt)</value></data>
+  <data name="Retro_WellbeingHint" xml:space="preserve"><value>Fyll bara i det du vill. Skalan går från 1 (lågt) till 5 (högt). Tryck igen för att ta bort.</value></data>
+  <data name="Wellbeing_Energy" xml:space="preserve"><value>Energi</value></data>
+  <data name="Wellbeing_Balance" xml:space="preserve"><value>Balans</value></data>
+  <data name="Wellbeing_Stress" xml:space="preserve"><value>Stress</value></data>
+  <data name="Wellbeing_Satisfaction" xml:space="preserve"><value>Nöjdhet</value></data>
+  <data name="Retro_Actions" xml:space="preserve"><value>Åtgärder och experiment</value></data>
+  <data name="Retro_ActionsHint" xml:space="preserve"><value>Små och konkreta. De tas upp igen i nästa återblick.</value></data>
+  <data name="Retro_ActionNew" xml:space="preserve"><value>Ny åtgärd eller experiment</value></data>
+  <data name="Retro_NoActions" xml:space="preserve"><value>Inga åtgärder än.</value></data>
+  <data name="ActionKind_Action" xml:space="preserve"><value>Åtgärd</value></data>
+  <data name="ActionKind_Experiment" xml:space="preserve"><value>Experiment</value></data>
+  <data name="Action_Kind" xml:space="preserve"><value>Typ</value></data>
+  <data name="Action_Owner" xml:space="preserve"><value>Ansvarig</value></data>
+  <data name="Action_Start" xml:space="preserve"><value>Startdatum</value></data>
+  <data name="Action_Due" xml:space="preserve"><value>Klart senast</value></data>
+  <data name="Action_Hypothesis" xml:space="preserve"><value>Vad tror du händer?</value></data>
+  <data name="Action_Details" xml:space="preserve"><value>Detaljer</value></data>
+  <data name="ActionStatus_Open" xml:space="preserve"><value>Öppen</value></data>
+  <data name="ActionStatus_InProgress" xml:space="preserve"><value>Pågår</value></data>
+  <data name="ActionStatus_Done" xml:space="preserve"><value>Klar</value></data>
+  <data name="ActionStatus_Dropped" xml:space="preserve"><value>Släppt</value></data>
+  <data name="Action_ToTask" xml:space="preserve"><value>Gör till uppgift</value></data>
+  <data name="Action_TaskCreated" xml:space="preserve"><value>Uppgiften skapades i backloggen.</value></data>
+  <data name="Action_HasTask" xml:space="preserve"><value>Har uppgift</value></data>
+  <data name="Retro_Summary" xml:space="preserve"><value>Sammanfattning</value></data>
+  <data name="Retro_SummaryHint" xml:space="preserve"><value>Med egna ord: vad tar du med dig?</value></data>
+  <data name="Retro_SaveDraft" xml:space="preserve"><value>Spara utkast</value></data>
+  <data name="Retro_Saved" xml:space="preserve"><value>Utkast sparat.</value></data>
+  <data name="Retro_Complete" xml:space="preserve"><value>Slutför återblick</value></data>
+  <data name="Retro_CompletedMsg" xml:space="preserve"><value>Återblicken är klar.</value></data>
+  <data name="Retro_Reopen" xml:space="preserve"><value>Öppna igen</value></data>
+  <data name="Retro_DeleteDraft" xml:space="preserve"><value>Ta bort utkast</value></data>
+  <data name="Retro_DeleteConfirm" xml:space="preserve"><value>Ta bort utkastet och dess svar? Åtgärder du skapat behålls.</value></data>
+  <data name="Retro_Related" xml:space="preserve"><value>Tidigare återblickar i perioden</value></data>
+  <data name="Retro_RelatedNone" xml:space="preserve"><value>Inga tidigare återblickar i perioden. Det går bra att göra den här ändå.</value></data>
+  <data name="Retro_Previous" xml:space="preserve"><value>Förra gången</value></data>
+  <data name="Retro_ReadOnly" xml:space="preserve"><value>Klar återblick. Öppna igen för att ändra.</value></data>
+  <data name="Retro_Wellbeing_Summary" xml:space="preserve"><value>Energi {0}, balans {1}, stress {2}, nöjdhet {3}</value></data>
+  <data name="Err_RetroCompleted" xml:space="preserve"><value>Återblicken är klar. Öppna den igen för att ändra.</value></data>
+  <data name="Err_InvalidWellbeing" xml:space="preserve"><value>Välj ett värde mellan 1 och 5.</value></data>
+  <data name="Err_InvalidQuestion" xml:space="preserve"><value>Okänd fråga.</value></data></root>

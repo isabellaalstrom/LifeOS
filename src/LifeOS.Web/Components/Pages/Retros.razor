@@ -1,5 +1,119 @@
 @page "/retros"
 @attribute [Authorize]
-@inject IStringLocalizer<SharedResource> L
+@inherits PlanningComponentBase
+@using LifeOS.Application.Abstractions
+@using LifeOS.Application.Retros
+@using LifeOS.Domain.Retros
+@inject RetroService RetrosApi
+@inject IUserClock Clock
+@inject NavigationManager Navigation
 
-<PagePlaceholder Title="@L["Nav_Retros"]" Description="@L["Retros_Description"]" Phase="4" />
+<PageTitle>@L["Nav_Retros"] – @L["App_Title"]</PageTitle>
+
+<MudText Typo="Typo.h5" Tag="@("h1")">@L["Nav_Retros"]</MudText>
+<MudText Color="Color.Secondary" Class="mb-3">@L["Retros_Intro"]</MudText>
+
+@* ---- gentle suggestions (never for weeks) ---- *@
+@foreach (var s in _suggestions)
+{
+    var suggestion = s;
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" ShowCloseIcon="false">
+        @L["Retros_Suggest", Fmt.RetroPeriod(L, suggestion.Type, suggestion.PeriodStart)]
+        <MudButton Size="Size.Small" Class="ml-2" OnClick="() => StartAsync(suggestion.Type, suggestion.PeriodStart)">@L["Retros_Start"]</MudButton>
+    </MudAlert>
+}
+
+<MudText Typo="Typo.h6" Class="mt-3 mb-1">@L["Retros_Start"]</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Retros_StartHint"]</MudText>
+<div class="d-flex flex-wrap gap-2 mb-4">
+    @foreach (var t in new[] { RetroType.Monthly, RetroType.Quarterly, RetroType.Annual, RetroType.Weekly })
+    {
+        var type = t;
+        <MudButton Variant="@(type == RetroType.Weekly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary"
+                   OnClick="() => StartAsync(type, Clock.Today)">
+            @L["RetroType_" + type] · @Fmt.RetroPeriod(L, type, RetroPeriods.Start(type, Clock.Today))
+        </MudButton>
+    }
+</div>
+
+@if (_retros is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_retros.Count == 0)
+{
+    <MudPaper Outlined="true" Class="pa-6 text-center"><MudText Color="Color.Secondary">@L["Retros_Empty"]</MudText></MudPaper>
+}
+else
+{
+    @if (_retros.Any(r => r.Status == RetroStatus.Draft))
+    {
+        <MudText Typo="Typo.h6" Class="mb-1">@L["Retros_Drafts"]</MudText>
+        @foreach (var r in _retros.Where(r => r.Status == RetroStatus.Draft))
+        {
+            <RetroRow Retro="r" OnOpen="Open" />
+        }
+    }
+
+    @if (_retros.Any(r => r.Status == RetroStatus.Completed))
+    {
+        <MudText Typo="Typo.h6" Class="mt-3 mb-1">@L["Retros_Done"]</MudText>
+        @foreach (var r in _retros.Where(r => r.Status == RetroStatus.Completed))
+        {
+            <RetroRow Retro="r" OnOpen="Open" />
+        }
+    }
+}
+
+<MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Retros_OpenActions"]</MudText>
+@if (_actions.Count == 0)
+{
+    <MudText Color="Color.Secondary">@L["Retros_NoOpenActions"]</MudText>
+}
+@foreach (var a in _actions)
+{
+    <div class="action-card">
+        <div class="action-head">
+            <span class="action-title">@a.Title</span>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@L["ActionKind_" + a.Kind]</MudChip>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["ActionStatus_" + a.Status]</MudChip>
+        </div>
+        @if (a.DueDate is { } due)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Action_Due"]: @Fmt.Day(due)</MudText>
+        }
+        <div class="d-flex flex-wrap gap-1 mt-1">
+            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => SetStatusAsync(a, RetroActionStatus.Done)">@L["ActionStatus_Done"]</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => SetStatusAsync(a, RetroActionStatus.Dropped)">@L["ActionStatus_Dropped"]</MudButton>
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<RetroView>? _retros;
+    private IReadOnlyList<RetroSuggestion> _suggestions = [];
+    private IReadOnlyList<RetroActionView> _actions = [];
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _retros = await RetrosApi.ListAsync();
+        _suggestions = await RetrosApi.SuggestionsAsync();
+        _actions = await RetrosApi.ListOpenActionsAsync();
+    }
+
+    private async Task StartAsync(RetroType type, DateOnly date)
+    {
+        var id = await RetrosApi.StartOrResumeAsync(type, date);
+        Navigation.NavigateTo($"retros/{id}");
+    }
+
+    private void Open(RetroView retro) => Navigation.NavigateTo($"retros/{retro.Id}");
+
+    private async Task SetStatusAsync(RetroActionView action, RetroActionStatus status)
+    {
+        await RunAsync(() => RetrosApi.SetActionStatusAsync(action.Id, status));
+        await ReloadAsync();
+    }
+}

@@ -40,7 +40,9 @@ public static class SprintCapacity
 /// <param name="CarriedOut">Distinct tasks moved on to another sprint when this sprint was closed.</param>
 /// <param name="CarriedIn">Distinct tasks that arrived by carry-over from an earlier sprint.</param>
 /// <param name="Current">Tasks in the sprint now.</param>
-public sealed record SprintScopeStats(int Original, int AddedAfterStart, int RemovedAfterStart, int CarriedOut, int CarriedIn, int Current)
+/// <param name="OriginalCarriedIn">Of the original scope, tasks that had been carried over from an earlier sprint (so fresh planning is Original minus this).</param>
+public sealed record SprintScopeStats(
+    int Original, int AddedAfterStart, int RemovedAfterStart, int CarriedOut, int CarriedIn, int Current, int OriginalCarriedIn = 0)
 {
     public static readonly SprintScopeStats Empty = new(0, 0, 0, 0, 0, 0);
 }
@@ -53,16 +55,18 @@ public static class SprintScope
             .OrderBy(c => c.OccurredUtc)
             .GroupBy(c => c.TaskItemId);
 
-        int original = 0, added = 0, removed = 0, carriedOut = 0, carriedIn = 0, current = 0;
+        int original = 0, added = 0, removed = 0, carriedOut = 0, carriedIn = 0, current = 0, originalCarriedIn = 0;
 
         foreach (var events in byTask)
         {
             var list = events.ToList();
 
             var presentAtBoundary = false;
+            ScopeChangeReason? lastReasonBefore = null;
             foreach (var e in list.Where(e => e.OccurredUtc < boundaryUtc))
             {
                 presentAtBoundary = e.Kind == ScopeChangeKind.Added;
+                lastReasonBefore = e.Kind == ScopeChangeKind.Added ? e.Reason : null;
             }
 
             var after = list.Where(e => e.OccurredUtc >= boundaryUtc).ToList();
@@ -71,6 +75,10 @@ public static class SprintScope
             if (presentAtBoundary)
             {
                 original++;
+                if (lastReasonBefore == ScopeChangeReason.CarryOver)
+                {
+                    originalCarriedIn++;
+                }
             }
             else if (after.Any(e => e.Kind == ScopeChangeKind.Added))
             {
@@ -100,6 +108,6 @@ public static class SprintScope
             }
         }
 
-        return new SprintScopeStats(original, added, removed, carriedOut, carriedIn, current);
+        return new SprintScopeStats(original, added, removed, carriedOut, carriedIn, current, originalCarriedIn);
     }
 }

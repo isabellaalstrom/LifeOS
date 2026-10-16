@@ -1,0 +1,363 @@
+@page "/retros/{Id:guid}"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+@using System.Globalization
+@using LifeOS.Application.Retros
+@using LifeOS.Domain.Retros
+@inject RetroService RetrosApi
+@inject NavigationManager Navigation
+@inject LifeOS.Application.Abstractions.IUserClock Clock
+
+@if (_loaded && _detail is null)
+{
+    <MudAlert Severity="Severity.Warning">@L["Err_NotFound"]</MudAlert>
+    <MudButton Href="retros" Class="mt-2">@L["Retro_Back"]</MudButton>
+}
+else if (_detail is not null)
+{
+    var r = _detail.Retro;
+    var isDraft = r.Status == RetroStatus.Draft;
+    var title = Fmt.RetroPeriod(L, r.Type, r.PeriodStart);
+    <PageTitle>@title – @L["App_Title"]</PageTitle>
+
+    <MudButton Href="retros" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ArrowBack" Class="mb-2">@L["Retro_Back"]</MudButton>
+
+    <div class="d-flex align-center flex-wrap gap-2">
+        <MudText Typo="Typo.h4" Tag="@("h1")">@L["RetroType_" + r.Type] · @title</MudText>
+        <MudChip T="string" Size="Size.Small" Color="@(isDraft ? Color.Default : Color.Success)">@L["RetroStatus_" + r.Status]</MudChip>
+    </div>
+
+    @if (!isDraft)
+    {
+        <MudAlert Severity="Severity.Success" Dense="true" Class="my-3" ShowCloseIcon="false">
+            @L["Retro_ReadOnly"]
+            <MudButton Size="Size.Small" Class="ml-2" OnClick="ReopenAsync">@L["Retro_Reopen"]</MudButton>
+        </MudAlert>
+    }
+
+    @* ---- numbers ---- *@
+    <div class="tone-card tone-sky my-3">
+        <p class="card-eyebrow">@L["Retro_Numbers"]</p>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+            @L["Retro_NumbersNote"]
+            @if (_detail.StatsAreSnapshot) { <text>@(" ")@L["Retro_Snapshot"]</text> }
+            else if (_detail.Stats.InProgress) { <text>@(" ")@L["Retro_InProgress"]</text> }
+        </MudText>
+        <RetroStatsPanel Stats="_detail.Stats" />
+    </div>
+
+    @* ---- compare with last time ---- *@
+    @if (_detail.Previous is { } prev)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            @L["Retro_Previous"]:
+            <a href="@($"retros/{prev.Id}")">@Fmt.RetroPeriod(L, prev.Type, prev.PeriodStart)</a>
+            @if (prev.Energy is not null || prev.Balance is not null || prev.Stress is not null || prev.Satisfaction is not null)
+            {
+                <text> · @L["Retro_Wellbeing_Summary", Show(prev.Energy), Show(prev.Balance), Show(prev.Stress), Show(prev.Satisfaction)]</text>
+            }
+        </MudText>
+    }
+
+    @* ---- earlier retros inside this period ---- *@
+    @if (RetroPeriods.SmallerType(r.Type) is { } smaller)
+    {
+        <MudText Typo="Typo.h6" Class="mt-3 mb-1">@L["Retro_Related"]</MudText>
+        @if (_detail.Related.Count == 0)
+        {
+            <MudText Color="Color.Secondary" Class="mb-2">@L["Retro_RelatedNone"]</MudText>
+        }
+        @foreach (var rel in _detail.Related)
+        {
+            <MudPaper Outlined="true" Class="pa-3 mb-2">
+                <a href="@($"retros/{rel.Id}")"><strong>@Fmt.RetroPeriod(L, rel.Type, rel.PeriodStart)</strong></a>
+                @if (!string.IsNullOrWhiteSpace(rel.Summary))
+                {
+                    <MudText Typo="Typo.body2" Style="white-space:pre-wrap">@rel.Summary</MudText>
+                }
+            </MudPaper>
+        }
+    }
+
+    @* ---- revisit earlier actions ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Retro_Revisit"]</MudText>
+    @if (_detail.ToRevisit.Count == 0)
+    {
+        <MudText Color="Color.Secondary">@L["Retro_RevisitNone"]</MudText>
+    }
+    @foreach (var a in _detail.ToRevisit)
+    {
+        <div class="action-card">
+            <div class="action-head">
+                <span class="action-title">@a.Title</span>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@L["ActionKind_" + a.Kind]</MudChip>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["ActionStatus_" + a.Status]</MudChip>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(a.Hypothesis))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Action_Hypothesis"]: @a.Hypothesis</MudText>
+            }
+            @foreach (var f in a.FollowUps)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
+                    @TimeZoneInfo.ConvertTime(f.RecordedUtc, Clock.Zone).ToString("d MMM yyyy", CultureInfo.CurrentCulture) · @L["Outcome_" + f.Outcome]@(string.IsNullOrWhiteSpace(f.Note) ? "" : " · " + f.Note)
+                </MudText>
+            }
+            @if (isDraft)
+            {
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                    @foreach (var o in Enum.GetValues<RetroOutcome>())
+                    {
+                        var outcome = o;
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => FollowUpAsync(a, outcome)">@L["Outcome_" + outcome]</MudButton>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                    @if (a.Status != RetroActionStatus.Done)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => SetStatusAsync(a, RetroActionStatus.Done)">@L["ActionStatus_Done"]</MudButton>
+                    }
+                    @if (a.Status != RetroActionStatus.InProgress)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => SetStatusAsync(a, RetroActionStatus.InProgress)">@L["ActionStatus_InProgress"]</MudButton>
+                    }
+                    @if (a.Status != RetroActionStatus.Dropped)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => SetStatusAsync(a, RetroActionStatus.Dropped)">@L["ActionStatus_Dropped"]</MudButton>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @* ---- guided questions ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Retro_Questions"]</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Retro_QuestionsHint"]</MudText>
+    @foreach (var key in RetroQuestions.For(r.Type))
+    {
+        var k = key;
+        <MudTextField T="string" Value="@(_answers.GetValueOrDefault(k))" ValueChanged="v => _answers[k] = v" Label="@L["Retro_Q_" + k]"
+                      Lines="3" Sizing="InputSizing.Auto" Variant="Variant.Outlined" Class="mb-3" MaxLength="8000"
+                      ReadOnly="@(!isDraft)" OnBlur="SaveQuietAsync" />
+    }
+
+    @* ---- optional well-being ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Retro_Wellbeing"]</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Retro_WellbeingHint"]</MudText>
+    @foreach (var (name, getter, setter) in Wellbeing())
+    {
+        <div class="rate-row">
+            <span class="rate-label">@L["Wellbeing_" + name]</span>
+            <div class="rate-buttons" role="group" aria-label="@L["Wellbeing_" + name]">
+                @for (var i = 1; i <= 5; i++)
+                {
+                    var value = i;
+                    <button type="button" class="rate-btn @(getter() == value ? "is-on" : null)" disabled="@(!isDraft)" aria-pressed="@(getter() == value)"
+                            @onclick="() => ToggleRating(setter, getter, value)">@value</button>
+                }
+            </div>
+        </div>
+    }
+
+    @* ---- actions and experiments ---- *@
+    <div class="d-flex align-center mt-4 mb-1">
+        <MudText Typo="Typo.h6">@L["Retro_Actions"]</MudText>
+        <MudSpacer />
+        @if (isDraft)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="NewActionAsync">@L["Retro_ActionNew"]</MudButton>
+        }
+    </div>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Retro_ActionsHint"]</MudText>
+    @if (_detail.Actions.Count == 0)
+    {
+        <MudText Color="Color.Secondary">@L["Retro_NoActions"]</MudText>
+    }
+    @foreach (var a in _detail.Actions)
+    {
+        <div class="action-card">
+            <div class="action-head">
+                <span class="action-title">@a.Title</span>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@L["ActionKind_" + a.Kind]</MudChip>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["ActionStatus_" + a.Status]</MudChip>
+                @if (a.TaskItemId is not null)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.TaskAlt">@L["Action_HasTask"]</MudChip>
+                }
+            </div>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
+                @if (!string.IsNullOrWhiteSpace(a.OwnerName)) { <text>@L["Action_Owner"]: @a.OwnerName</text> }
+                @if (a.DueDate is { } due) { <text> · @L["Action_Due"]: @Fmt.Day(due)</text> }
+            </MudText>
+            @if (!string.IsNullOrWhiteSpace(a.Hypothesis))
+            {
+                <MudText Typo="Typo.body2">@L["Action_Hypothesis"]: @a.Hypothesis</MudText>
+            }
+            @if (!string.IsNullOrWhiteSpace(a.Details))
+            {
+                <MudText Typo="Typo.body2" Style="white-space:pre-wrap">@a.Details</MudText>
+            }
+            <div class="d-flex flex-wrap gap-1 mt-1">
+                @if (isDraft)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditActionAsync(a)">@L["Edit"]</MudButton>
+                }
+                @if (a.TaskItemId is null)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => ToTaskAsync(a)">@L["Action_ToTask"]</MudButton>
+                }
+            </div>
+        </div>
+    }
+
+    @* ---- summary and finish ---- *@
+    <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Retro_Summary"]</MudText>
+    <MudTextField T="string" @bind-Value="_summary" Label="@L["Retro_SummaryHint"]" Lines="3" Sizing="InputSizing.Auto" Variant="Variant.Outlined"
+                  MaxLength="8000" ReadOnly="@(!isDraft)" OnBlur="SaveQuietAsync" Class="mb-3" />
+
+    @if (isDraft)
+    {
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            <MudButton Variant="Variant.Outlined" OnClick="SaveAsync">@L["Retro_SaveDraft"]</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CompleteAsync">@L["Retro_Complete"]</MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="DeleteAsync">@L["Retro_DeleteDraft"]</MudButton>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private RetroDetail? _detail;
+    private bool _loaded;
+    private readonly Dictionary<string, string?> _answers = [];
+    private string? _summary;
+    private int? _energy, _balance, _stress, _satisfaction;
+
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _detail = await RetrosApi.GetAsync(Id);
+        _loaded = true;
+        if (_detail is null)
+        {
+            return;
+        }
+
+        _answers.Clear();
+        foreach (var (key, value) in _detail.Answers)
+        {
+            _answers[key] = value;
+        }
+
+        var r = _detail.Retro;
+        _summary = r.Summary;
+        _energy = r.Energy;
+        _balance = r.Balance;
+        _stress = r.Stress;
+        _satisfaction = r.Satisfaction;
+    }
+
+    private IEnumerable<(string Name, Func<int?> Get, Action<int?> Set)> Wellbeing() =>
+    [
+        ("Energy", () => _energy, v => _energy = v),
+        ("Balance", () => _balance, v => _balance = v),
+        ("Stress", () => _stress, v => _stress = v),
+        ("Satisfaction", () => _satisfaction, v => _satisfaction = v),
+    ];
+
+    private async Task ToggleRating(Action<int?> set, Func<int?> get, int value)
+    {
+        set(get() == value ? null : value);
+        await SaveQuietAsync();
+    }
+
+    private static string Show(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "–";
+
+    private Task<bool> PersistAsync() => RunAsync(() => RetrosApi.SaveAsync(
+        Id, new Dictionary<string, string?>(_answers), _summary, new WellbeingInput(_energy, _balance, _stress, _satisfaction)));
+
+    /// <summary>Saves silently when a field loses focus, so nothing typed is lost.</summary>
+    private async Task SaveQuietAsync()
+    {
+        if (_detail?.Retro.Status == RetroStatus.Draft)
+        {
+            await PersistAsync();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (await PersistAsync())
+        {
+            Snackbar.Add(L["Retro_Saved"], Severity.Success);
+        }
+    }
+
+    private async Task CompleteAsync()
+    {
+        if (await PersistAsync() && await RunAsync(() => RetrosApi.CompleteAsync(Id)))
+        {
+            Snackbar.Add(L["Retro_CompletedMsg"], Severity.Success);
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ReopenAsync()
+    {
+        await RunAsync(() => RetrosApi.ReopenAsync(Id));
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            L["Retro_DeleteDraft"], L["Retro_DeleteConfirm"], yesText: L["Delete"], cancelText: L["Cancel"]);
+        if (confirmed == true && await RunAsync(() => RetrosApi.DeleteDraftAsync(Id)))
+        {
+            Navigation.NavigateTo("retros");
+        }
+    }
+
+    private async Task NewActionAsync()
+    {
+        if (await ShowDialogAsync<RetroActionDialog>(L["Retro_ActionNew"], new DialogParameters<RetroActionDialog> { { x => x.RetroId, Id } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task EditActionAsync(RetroActionView action)
+    {
+        if (await ShowDialogAsync<RetroActionDialog>(L["Edit"], new DialogParameters<RetroActionDialog> { { x => x.RetroId, Id }, { x => x.Existing, action } }) is not null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task FollowUpAsync(RetroActionView action, RetroOutcome outcome)
+    {
+        if (await RunAsync(() => RetrosApi.RecordFollowUpAsync(action.Id, Id, outcome, null)))
+        {
+            Snackbar.Add(L["Retro_FollowUpSaved"], Severity.Success);
+            await ReloadAsync();
+        }
+    }
+
+    private async Task SetStatusAsync(RetroActionView action, RetroActionStatus status)
+    {
+        await RunAsync(() => RetrosApi.SetActionStatusAsync(action.Id, status));
+        await ReloadAsync();
+    }
+
+    private async Task ToTaskAsync(RetroActionView action)
+    {
+        if (await RunAsync(() => RetrosApi.CreateTaskForActionAsync(action.Id)))
+        {
+            Snackbar.Add(L["Action_TaskCreated"], Severity.Success);
+            await ReloadAsync();
+        }
+    }
+}

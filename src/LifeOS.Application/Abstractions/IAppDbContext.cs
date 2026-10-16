@@ -3,6 +3,7 @@ using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Projects;
+using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +37,14 @@ public interface IAppDbContext : IAsyncDisposable
     DbSet<Habit> Habits { get; }
 
     DbSet<HabitCompletion> HabitCompletions { get; }
+
+    DbSet<Retrospective> Retrospectives { get; }
+
+    DbSet<RetroResponse> RetroResponses { get; }
+
+    DbSet<RetroAction> RetroActions { get; }
+
+    DbSet<RetroActionFollowUp> RetroActionFollowUps { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

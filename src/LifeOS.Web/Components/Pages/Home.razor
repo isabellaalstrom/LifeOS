@@ -12,6 +12,7 @@
 @inject IUserClock Clock
 @inject LifeOS.Application.Goals.GoalService GoalsApi
 @inject LifeOS.Application.Habits.HabitService HabitsApi
+@inject LifeOS.Application.Retros.RetroService RetrosApi
 
 <PageTitle>@L["Nav_Overview"] – @L["App_Title"]</PageTitle>
 
@@ -50,6 +51,14 @@ else
             <path d="M0 170 C 100 150, 190 160, 280 168 S 420 168, 460 160 L460 170 Z" fill="#86B287" />
         </svg>
     </section>
+
+    @if (_retroSuggestion is { } suggestion)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" ShowCloseIcon="false">
+            @L["Retros_Suggest", Fmt.RetroPeriod(L, suggestion.Type, suggestion.PeriodStart)]
+            <MudButton Size="Size.Small" Class="ml-2" Href="retros">@L["Retros_Open"]</MudButton>
+        </MudAlert>
+    }
 
     @foreach (var past in _view.PastSprintsToClose)
     {
@@ -194,6 +203,7 @@ else
     private OverviewView? _view;
     private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
     private IReadOnlyList<LifeOS.Application.Habits.HabitView> _habits = [];
+    private LifeOS.Application.Retros.RetroSuggestion? _retroSuggestion;
 
     [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
 
@@ -223,6 +233,7 @@ else
         _view = await TodayService.GetOverviewAsync();
         _goals = await GoalsApi.ListCurrentAsync();
         _habits = (await HabitsApi.ListAsync()).Take(5).ToList();
+        _retroSuggestion = (await RetrosApi.SuggestionsAsync()).FirstOrDefault();
     }
 
     private async Task OnInboxChangedAsync()

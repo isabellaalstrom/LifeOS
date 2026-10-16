@@ -22,6 +22,7 @@ notifications arrive in Phases 3–6 (see `LifeOS_Codex_MVP_Brief.md`).
 | **Översikt** | Today's focus, current sprint, deadlines and inbox count. |
 | **Mål** (`/goals`) | Year, quarter and month goals, parent and child goals, four ways to measure progress (a value that can go up or down, milestones, linked tasks, or your own estimate), a progress history chart, and links from projects, tasks and habits. |
 | **Vanor** (`/habits`) | Flexible targets (for example 3 per week), one-tap logging, encouraging consistency, optional sprint tasks for the week without duplicates, and contribution to numeric goals. |
+| **Retron** (`/retros`) | Weekly (optional), monthly, quarterly and annual reflections that can be started any time, saved as drafts and completed without AI. Period facts, guided questions, optional well-being, actions and experiments that are followed up in later retros. |
 
 Dates and "today" use the owner's time zone (`Europe/Stockholm` by default); weeks start on Monday.
 

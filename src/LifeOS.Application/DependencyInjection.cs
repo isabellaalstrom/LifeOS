@@ -2,6 +2,7 @@ using LifeOS.Application.Goals;
 using LifeOS.Application.Habits;
 using LifeOS.Application.Organize;
 using LifeOS.Application.Planning;
+using LifeOS.Application.Retros;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LifeOS.Application;
@@ -20,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<TodayService>();
         services.AddScoped<GoalService>();
         services.AddScoped<HabitService>();
+        services.AddScoped<RetroStatsService>();
+        services.AddScoped<RetroService>();
         return services;
     }
 }

@@ -5,6 +5,7 @@ using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Projects;
+using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
 using LifeOS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -47,6 +48,14 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
 
     public DbSet<HabitCompletion> HabitCompletions => Set<HabitCompletion>();
 
+    public DbSet<Retrospective> Retrospectives => Set<Retrospective>();
+
+    public DbSet<RetroResponse> RetroResponses => Set<RetroResponse>();
+
+    public DbSet<RetroAction> RetroActions => Set<RetroAction>();
+
+    public DbSet<RetroActionFollowUp> RetroActionFollowUps => Set<RetroActionFollowUp>();
+
     public async Task<IAppTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) =>
         new EfTransaction(await Database.BeginTransactionAsync(cancellationToken));
 
@@ -77,6 +86,11 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
         configurationBuilder.Properties<GoalProgressMode>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<GoalProgressSource>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<HabitPeriod>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<RetroType>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<RetroStatus>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<RetroActionKind>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<RetroActionStatus>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<RetroOutcome>().HaveConversion<string>().HaveMaxLength(20);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -186,6 +200,38 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
         modelBuilder.Entity<Project>(b =>
         {
             b.HasOne(x => x.Goal).WithMany().HasForeignKey(x => x.GoalId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Retrospective>(b =>
+        {
+            b.Property(x => x.Summary).HasMaxLength(8000);
+            // One retro per type and period: starting again resumes it.
+            b.HasIndex(x => new { x.OwnerId, x.Type, x.PeriodStart }).IsUnique();
+        });
+
+        modelBuilder.Entity<RetroResponse>(b =>
+        {
+            b.Property(x => x.QuestionKey).HasMaxLength(50).IsRequired();
+            b.Property(x => x.Answer).HasMaxLength(8000).IsRequired();
+            b.HasIndex(x => new { x.RetroId, x.QuestionKey }).IsUnique();
+        });
+
+        // Actions outlive the retro that created them (plain ids, no foreign keys), so deleting a draft never loses them.
+        modelBuilder.Entity<RetroAction>(b =>
+        {
+            b.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Details).HasMaxLength(4000);
+            b.Property(x => x.OwnerName).HasMaxLength(100);
+            b.Property(x => x.Hypothesis).HasMaxLength(1000);
+            b.HasIndex(x => new { x.OwnerId, x.Status });
+            b.HasIndex(x => x.RetroId);
+        });
+
+        modelBuilder.Entity<RetroActionFollowUp>(b =>
+        {
+            b.Property(x => x.Note).HasMaxLength(2000);
+            b.HasIndex(x => new { x.ActionId, x.RecordedUtc });
+            b.HasIndex(x => x.RetroId);
         });
 
         // Deliberately no foreign keys: the audit trail stands on its own and is never touched by other deletes.

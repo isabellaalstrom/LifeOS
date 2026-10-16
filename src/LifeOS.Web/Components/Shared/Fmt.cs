@@ -1,4 +1,5 @@
 using System.Globalization;
+using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
 using Microsoft.Extensions.Localization;
 
@@ -28,6 +29,14 @@ public static class Fmt
 
     public static string Range(DateOnly weekStart) =>
         $"{weekStart.ToString("d MMM", CultureInfo.CurrentCulture)} – {weekStart.AddDays(6).ToString("d MMM", CultureInfo.CurrentCulture)}";
+
+    public static string RetroPeriod(IStringLocalizer l, RetroType type, DateOnly start) => type switch
+    {
+        RetroType.Weekly => $"{l["Retro_Week", System.Globalization.ISOWeek.GetWeekOfYear(start.ToDateTime(TimeOnly.MinValue))]} · {Range(start)}",
+        RetroType.Monthly => start.ToString("MMMM yyyy", CultureInfo.CurrentCulture),
+        RetroType.Quarterly => $"Q{((start.Month - 1) / 3) + 1} {start.Year}",
+        _ => start.Year.ToString(CultureInfo.InvariantCulture),
+    };
 
     public static string PriorityKey(TaskPriority p) => "Priority_" + p;
 
