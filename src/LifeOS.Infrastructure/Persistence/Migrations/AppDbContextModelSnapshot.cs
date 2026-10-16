@@ -23,7 +23,14 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
                     b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsArchived")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
@@ -49,6 +56,291 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.HasIndex("OwnerId", "SortOrder");
 
                     b.ToTable("LifeAreas");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Planning.Sprint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CapacityMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ClosedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("CommittedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Goal")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("WeekStart")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "WeekStart")
+                        .IsUnique();
+
+                    b.ToTable("Sprints");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Planning.SprintScopeChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("EstimateMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("OccurredUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RelatedSprintId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SprintId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TaskTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("TaskItemId");
+
+                    b.HasIndex("SprintId", "OccurredUtc");
+
+                    b.ToTable("ScopeChanges");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Planning.SprintTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("AddedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LeaveReason")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("LeftUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SprintId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("TaskItemId");
+
+                    b.HasIndex("SprintId", "TaskItemId")
+                        .IsUnique();
+
+                    b.ToTable("SprintTasks");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Projects.Project", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("LifeAreaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LifeAreaId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("OwnerId", "Status");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Tasks.TaskItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("CompletedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EstimateMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("FocusDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("LifeAreaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentTaskId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("ScheduledDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly?>("ScheduledTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Triage")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LifeAreaId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ParentTaskId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("OwnerId", "DueDate");
+
+                    b.HasIndex("OwnerId", "FocusDate");
+
+                    b.HasIndex("OwnerId", "ProjectId");
+
+                    b.HasIndex("OwnerId", "ScheduledDate");
+
+                    b.HasIndex("OwnerId", "Triage", "Status");
+
+                    b.ToTable("Tasks");
                 });
 
             modelBuilder.Entity("LifeOS.Infrastructure.Identity.AppUser", b =>
@@ -247,6 +539,59 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("LifeOS.Domain.Planning.SprintTask", b =>
+                {
+                    b.HasOne("LifeOS.Domain.Planning.Sprint", "Sprint")
+                        .WithMany("Tasks")
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeOS.Domain.Tasks.TaskItem", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Sprint");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Projects.Project", b =>
+                {
+                    b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
+                        .WithMany()
+                        .HasForeignKey("LifeAreaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("LifeArea");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Tasks.TaskItem", b =>
+                {
+                    b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
+                        .WithMany()
+                        .HasForeignKey("LifeAreaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LifeOS.Domain.Tasks.TaskItem", "Parent")
+                        .WithMany("Subtasks")
+                        .HasForeignKey("ParentTaskId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LifeOS.Domain.Projects.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("LifeArea");
+
+                    b.Navigation("Parent");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -296,6 +641,16 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Planning.Sprint", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Tasks.TaskItem", b =>
+                {
+                    b.Navigation("Subtasks");
                 });
 #pragma warning restore 612, 618
         }

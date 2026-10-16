@@ -1,4 +1,4 @@
-﻿using LifeOS.Application.Abstractions;
+using LifeOS.Application.Abstractions;
 using LifeOS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,8 +13,14 @@ public static class DependencyInjection
     {
         services.Configure<LifeOSOptions>(configuration.GetSection(LifeOSOptions.SectionName));
 
-        services.AddDbContext<AppDbContext>((sp, builder) =>
-            builder.UseSqlite(sp.GetRequiredService<IOptions<LifeOSOptions>>().Value.ConnectionString));
+        // Scoped factory: each operation gets its own short-lived context that still sees the current user.
+        // The plain scoped AppDbContext (Identity stores, health check) is created from the same factory.
+        services.AddDbContextFactory<AppDbContext>(
+            (sp, builder) => builder.UseSqlite(sp.GetRequiredService<IOptions<LifeOSOptions>>().Value.ConnectionString),
+            ServiceLifetime.Scoped);
+        services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
+        services.AddScoped<IAppDbContextFactory, AppDbContextFactory>();
+        services.AddScoped<IUserClock, UserClock>();
 
         services.AddScoped<IDatabaseBackupService, SqliteBackupService>();
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
