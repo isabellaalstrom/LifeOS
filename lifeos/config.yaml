@@ -1,6 +1,6 @@
 # Home Assistant app (add-on) manifest. Packaging only: LifeOS does not talk to HA entities, APIs or automations.
 name: LifeOS
-version: "0.3.0"
+version: "0.3.1"
 slug: lifeos
 # Prebuilt image published by .github/workflows/publish-app-image.yml ({arch} = amd64 | aarch64).
 # The tag is `version` above, so bump it for every release. ha/build-local-app.ps1 strips this line for local builds.
@@ -21,18 +21,13 @@ panel_title: LifeOS
 # /data (SQLite DB, Data Protection keys, backups) is persistent and included in HA backups.
 # "cold" stops the app while the backup runs so the SQLite file is consistent.
 backup: cold
-# Optional settings, entered in the HA UI (never stored in the repository). Leave empty to keep a feature off.
-options:
-  openai_api_key: ""
-  openai_model: ""
-  ntfy_url: ""
-  ntfy_topic: ""
-  ntfy_token: ""
-  push_subject: ""
+# Optional settings, entered in the HA UI (never stored in the repository). All are optional and omitted by default,
+# so nothing has to be filled in. Leave a field empty to keep that feature off.
+options: {}
 schema:
   openai_api_key: password?
   openai_model: str?
-  ntfy_url: url?
+  ntfy_url: str?
   ntfy_topic: str?
   ntfy_token: password?
   push_subject: str?
