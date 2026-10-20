@@ -1,5 +1,4 @@
 using LifeOS.Domain.Planning;
-using LifeOS.Domain.Projects;
 using LifeOS.Domain.Tasks;
 
 namespace LifeOS.Application.Organize;
@@ -13,14 +12,12 @@ public sealed record TaskInput(
     DateOnly? ScheduledDate = null,
     TimeOnly? ScheduledTime = null,
     Guid? LifeAreaId = null,
-    Guid? ProjectId = null,
     Guid? GoalId = null);
 
 public sealed record TaskView(
     Guid Id,
     string Title,
     string? Notes,
-    TaskTriage Triage,
     TaskItemStatus Status,
     TaskPriority Priority,
     int? EstimateMinutes,
@@ -31,8 +28,6 @@ public sealed record TaskView(
     Guid? LifeAreaId,
     string? LifeAreaName,
     string? LifeAreaColor,
-    Guid? ProjectId,
-    string? ProjectName,
     Guid? ParentTaskId,
     int SubtaskTotal,
     int SubtaskDone,
@@ -47,7 +42,7 @@ public sealed record TaskView(
 
 public sealed record TaskDetail(TaskView Task, IReadOnlyList<TaskView> Subtasks);
 
-public sealed record TaskFilter(Guid? LifeAreaId = null, Guid? ProjectId = null, string? Text = null);
+public sealed record TaskFilter(Guid? LifeAreaId = null, string? Text = null, bool RecurringOnly = false);
 
 public enum DeleteOutcome
 {
@@ -56,20 +51,6 @@ public enum DeleteOutcome
     /// <summary>The task has sprint history, so it was cancelled instead of removed.</summary>
     Cancelled,
 }
-
-public sealed record ProjectInput(string Name, string? Description = null, Guid? LifeAreaId = null, Guid? GoalId = null);
-
-public sealed record ProjectView(
-    Guid Id,
-    string Name,
-    string? Description,
-    Guid? LifeAreaId,
-    string? LifeAreaName,
-    ProjectStatus Status,
-    int OpenTasks,
-    int DoneTasks,
-    Guid? GoalId = null,
-    string? GoalTitle = null);
 
 public enum CarryDecision
 {
@@ -137,5 +118,4 @@ public sealed record OverviewView(
     IReadOnlyList<TaskView> Focus,
     SprintSummary Sprint,
     IReadOnlyList<TaskView> Deadlines,
-    int InboxCount,
     IReadOnlyList<PastSprintToClose> PastSprintsToClose);

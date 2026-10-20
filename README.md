@@ -10,23 +10,20 @@ notifications, polish.** See `LifeOS_Codex_MVP_Brief.md`, `docs/decisions.md` an
 
 | Area | What you can do |
 |---|---|
-| **Quick capture** | The `+` button in the top bar works on every page: one field, lands in the **Inkorg** (Inbox). |
-| **Inkorg → Backlog** | Sort at your own pace: move to backlog, or plan straight into this week. Nothing needs a project, area or goal. |
-| **Livsområden** | Optional areas (Hem, Hälsa, Cykling, …). Offered as one-click suggestions, never created for you. |
-| **Projekt** | Projects with tasks, status (active/paused/done/archived) and progress. |
-| **Uppgifter** | Subtasks (one level), priority, estimate, deadline, optional scheduled day/time, notes. |
-| **Sprint** (`/planning`) | A weekly sprint per ISO week: goal, capacity with a friendly warning (never a block), Kanban (drag and drop, or the card menu on mobile), reorder, move to next week, remove. |
-| **Scope history** | Every change to a sprint's scope is logged. The sprint shows *planned from start*, *added during the week*, *removed*, *carried in/out*. The start is automatic (Monday 00:00 local time) with an optional **Starta sprint** button. |
-| **Close sprint** | Per unfinished task: carry to next sprint or back to the backlog. Finished work stays in the closed sprint. |
-| **Idag** (`/today`) | Daily focus without time blocks, plus due/overdue items and suggestions from the sprint. |
-| **Översikt** | Today's focus, current sprint, deadlines and inbox count. |
-| **Mål** (`/goals`) | Year, quarter and month goals, parent and child goals, four ways to measure progress (a value that can go up or down, milestones, linked tasks, or your own estimate), a progress history chart, and links from projects, tasks and habits. |
-| **Vanor** (`/habits`) | Flexible targets (for example 3 per week), one-tap logging, encouraging consistency, optional sprint tasks for the week without duplicates, and contribution to numeric goals. |
-| **Retron** (`/retros`) | Weekly (optional), monthly, quarterly and annual reflections that can be started any time, saved as drafts and completed without AI. Period facts, guided questions, optional well-being, actions and experiments that are followed up in later retros. |
-| **AI coach** (optional, off by default) | In a retro: a coach that reads what you saved, separates *what the data shows* from *tentative interpretations*, asks one follow-up question and can suggest actions. Also: help formulating a goal, sprint suggestions from the backlog, and an on-demand overview insight. The AI **only proposes**; nothing is saved until you press *Godkänn*. Everything works without it. |
+| **Idag** (home) | Daily focus, recurring items to tick off, what is due, suggestions from this week's plan, the week at a glance, your goals, an optional AI insight, and gentle reminders to look back (last month, quarter, year) when it is time. Shortcuts to the rest sit at the bottom. |
+| **Quick capture** | The `+` button works on every page: one field, lands in the **Backlog**. |
+| **Backlog** | All open tasks in one list. Filter by text, category or *recurring only*. Plan into this or next week from the row menu. |
+| **Vecka** (`/planning`) | A weekly plan per ISO week: goal, capacity with a friendly warning (never a block), Kanban (drag and drop, or the card menu on mobile), reorder, move to next week. |
+| **Scope history** | Every change to a week's scope is logged: *planned from start*, *added during the week*, *removed*, *carried in/out*. The start is automatic (Monday 00:00 local time) with an optional **Starta sprint** button. |
+| **Close the week** | Per unfinished task: carry to next week or back to the backlog. Finished work stays in the closed week. |
+| **Uppgifter** | Subtasks (one level), priority, estimate, deadline, optional scheduled day/time, notes. A task can belong to a goal and have a category. |
+| **Mål** (`/goals`) | Year, quarter and month goals. Follow a goal by its **tasks** (progress = done tasks) or by a **number** you update (for example FTP 240 to 280). Progress history chart. |
+| **Återkommande** (`/habits`) | Recurring tasks: "3 per week" puts the tasks into the week's plan by itself; daily and monthly ones are ticked off on Idag. Consistency and streaks, optionally counting towards a goal. |
+| **Kategorier** | Optional free tags (Hälsa, Hem, Jobb) for tasks, goals and recurring items. |
+| **Retron** (`/retros`) | Monthly, quarterly and annual reflections (weekly is optional), saved as drafts. Period facts, guided questions, optional well-being (with a small trend chart), actions and experiments that are followed up in later retros. Suggested on Idag only for periods you actually used the app in. |
+| **AI coach** (optional, off by default) | In a retro: a coach that reads what you saved, separates *what the data shows* from *tentative interpretations*, asks one follow-up question and can suggest actions. Also: help formulating a goal, week suggestions from the backlog, and an on-demand insight. The AI **only proposes**; nothing is saved until you press *Godkänn*. Everything works without it. |
 | **Notiser** (optional, nothing sent by default) | Web Push (PWA) reminders for due tasks, a weekly goal check-in and retro invitations, with a send time and quiet hours. Optional extra channel: ntfy. Texts are generic and never contain your titles or answers. |
-| **Kom igång** | A new owner without goals gets a short onboarding card on the overview: pick an example goal or write your own. |
-| **Trend** | On the retros page, your own optional 1–5 ratings from completed monthly retros as a small chart (gaps stay gaps) with a table for screen readers. |
+| **Kom igång / guide** | A short onboarding card while there are no goals, and a one-page guide (`?` in the top bar) explaining tasks, goals and recurring tasks. |
 | **Inställningar** (`/settings`) | Time zone, AI on/off and coach style (with what is shared), notification categories, this device's push registration, a test notification and recent deliveries. |
 
 Dates and "today" use the owner's time zone (`Europe/Stockholm` by default); weeks start on Monday.

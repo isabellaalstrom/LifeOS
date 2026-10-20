@@ -27,6 +27,15 @@ public class NotificationTests
         return h;
     }
 
+    /// <summary>A harness at the given time whose owner started using the app in early October (so October counts as a used period).</summary>
+    private static async Task<ServiceHarness> WithHistoryAsync(string now)
+    {
+        var h = new ServiceHarness(now: "2026-10-05T10:00:00Z");
+        await h.Tasks.CreateAsync(new TaskInput("Första uppgiften"));
+        h.Clock.Set(now);
+        return h;
+    }
+
     private static async Task<NotificationView> OnlyAsync(ServiceHarness h) => Assert.Single(await h.Notifications.RecentAsync());
 
     // ---------- pure rules ----------
@@ -127,7 +136,7 @@ public class NotificationTests
     [Fact]
     public async Task Retro_reminders_appear_only_in_the_week_after_the_period_and_only_when_enabled()
     {
-        using var h = new ServiceHarness(now: "2026-11-02T10:00:00Z"); // 2 Nov: October has just ended, no retro yet
+        using var h = await WithHistoryAsync("2026-11-02T10:00:00Z"); // 2 Nov: October has just ended, no retro yet
         await h.Prefs.SetNotificationsAsync(TasksOnly with { TasksEnabled = false, RetrosEnabled = true });
 
         Assert.Equal(1, await h.Planner.PlanAsync());
@@ -135,12 +144,12 @@ public class NotificationTests
         Assert.Equal(NotificationCategory.Retros, n.Category);
         Assert.Contains("förra månaden", n.Body);
 
-        var later = new ServiceHarness(now: "2026-11-20T10:00:00Z"); // far outside the window
+        var later = await WithHistoryAsync("2026-11-20T10:00:00Z"); // far outside the window
         await later.Prefs.SetNotificationsAsync(TasksOnly with { TasksEnabled = false, RetrosEnabled = true });
         Assert.Equal(0, await later.Planner.PlanAsync());
         later.Dispose();
 
-        using var done = new ServiceHarness(now: "2026-11-02T10:00:00Z");
+        using var done = await WithHistoryAsync("2026-11-02T10:00:00Z");
         await done.Prefs.SetNotificationsAsync(TasksOnly with { TasksEnabled = false, RetrosEnabled = true });
         await done.Retros.StartOrResumeAsync(RetroType.Monthly, new DateOnly(2026, 10, 1));
         Assert.Equal(0, await done.Planner.PlanAsync()); // already reflecting on October

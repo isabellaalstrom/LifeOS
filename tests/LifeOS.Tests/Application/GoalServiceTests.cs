@@ -153,14 +153,13 @@ public class GoalServiceTests
     }
 
     [Fact]
-    public async Task Linked_task_progress_counts_direct_and_project_tasks_and_ignores_cancelled_and_subtasks()
+    public async Task Linked_task_progress_counts_the_goals_tasks_and_ignores_cancelled_and_subtasks()
     {
         using var h = new ServiceHarness();
         var goal = await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks));
-        var project = await h.Projects.CreateAsync(new ProjectInput("Projekt", GoalId: goal));
 
         var direct = await h.Tasks.CreateAsync(new TaskInput("Direkt", GoalId: goal));
-        var viaProject = await h.Tasks.CreateAsync(new TaskInput("Via projekt", ProjectId: project));
+        var second = await h.Tasks.CreateAsync(new TaskInput("Andra", GoalId: goal));
         var cancelled = await h.Tasks.CreateAsync(new TaskInput("Avbruten", GoalId: goal));
         await h.Tasks.AddSubtaskAsync(direct, "Delmoment");
         await h.Tasks.SetStatusAsync(cancelled, TaskItemStatus.Cancelled);
@@ -171,7 +170,7 @@ public class GoalServiceTests
         await h.Tasks.SetStatusAsync(direct, TaskItemStatus.Done);
         Assert.Equal(50m, (await h.Goals.GetAsync(goal))!.Goal.Percent);
 
-        await h.Tasks.SetStatusAsync(viaProject, TaskItemStatus.Done);
+        await h.Tasks.SetStatusAsync(second, TaskItemStatus.Done);
         var detail = (await h.Goals.GetAsync(goal))!;
         Assert.Equal(100m, detail.Goal.Percent);
         Assert.Equal(2, detail.LinkedTasks.Count);
@@ -179,7 +178,7 @@ public class GoalServiceTests
     }
 
     [Fact]
-    public async Task Moving_a_task_or_project_between_goals_updates_both()
+    public async Task Moving_a_task_between_goals_updates_both()
     {
         using var h = new ServiceHarness();
         var a = await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "A"));
@@ -192,11 +191,6 @@ public class GoalServiceTests
         Assert.Equal(0m, (await h.Goals.GetAsync(a))!.Goal.Percent);
         Assert.Equal(100m, (await h.Goals.GetAsync(b))!.Goal.Percent);
 
-        var project = await h.Projects.CreateAsync(new ProjectInput("P", GoalId: a));
-        await h.Tasks.CreateAsync(new TaskInput("I projektet", ProjectId: project));
-        Assert.Equal(0m, (await h.Goals.GetAsync(a))!.Goal.Percent);
-        await h.Projects.UpdateAsync(project, new ProjectInput("P", GoalId: b));
-        Assert.Equal(50m, (await h.Goals.GetAsync(b))!.Goal.Percent);
     }
 
     [Fact]

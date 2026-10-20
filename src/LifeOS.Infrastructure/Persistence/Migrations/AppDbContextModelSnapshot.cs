@@ -245,9 +245,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("ShowProjectsAndAreas")
-                        .HasColumnType("INTEGER");
-
                     b.Property<long>("UpdatedUtc")
                         .HasColumnType("INTEGER");
 
@@ -955,56 +952,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.ToTable("SprintTasks");
                 });
 
-            modelBuilder.Entity("LifeOS.Domain.Projects.Project", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("CreatedUtc")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("GoalId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("LifeAreaId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("UpdatedUtc")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GoalId");
-
-                    b.HasIndex("LifeAreaId");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("OwnerId", "Status");
-
-                    b.ToTable("Projects");
-                });
-
             modelBuilder.Entity("LifeOS.Domain.Retros.RetroAction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1276,9 +1223,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProjectId")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateOnly?>("ScheduledDate")
                         .HasColumnType("TEXT");
 
@@ -1295,11 +1239,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Triage")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
                     b.Property<long>("UpdatedUtc")
                         .HasColumnType("INTEGER");
 
@@ -1313,22 +1252,18 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ParentTaskId");
 
-                    b.HasIndex("ProjectId");
-
                     b.HasIndex("OwnerId", "DueDate");
 
                     b.HasIndex("OwnerId", "FocusDate");
 
                     b.HasIndex("OwnerId", "GoalId");
 
-                    b.HasIndex("OwnerId", "ProjectId");
-
                     b.HasIndex("OwnerId", "ScheduledDate");
+
+                    b.HasIndex("OwnerId", "Status");
 
                     b.HasIndex("HabitId", "GeneratedForPeriodStart", "GeneratedIndex")
                         .IsUnique();
-
-                    b.HasIndex("OwnerId", "Triage", "Status");
 
                     b.ToTable("Tasks");
                 });
@@ -1604,23 +1539,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.Navigation("Task");
                 });
 
-            modelBuilder.Entity("LifeOS.Domain.Projects.Project", b =>
-                {
-                    b.HasOne("LifeOS.Domain.Goals.Goal", "Goal")
-                        .WithMany()
-                        .HasForeignKey("GoalId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("LifeOS.Domain.LifeAreas.LifeArea", "LifeArea")
-                        .WithMany()
-                        .HasForeignKey("LifeAreaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Goal");
-
-                    b.Navigation("LifeArea");
-                });
-
             modelBuilder.Entity("LifeOS.Domain.Tasks.TaskItem", b =>
                 {
                     b.HasOne("LifeOS.Domain.Goals.Goal", "Goal")
@@ -1643,11 +1561,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentTaskId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("LifeOS.Domain.Projects.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Goal");
 
                     b.Navigation("Habit");
@@ -1655,8 +1568,6 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.Navigation("LifeArea");
 
                     b.Navigation("Parent");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

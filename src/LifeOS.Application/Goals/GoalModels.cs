@@ -56,7 +56,6 @@ public sealed record GoalDetail(
     IReadOnlyList<GoalHistoryPoint> History,
     IReadOnlyList<GoalView> Children,
     IReadOnlyList<TaskView> LinkedTasks,
-    IReadOnlyList<ProjectView> Projects,
     IReadOnlyList<HabitView> Habits);
 
 /// <summary>Counts that, with the goal itself, determine its progress.</summary>

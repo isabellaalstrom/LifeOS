@@ -103,7 +103,6 @@ public class SprintServiceTests
         Assert.Equal(0, board.Stats.Current);
 
         var task = (await h.Tasks.GetAsync(id))!.Task;
-        Assert.Equal(TaskTriage.Backlog, task.Triage);
         Assert.Null(task.PlannedWeekStart);
         Assert.Contains(id, (await h.Tasks.ListPlannableAsync()).Select(t => t.Id));
     }
@@ -155,7 +154,6 @@ public class SprintServiceTests
         await h.Sprints.AddTaskAsync(Week, id);
 
         var task = (await h.Tasks.GetAsync(id))!.Task;
-        Assert.Equal(TaskTriage.Backlog, task.Triage);
         Assert.Equal(Week, task.PlannedWeekStart);
     }
 

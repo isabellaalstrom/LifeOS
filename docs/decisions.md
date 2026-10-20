@@ -110,3 +110,14 @@
 | 62 | Accessibility baseline: skip link (full URL because of `<base href>`), visible focus outlines, reduced-motion support, labelled icon buttons, chart alternatives as text. | Keyboard and screen reader users get the same app |
 | 63 | Circuits re-validate the security stamp every 30 minutes (`RevalidatingAuthenticationStateProvider`). | An open circuit no longer outlives a removed user or a changed stamp |
 | 64 | Security review is kept in `docs/security-review.md` with accepted risks (HTTP on the LAN, no password-change UI yet, no script CSP). | Risks are explicit and revisitable |
+
+# Decisions (Phase 7: simplified structure)
+
+| # | Decision | Why |
+|---|---|---|
+| 65 | Three building blocks: **tasks**, **goals**, **recurring tasks**. Projects are gone: a goal with tasks is the project. Goals are followed by their tasks or by a number; other modes remain in the engine for old data but are no longer offered. Parent goals can no longer be created. | "Goal and project are the same thing" in use; fewer concepts to hold in your head |
+| 66 | The inbox is gone: quick capture lands in the backlog. `Triage` was removed from tasks. | One list instead of two places for unsorted tasks |
+| 67 | A recurring task is the old habit engine under a new name: "N per week" always generates its tasks into the week plan, automatically when Idag or Vecka is opened (`EnsureWeekTasksAsync`, idempotent, silent for closed weeks) and after saving; daily and monthly ones are ticked off on Idag. Backlog can filter on recurring tasks. | The user's mental model ("a habit is a recurring task") without losing streaks, goal contribution or the no-duplicates guarantees |
+| 68 | Life areas are shown as **Kategorier** (free tags). Their fields appear only when some exist. | Same function, plainer word, no clutter |
+| 69 | Navigation: Idag, Vecka, Backlog, Mål, Retron. Idag is the home page (focus, recurring, due, plan suggestions, week, goals, insight, retro reminders) with shortcuts to Återkommande, Kategorier, Retron and the guide. The separate overview and today pages were merged. | The brief's "execute daily" loop starts where you land |
+| 70 | Retro suggestions (last month, quarter, year) show on Idag and only for periods that ended after the owner's first data (task, goal or recurring item). Notifications use the same rule. | A new user is not asked to reflect on a year they were not here |

@@ -16,22 +16,22 @@ public sealed class TaskService(
     public const int MaxTitleLength = 300;
     public const int MaxEstimateMinutes = 10_000;
 
-    /// <summary>Quick capture: no categorization required, lands in the Inbox.</summary>
+    /// <summary>Quick capture: no categorization required, lands in the backlog.</summary>
     public async Task<Guid> CaptureAsync(string title, CancellationToken ct = default)
     {
         title = RequireTitle(title);
         await using var db = dbFactory.Create();
-        var task = new TaskItem { Title = title, Triage = TaskTriage.Inbox };
+        var task = new TaskItem { Title = title };
         db.Tasks.Add(task);
         await db.SaveChangesAsync(ct);
         return task.Id;
     }
 
-    public async Task<Guid> CreateAsync(TaskInput input, TaskTriage triage = TaskTriage.Backlog, CancellationToken ct = default)
+    public async Task<Guid> CreateAsync(TaskInput input, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
         await using var tx = await db.BeginTransactionAsync(ct);
-        var task = new TaskItem { Triage = triage };
+        var task = new TaskItem();
         Apply(task, input);
         db.Tasks.Add(task);
         await db.SaveChangesAsync(ct);
@@ -67,9 +67,8 @@ public sealed class TaskService(
         {
             Title = title,
             ParentTaskId = parent.Id,
-            Triage = TaskTriage.Backlog,
             LifeAreaId = parent.LifeAreaId,
-            ProjectId = parent.ProjectId,
+            GoalId = parent.GoalId,
         };
         db.Tasks.Add(sub);
         await db.SaveChangesAsync(ct);
@@ -119,25 +118,9 @@ public sealed class TaskService(
         await tx.CommitAsync(ct);
     }
 
-    /// <summary>The goals a task counts towards: its own link and its project's.</summary>
-    private static async Task<List<Guid?>> GoalIdsAsync(IAppDbContext db, TaskItem task, CancellationToken ct)
-    {
-        var ids = new List<Guid?> { task.GoalId };
-        if (task.ProjectId is { } projectId)
-        {
-            ids.Add(await db.Projects.Where(p => p.Id == projectId).Select(p => p.GoalId).FirstOrDefaultAsync(ct));
-        }
-
-        return ids;
-    }
-
-    public async Task SetTriageAsync(Guid id, TaskTriage triage, CancellationToken ct = default)
-    {
-        await using var db = dbFactory.Create();
-        var task = await Load(db, id, ct);
-        task.Triage = triage;
-        await db.SaveChangesAsync(ct);
-    }
+    /// <summary>The goal a task counts towards (subtasks never count; their parent does).</summary>
+    private static Task<List<Guid?>> GoalIdsAsync(IAppDbContext db, TaskItem task, CancellationToken ct) =>
+        Task.FromResult(new List<Guid?> { task.GoalId });
 
     /// <summary>Marks (or clears, with null) the task as focus for a user-local day.</summary>
     public async Task SetFocusAsync(Guid id, DateOnly? day, CancellationToken ct = default)
@@ -201,28 +184,11 @@ public sealed class TaskService(
         return new TaskDetail(task, subtasks);
     }
 
-    public async Task<IReadOnlyList<TaskView>> ListInboxAsync(CancellationToken ct = default)
-    {
-        await using var db = dbFactory.Create();
-        return await db.Tasks
-            .Where(t => t.Triage == TaskTriage.Inbox && t.ParentTaskId == null && t.Status != TaskItemStatus.Cancelled)
-            .OrderByDescending(t => t.CreatedUtc)
-            .ToView(db.SprintTasks)
-            .ToListAsync(ct);
-    }
-
-    public async Task<int> InboxCountAsync(CancellationToken ct = default)
-    {
-        await using var db = dbFactory.Create();
-        return await db.Tasks.CountAsync(
-            t => t.Triage == TaskTriage.Inbox && t.ParentTaskId == null && t.Status != TaskItemStatus.Cancelled, ct);
-    }
-
-    /// <summary>Open top-level backlog tasks, newest priority first. Includes tasks already planned (see PlannedWeekStart).</summary>
+    /// <summary>All open top-level tasks, highest priority first. Includes tasks already planned (see PlannedWeekStart).</summary>
     public async Task<IReadOnlyList<TaskView>> ListBacklogAsync(TaskFilter? filter = null, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
-        var query = db.Tasks.Where(t => t.Triage == TaskTriage.Backlog && t.ParentTaskId == null
+        var query = db.Tasks.Where(t => t.ParentTaskId == null
                                         && (t.Status == TaskItemStatus.ToDo || t.Status == TaskItemStatus.InProgress));
         query = ApplyFilter(query, filter);
         return await query
@@ -238,16 +204,6 @@ public sealed class TaskService(
         return backlog.Where(t => t.PlannedWeekStart is null).ToList();
     }
 
-    public async Task<IReadOnlyList<TaskView>> ListForProjectAsync(Guid projectId, CancellationToken ct = default)
-    {
-        await using var db = dbFactory.Create();
-        return await db.Tasks
-            .Where(t => t.ProjectId == projectId && t.ParentTaskId == null && t.Status != TaskItemStatus.Cancelled)
-            .OrderBy(t => t.Status == TaskItemStatus.Done).ThenByDescending(EnumOrdering.PriorityRank).ThenBy(t => t.CreatedUtc)
-            .ToView(db.SprintTasks)
-            .ToListAsync(ct);
-    }
-
     private static IQueryable<TaskItem> ApplyFilter(IQueryable<TaskItem> query, TaskFilter? filter)
     {
         if (filter is null)
@@ -260,9 +216,9 @@ public sealed class TaskService(
             query = query.Where(t => t.LifeAreaId == area);
         }
 
-        if (filter.ProjectId is { } project)
+        if (filter.RecurringOnly)
         {
-            query = query.Where(t => t.ProjectId == project);
+            query = query.Where(t => t.HabitId != null);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Text))
@@ -288,7 +244,6 @@ public sealed class TaskService(
         task.ScheduledDate = input.ScheduledDate;
         task.ScheduledTime = input.ScheduledDate is null ? null : input.ScheduledTime;
         task.LifeAreaId = input.LifeAreaId;
-        task.ProjectId = input.ProjectId;
         task.GoalId = input.GoalId;
     }
 

@@ -16,7 +16,6 @@
 @inject IEnumerable<INotificationSender> Senders
 @inject IUserClock Clock
 @inject IJSRuntime Js
-@inject LifeOS.Web.Services.AppEvents Events
 
 <PageTitle>@L["Nav_Settings"] – @L["App_Title"]</PageTitle>
 
@@ -35,16 +34,6 @@ else
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_TimeZoneHint"]</MudText>
         <MudAutocomplete T="string" Value="_zone" ValueChanged="SaveZoneAsync" SearchFunc="SearchZones" Label="@L["Settings_TimeZone"]"
                          CoerceText="false" CoerceValue="false" ResetValueOnEmptyText="false" Variant="Variant.Outlined" Margin="Margin.Dense" />
-    </section>
-
-    @* ---- simpler menu ---- *@
-    <section class="settings-card tone-card tone-sage">
-        <h2 class="card-title">@L["Settings_Advanced"]</h2>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_AdvancedHint"]</MudText>
-        <MudSwitch T="bool" Value="_showAdvanced" ValueChanged="SaveAdvancedAsync" Color="Color.Primary" Label="@L["Settings_AdvancedShow"]" />
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">
-            <a href="areas">@L["Projects_Areas"]</a>
-        </MudText>
     </section>
 
     @* ---- AI ---- *@
@@ -187,7 +176,6 @@ else
     private AiPreferenceView? _ai;
     private AiAvailability? _availability;
     private string _zone = string.Empty;
-    private bool _showAdvanced;
     private IReadOnlyList<NotificationView> _recent = [];
     private IReadOnlyList<PushSubscriptionView> _devices = [];
     private bool _ntfyAvailable;
@@ -208,7 +196,6 @@ else
         _ai = await Prefs.GetAiAsync();
         _availability = await Coach.GetAvailabilityAsync();
         _zone = await Prefs.GetTimeZoneAsync();
-        _showAdvanced = await Prefs.GetShowProjectsAndAreasAsync();
         _ntfyAvailable = Senders.Any(s => s.Channel == NotificationChannel.Ntfy && s.IsAvailable);
         await LoadListsAsync();
     }
@@ -255,14 +242,6 @@ else
             _zone = zone;
             Snackbar.Add(L["Settings_Saved"], Severity.Success);
         }
-    }
-
-    private async Task SaveAdvancedAsync(bool show)
-    {
-        await Prefs.SetShowProjectsAndAreasAsync(show);
-        _showAdvanced = show;
-        await Events.NotifyPreferencesChangedAsync();
-        Snackbar.Add(L["Settings_Saved"], Severity.Success);
     }
 
     private async Task SaveAiAsync(bool enabled, AiCoachMode mode)

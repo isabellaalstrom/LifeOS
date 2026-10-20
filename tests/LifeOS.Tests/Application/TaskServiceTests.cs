@@ -1,6 +1,5 @@
 using LifeOS.Application.Organize;
 using LifeOS.Application.Planning;
-using LifeOS.Domain.Projects;
 using LifeOS.Domain.Tasks;
 using LifeOS.Tests.Infrastructure;
 
@@ -15,19 +14,16 @@ public class TaskServiceTests
     }
 
     [Fact]
-    public async Task Quick_capture_needs_only_a_title_and_lands_in_the_inbox()
+    public async Task Quick_capture_needs_only_a_title_and_lands_in_the_backlog()
     {
         using var h = new ServiceHarness();
         var id = await h.Tasks.CaptureAsync("  Ring tandläkaren  ");
 
         var task = (await h.Tasks.GetAsync(id))!.Task;
         Assert.Equal("Ring tandläkaren", task.Title);
-        Assert.Equal(TaskTriage.Inbox, task.Triage);
         Assert.Equal(TaskItemStatus.ToDo, task.Status);
         Assert.Null(task.LifeAreaId);
-        Assert.Null(task.ProjectId);
-        Assert.Equal(1, await h.Tasks.InboxCountAsync());
-        Assert.Single(await h.Tasks.ListInboxAsync());
+        Assert.Equal(id, Assert.Single(await h.Tasks.ListBacklogAsync()).Id);
     }
 
     [Fact]
@@ -41,22 +37,10 @@ public class TaskServiceTests
     }
 
     [Fact]
-    public async Task Triage_moves_a_task_from_inbox_to_backlog()
-    {
-        using var h = new ServiceHarness();
-        var id = await h.Tasks.CaptureAsync("Sortera mig");
-        await h.Tasks.SetTriageAsync(id, TaskTriage.Backlog);
-
-        Assert.Empty(await h.Tasks.ListInboxAsync());
-        Assert.Equal(id, Assert.Single(await h.Tasks.ListBacklogAsync()).Id);
-    }
-
-    [Fact]
-    public async Task Tasks_do_not_need_a_project_or_goal_but_can_have_area_project_and_dates()
+    public async Task Tasks_do_not_need_a_goal_but_can_have_area_and_dates()
     {
         using var h = new ServiceHarness();
         var area = await h.Areas.CreateAsync("Cykling");
-        var project = await h.Projects.CreateAsync(new ProjectInput("Sommarlopp", LifeAreaId: area));
         var id = await h.Tasks.CreateAsync(new TaskInput(
             "Långpass",
             Notes: "Zon 2",
@@ -65,15 +49,12 @@ public class TaskServiceTests
             DueDate: new DateOnly(2026, 10, 20),
             ScheduledDate: new DateOnly(2026, 10, 18),
             ScheduledTime: new TimeOnly(9, 30),
-            LifeAreaId: area,
-            ProjectId: project));
+            LifeAreaId: area));
 
         var task = (await h.Tasks.GetAsync(id))!.Task;
         Assert.Equal("Cykling", task.LifeAreaName);
-        Assert.Equal("Sommarlopp", task.ProjectName);
         Assert.Equal(TaskPriority.High, task.Priority);
         Assert.Equal(new TimeOnly(9, 30), task.ScheduledTime);
-        Assert.Equal(TaskTriage.Backlog, task.Triage);
     }
 
     [Fact]
@@ -131,16 +112,14 @@ public class TaskServiceTests
         using var h = new ServiceHarness();
         var area = await h.Areas.CreateAsync("Hälsa");
         var other = await h.Areas.CreateAsync("Hem");
-        var project = await h.Projects.CreateAsync(new ProjectInput("Löpning"));
-        var run = await h.Tasks.CreateAsync(new TaskInput("Springa 5 km", LifeAreaId: area, ProjectId: project));
+        var run = await h.Tasks.CreateAsync(new TaskInput("Springa 5 km", LifeAreaId: area));
         await h.Tasks.CreateAsync(new TaskInput("Städa köket", LifeAreaId: other));
         var done = await h.NewPlannableTaskAsync("Redan klar");
         await h.Tasks.SetStatusAsync(done, TaskItemStatus.Done);
-        await h.Tasks.CaptureAsync("Ligger i inkorgen");
+        await h.Tasks.CaptureAsync("Nyss fångad");
 
-        Assert.Equal(2, (await h.Tasks.ListBacklogAsync()).Count);
+        Assert.Equal(3, (await h.Tasks.ListBacklogAsync()).Count);
         Assert.Equal(run, Assert.Single(await h.Tasks.ListBacklogAsync(new TaskFilter(LifeAreaId: area))).Id);
-        Assert.Equal(run, Assert.Single(await h.Tasks.ListBacklogAsync(new TaskFilter(ProjectId: project))).Id);
         Assert.Equal(run, Assert.Single(await h.Tasks.ListBacklogAsync(new TaskFilter(Text: "spring"))).Id);
     }
 
@@ -191,26 +170,6 @@ public class TaskServiceTests
         using var h = new ServiceHarness();
         await AssertCodeAsync(PlanningException.Codes.NotFound, () => h.Tasks.SetStatusAsync(Guid.NewGuid(), TaskItemStatus.Done));
         Assert.Null(await h.Tasks.GetAsync(Guid.NewGuid()));
-    }
-
-    [Fact]
-    public async Task Projects_count_open_and_done_tasks_and_hide_closed_projects_by_default()
-    {
-        using var h = new ServiceHarness();
-        var project = await h.Projects.CreateAsync(new ProjectInput("  Köksrenovering  ", "Beskrivning"));
-        var a = await h.Tasks.CreateAsync(new TaskInput("A", ProjectId: project));
-        await h.Tasks.CreateAsync(new TaskInput("B", ProjectId: project));
-        await h.Tasks.SetStatusAsync(a, TaskItemStatus.Done);
-
-        var view = (await h.Projects.GetAsync(project))!;
-        Assert.Equal("Köksrenovering", view.Name);
-        Assert.Equal(1, view.OpenTasks);
-        Assert.Equal(1, view.DoneTasks);
-
-        await h.Projects.SetStatusAsync(project, ProjectStatus.Completed);
-        Assert.Empty(await h.Projects.ListAsync());
-        Assert.Single(await h.Projects.ListAsync(includeClosed: true));
-        await AssertCodeAsync(PlanningException.Codes.NameRequired, () => h.Projects.CreateAsync(new ProjectInput(" ")));
     }
 
     [Fact]

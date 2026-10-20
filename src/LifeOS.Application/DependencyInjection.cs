@@ -15,7 +15,6 @@ public static class DependencyInjection
         services.AddScoped<GoalProgressRecorder>();
         services.AddScoped<HabitCompletionRecorder>();
         services.AddScoped<LifeAreaService>();
-        services.AddScoped<ProjectService>();
         services.AddScoped<TaskService>();
         services.AddScoped<SprintService>();
         services.AddScoped<TodayService>();

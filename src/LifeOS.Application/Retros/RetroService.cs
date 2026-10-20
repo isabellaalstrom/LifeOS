@@ -3,6 +3,7 @@ using LifeOS.Application.Abstractions;
 using LifeOS.Application.Organize;
 using LifeOS.Application.Planning;
 using LifeOS.Domain.Retros;
+using LifeOS.Domain.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace LifeOS.Application.Retros;
@@ -36,10 +37,30 @@ public sealed class RetroService(IAppDbContextFactory dbFactory, IUserClock cloc
         var today = clock.Today;
         await using var db = dbFactory.Create();
         var existing = await db.Retrospectives.Select(r => new { r.Type, r.PeriodStart }).ToListAsync(ct);
+
+        // Only periods the owner was actually using the app in: nothing is suggested before the first piece of data exists.
+        var firstUtc = new[]
+        {
+            await db.Tasks.OrderBy(t => t.CreatedUtc).Select(t => (DateTimeOffset?)t.CreatedUtc).FirstOrDefaultAsync(ct),
+            await db.Goals.OrderBy(g => g.CreatedUtc).Select(g => (DateTimeOffset?)g.CreatedUtc).FirstOrDefaultAsync(ct),
+            await db.Habits.OrderBy(h => h.CreatedUtc).Select(h => (DateTimeOffset?)h.CreatedUtc).FirstOrDefaultAsync(ct),
+        }.Where(d => d is not null).Select(d => d!.Value).DefaultIfEmpty().Min();
+        if (firstUtc == default)
+        {
+            return [];
+        }
+
+        var firstDay = PeriodCalculator.LocalDate(firstUtc, clock.Zone);
+
         var suggestions = new List<RetroSuggestion>();
         foreach (var type in new[] { RetroType.Monthly, RetroType.Quarterly, RetroType.Annual })
         {
             var last = RetroPeriods.Previous(type, RetroPeriods.Start(type, today));
+            if (RetroPeriods.EndExclusive(type, last) <= firstDay)
+            {
+                continue;
+            }
+
             if (!existing.Any(e => e.Type == type && e.PeriodStart == last))
             {
                 suggestions.Add(new RetroSuggestion(type, last));

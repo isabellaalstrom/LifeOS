@@ -35,7 +35,7 @@
                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Ai_MilestoneIdeas"]: @string.Join(" · ", _milestoneIdeas)</MudText>
                 }
             }
-            <MudTextField @bind-Value="_description" Label="@L["Project_Description"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="4000" Class="mb-2" />
+            <MudTextField @bind-Value="_description" Label="@L["Field_Description"]" Lines="2" Sizing="InputSizing.Auto" MaxLength="4000" Class="mb-2" />
 
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="5">
@@ -66,7 +66,7 @@
             </MudGrid>
 
             <MudSelect T="GoalProgressMode" @bind-Value="_mode" Label="@L["Goal_Mode"]" Class="mt-3" HelperText="@L["ModeHint_" + _mode]">
-                @foreach (var m in Enum.GetValues<GoalProgressMode>())
+                @foreach (var m in ChoosableModes)
                 {
                     <MudSelectItem T="GoalProgressMode" Value="@m">@L["Mode_" + m]</MudSelectItem>
                 }
@@ -115,7 +115,7 @@
     private DateOnly _periodDate;
     private Guid? _areaId;
     private Guid? _parentId;
-    private GoalProgressMode _mode = GoalProgressMode.Manual;
+    private GoalProgressMode _mode = GoalProgressMode.LinkedTasks;
     private decimal? _start;
     private decimal? _target;
     private decimal? _current;
@@ -124,6 +124,11 @@
     private bool _aiBusy;
     private string? _aiNotice;
     private IReadOnlyList<string> _milestoneIdeas = [];
+
+    /// <summary>Two simple ways to follow a goal. (Older goals may use others, which keep working.)</summary>
+    private IEnumerable<GoalProgressMode> ChoosableModes =>
+        new[] { GoalProgressMode.LinkedTasks, GoalProgressMode.Numeric }
+            .Concat(_mode is GoalProgressMode.Milestones or GoalProgressMode.Manual ? [_mode] : []);
 
     private DateOnly PeriodStart => GoalPeriods.Start(_horizon, _periodDate);
 
@@ -189,7 +194,7 @@
         {
             _title = s.Title;
             _description = s.Description ?? _description;
-            _mode = s.Mode == GoalProgressMode.Milestones || s.Mode == GoalProgressMode.LinkedTasks ? GoalProgressMode.Manual : s.Mode;
+            _mode = s.Mode == GoalProgressMode.Numeric ? GoalProgressMode.Numeric : GoalProgressMode.LinkedTasks;
             _start = s.Start;
             _target = s.Target;
             _unit = s.Unit;

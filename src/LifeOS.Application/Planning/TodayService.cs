@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LifeOS.Application.Planning;
 
 /// <summary>Daily focus and the overview dashboard. Read-only; "today" is the user's local date.</summary>
-public sealed class TodayService(IAppDbContextFactory dbFactory, IUserClock clock, SprintService sprints, TaskService tasks)
+public sealed class TodayService(IAppDbContextFactory dbFactory, IUserClock clock, SprintService sprints)
 {
     public const int UpcomingDeadlineDays = 14;
 
@@ -81,7 +81,6 @@ public sealed class TodayService(IAppDbContextFactory dbFactory, IUserClock cloc
             todayView.Focus,
             summary,
             deadlines,
-            await tasks.InboxCountAsync(ct),
             await sprints.ListPastSprintsToCloseAsync(ct));
     }
 }

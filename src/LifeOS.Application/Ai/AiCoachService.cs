@@ -162,10 +162,10 @@ public sealed class AiCoachService(
         var prefs = await preferences.GetAiAsync(ct);
 
         const string schema =
-            "Schema: {\"title\":\"..\",\"description\":\"..\",\"mode\":\"Numeric\"|\"Milestones\"|\"LinkedTasks\"|\"Manual\"," +
+            "Schema: {\"title\":\"..\",\"description\":\"..\",\"mode\":\"Numeric\"|\"LinkedTasks\"," +
             "\"start\":number|null,\"target\":number|null,\"unit\":\"..\"|null,\"milestones\":[\"..\"]}. " +
             "Gör idén till ett tydligt, mätbart mål. Använd Numeric bara om det finns ett naturligt mätvärde (då start, target, unit). " +
-            "milestones: högst 5 steg, bara om de behövs.";
+            "Använd annars LinkedTasks (framsteg räknas från målets uppgifter). milestones: högst 5 konkreta första uppgifter, bara om de behövs.";
 
         var user = $"Horisont: {horizon}. Personens idé: {roughIdea}";
         var (status, doc) = await CallAsync(AiFeature.GoalFormulation, prefs.Mode, schema, [new("user", user)], 600, ct);
@@ -183,12 +183,12 @@ public sealed class AiCoachService(
                 return AiResult<GoalSuggestion>.Fail(AiStatus.Failed);
             }
 
-            var mode = Enum.TryParse<GoalProgressMode>(Text(root, "mode", 20), true, out var m) ? m : GoalProgressMode.Manual;
+            var mode = string.Equals(Text(root, "mode", 20), "Numeric", StringComparison.OrdinalIgnoreCase) ? GoalProgressMode.Numeric : GoalProgressMode.LinkedTasks;
             var start = Number(root, "start");
             var target = Number(root, "target");
             if (mode == GoalProgressMode.Numeric && (start is null || target is null))
             {
-                mode = GoalProgressMode.Manual;
+                mode = GoalProgressMode.LinkedTasks;
             }
 
             return AiResult<GoalSuggestion>.Success(new GoalSuggestion(

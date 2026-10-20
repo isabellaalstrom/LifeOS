@@ -10,8 +10,7 @@ public sealed record HabitInput(
     Guid? LifeAreaId = null,
     Guid? GoalId = null,
     decimal GoalIncrement = 1m,
-    int? EstimateMinutes = null,
-    bool GenerateSprintTasks = false);
+    int? EstimateMinutes = null);
 
 public sealed record HabitView(
     Guid Id,

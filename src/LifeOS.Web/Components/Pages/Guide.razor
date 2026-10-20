@@ -8,24 +8,27 @@
 <MudText Color="Color.Secondary" Class="mb-3">@L["Guide_Intro"]</MudText>
 
 <section class="tone-card tone-sage my-3">
-    <h2 class="card-title">@L["Guide_Ladder"]</h2>
-    <ol class="guide-ladder">
-        <li><strong>@L["Nav_Goals"]</strong> – @L["Guide_Goals"]</li>
-        <li><strong>@L["Nav_Projects"]</strong> – @L["Guide_Projects"]</li>
-        <li><strong>@L["Guide_Tasks"]</strong> – @L["Guide_TasksText"]</li>
-        <li><strong>@L["Nav_Planning"]</strong> – @L["Guide_Week"]</li>
-    </ol>
-    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Guide_LadderNote"]</MudText>
+    <h2 class="card-title">@L["Guide_Blocks"]</h2>
+    <dl class="guide-words">
+        <dt>@L["Guide_Task"]</dt><dd>@L["Guide_TaskText"]</dd>
+        <dt>@L["Guide_Goal"]</dt><dd>@L["Guide_GoalText"]</dd>
+        <dt>@L["Guide_Recurring"]</dt><dd>@L["Guide_RecurringText"]</dd>
+    </dl>
+</section>
+
+<section class="tone-card tone-sky my-3">
+    <h2 class="card-title">@L["Guide_Views"]</h2>
+    <ul class="guide-list">
+        <li>@L["Guide_ViewToday"]</li>
+        <li>@L["Guide_ViewWeek"]</li>
+        <li>@L["Guide_ViewBacklog"]</li>
+    </ul>
 </section>
 
 <section class="tone-card tone-lavender my-3">
-    <h2 class="card-title">@L["Guide_Words"]</h2>
-    <dl class="guide-words">
-        <dt>@L["Guide_Milestone"]</dt><dd>@L["Guide_MilestoneText"]</dd>
-        <dt>@L["Nav_Habits"]</dt><dd>@L["Guide_HabitText"]</dd>
-        <dt>@L["Guide_Area"]</dt><dd>@L["Guide_AreaText"]</dd>
-        <dt>@L["Nav_Retros"]</dt><dd>@L["Guide_RetroText"]</dd>
-    </dl>
+    <h2 class="card-title">@L["Guide_Extras"]</h2>
+    <MudText Class="mb-1">@L["Guide_CategoriesText"]</MudText>
+    <MudText>@L["Guide_RetroText"]</MudText>
 </section>
 
 <section class="tone-card tone-butter my-3">

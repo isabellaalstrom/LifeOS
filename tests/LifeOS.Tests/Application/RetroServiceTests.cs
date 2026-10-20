@@ -381,7 +381,6 @@ public class RetroServiceTests
         var created = (await h.Tasks.GetAsync(task))!.Task;
         Assert.Equal("Boka service", created.Title);
         Assert.Equal(new DateOnly(2026, 11, 5), created.DueDate);
-        Assert.Equal(TaskTriage.Backlog, created.Triage);
         Assert.Equal(task, Assert.Single((await h.Retros.GetAsync(retro))!.Actions).TaskItemId);
     }
 
@@ -419,9 +418,26 @@ public class RetroServiceTests
     }
 
     [Fact]
+    public async Task Nothing_is_suggested_for_periods_before_the_owner_had_any_data()
+    {
+        using var h = new ServiceHarness(); // 14 Oct 2026
+        Assert.Empty(await h.Retros.SuggestionsAsync());                      // brand new: no data at all
+
+        await h.Tasks.CreateAsync(new LifeOS.Application.Organize.TaskInput("Första uppgiften"));
+        Assert.Empty(await h.Retros.SuggestionsAsync());                      // started this month: last month/quarter/year were before that
+
+        h.Clock.Set("2026-11-02T10:00:00Z");
+        Assert.Equal([(RetroType.Monthly, new DateOnly(2026, 10, 1))],
+            (await h.Retros.SuggestionsAsync()).Select(s => (s.Type, s.PeriodStart)));
+    }
+
+    [Fact]
     public async Task Suggestions_cover_the_latest_ended_month_quarter_and_year_and_never_weeks()
     {
         using var h = new ServiceHarness(); // 14 Oct 2026
+        h.Clock.Set("2025-03-10T10:00:00Z");
+        await h.Tasks.CreateAsync(new LifeOS.Application.Organize.TaskInput("Gammal uppgift")); // the owner has been here since March 2025
+        h.Clock.Set(ServiceHarness.Wednesday);
         var suggestions = await h.Retros.SuggestionsAsync();
 
         Assert.Equal(

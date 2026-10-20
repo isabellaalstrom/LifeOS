@@ -187,7 +187,6 @@ public sealed class HabitService(
                     db.Tasks.Add(new TaskItem
                     {
                         Title = $"{habit.Name} ({nextIndex}/{habit.TargetCount})",
-                        Triage = TaskTriage.Backlog,
                         EstimateMinutes = habit.EstimateMinutes,
                         LifeAreaId = habit.LifeAreaId,
                         GoalId = habit.GoalId,
@@ -229,6 +228,22 @@ public sealed class HabitService(
         }
 
         return new GenerateHabitTasksResult(created, planned);
+    }
+
+    /// <summary>
+    /// Makes sure the week has its tasks from recurring items. Called when the owner opens Today or the week plan, so it
+    /// happens by itself. Quietly does nothing for a closed week, and is safe to repeat.
+    /// </summary>
+    public async Task EnsureWeekTasksAsync(DateOnly anyDateInWeek, CancellationToken ct = default)
+    {
+        try
+        {
+            await GenerateWeekTasksAsync(anyDateInWeek, ct);
+        }
+        catch (PlanningException ex) when (ex.Code == PlanningException.Codes.SprintClosed)
+        {
+            // A closed week is history; nothing to add.
+        }
     }
 
     private async Task<IReadOnlyList<HabitView>> BuildViewsAsync(IAppDbContext db, List<Habit> habits, CancellationToken ct)
@@ -287,8 +302,8 @@ public sealed class HabitService(
         habit.GoalId = input.GoalId;
         habit.GoalIncrement = input.GoalIncrement;
         habit.EstimateMinutes = input.EstimateMinutes;
-        // Only weekly habits can generate tasks: the sprint is a week.
-        habit.GenerateSprintTasks = input.GenerateSprintTasks && input.Period == HabitPeriod.Week;
+        // "N times per week" always becomes tasks in the week plan; daily and monthly ones are ticked off on Today.
+        habit.GenerateSprintTasks = input.Period == HabitPeriod.Week;
     }
 
     private static async Task<Habit> Load(IAppDbContext db, Guid id, CancellationToken ct) =>

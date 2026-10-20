@@ -199,17 +199,6 @@ else if (_detail is not null)
         </div>
     }
 
-    @if (_detail.Projects.Count > 0)
-    {
-        <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Goal_Projects"]</MudText>
-        <div class="task-meta">
-            @foreach (var p in _detail.Projects)
-            {
-                <MudChip T="string" Icon="@Icons.Material.Filled.Folder" Href="@($"projects/{p.Id}")">@p.Name</MudChip>
-            }
-        </div>
-    }
-
     @if (_detail.Habits.Count > 0)
     {
         <MudText Typo="Typo.h6" Class="mt-4 mb-1">@L["Goal_Habits"]</MudText>

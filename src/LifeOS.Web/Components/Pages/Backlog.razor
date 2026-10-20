@@ -8,11 +8,9 @@
 @inject TaskService Tasks
 @inject SprintService Sprints
 @inject LifeAreaService Areas
-@inject ProjectService Projects
 @inject IUserClock Clock
 
 <PageTitle>@L["Backlog_Title"] – @L["App_Title"]</PageTitle>
-<PlanningTabs />
 
 <div class="d-flex align-center flex-wrap gap-2 mb-3">
     <MudText Typo="Typo.h5" Tag="@("h1")">@L["Backlog_Title"]</MudText>
@@ -28,6 +26,8 @@
                       DebounceInterval="250" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                       Variant="Variant.Outlined" Margin="Margin.Dense" />
     </MudItem>
+    @if (_areas.Count > 0)
+    {
     <MudItem xs="6" md="3">
         <MudSelect T="Guid?" Value="_areaId" ValueChanged="AreaChangedAsync" Label="@L["Task_Area"]" Clearable="true"
                    Variant="Variant.Outlined" Margin="Margin.Dense">
@@ -37,14 +37,9 @@
             }
         </MudSelect>
     </MudItem>
+    }
     <MudItem xs="6" md="4">
-        <MudSelect T="Guid?" Value="_projectId" ValueChanged="ProjectChangedAsync" Label="@L["Task_Project"]" Clearable="true"
-                   Variant="Variant.Outlined" Margin="Margin.Dense">
-            @foreach (var p in _projects)
-            {
-                <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.Name</MudSelectItem>
-            }
-        </MudSelect>
+        <MudSwitch T="bool" Value="_recurringOnly" ValueChanged="RecurringChangedAsync" Color="Color.Primary" Label="@L["Backlog_RecurringOnly"]" />
     </MudItem>
 </MudGrid>
 
@@ -77,20 +72,18 @@ else
 @code {
     private IReadOnlyList<TaskView>? _items;
     private IReadOnlyList<LifeAreaView> _areas = [];
-    private IReadOnlyList<ProjectView> _projects = [];
     private string? _text;
     private Guid? _areaId;
-    private Guid? _projectId;
+    private bool _recurringOnly;
 
     protected override async Task OnInitializedAsync()
     {
         _areas = await Areas.ListAsync();
-        _projects = await Projects.ListAsync();
         await ReloadAsync();
     }
 
     private async Task ReloadAsync() =>
-        _items = await Tasks.ListBacklogAsync(new TaskFilter(_areaId, _projectId, _text));
+        _items = await Tasks.ListBacklogAsync(new TaskFilter(_areaId, _text, _recurringOnly));
 
     private async Task TextChangedAsync(string? text)
     {
@@ -104,9 +97,9 @@ else
         await ReloadAsync();
     }
 
-    private async Task ProjectChangedAsync(Guid? id)
+    private async Task RecurringChangedAsync(bool value)
     {
-        _projectId = id;
+        _recurringOnly = value;
         await ReloadAsync();
     }
 

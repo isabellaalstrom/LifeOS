@@ -2,16 +2,8 @@ using LifeOS.Domain.Common;
 using LifeOS.Domain.Goals;
 using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
-using LifeOS.Domain.Projects;
 
 namespace LifeOS.Domain.Tasks;
-
-/// <summary>Where an unplanned task lives. Planning into a sprint is separate (SprintTask).</summary>
-public enum TaskTriage
-{
-    Inbox,
-    Backlog,
-}
 
 public enum TaskItemStatus
 {
@@ -35,8 +27,6 @@ public class TaskItem : OwnedEntity
 
     public string? Notes { get; set; }
 
-    public TaskTriage Triage { get; set; } = TaskTriage.Inbox;
-
     public TaskItemStatus Status { get; set; } = TaskItemStatus.ToDo;
 
     public TaskPriority Priority { get; set; } = TaskPriority.None;
@@ -56,10 +46,6 @@ public class TaskItem : OwnedEntity
     public Guid? LifeAreaId { get; set; }
 
     public LifeArea? LifeArea { get; set; }
-
-    public Guid? ProjectId { get; set; }
-
-    public Project? Project { get; set; }
 
     /// <summary>Set for subtasks. Only one level of nesting is allowed.</summary>
     public Guid? ParentTaskId { get; set; }

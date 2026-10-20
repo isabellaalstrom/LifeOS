@@ -1062,3 +1062,5 @@ a {
 .guide-ladder li { margin: 6px 0; }
 .guide-words dt { font-weight: 600; margin-top: 8px; }
 .guide-words dd { margin: 2px 0 0; color: var(--lo-ink-2); }
+.guide-list { margin: 6px 0; padding-left: 22px; } .guide-list li { margin: 6px 0; }
+.shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 8px; }

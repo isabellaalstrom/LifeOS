@@ -130,10 +130,9 @@ public sealed class ServiceHarness : IDisposable
         Areas = new LifeAreaService(Factory);
         GoalRecorder = new GoalProgressRecorder(Clock);
         HabitRecorder = new HabitCompletionRecorder(Clock, GoalRecorder);
-        Projects = new ProjectService(Factory, GoalRecorder);
         Tasks = new TaskService(Factory, Clock, GoalRecorder, HabitRecorder);
         Sprints = new SprintService(Factory, Clock);
-        Today = new TodayService(Factory, Clock, Sprints, Tasks);
+        Today = new TodayService(Factory, Clock, Sprints);
         Goals = new GoalService(Factory, Clock, GoalRecorder);
         Habits = new HabitService(Factory, Clock, HabitRecorder, Tasks, Sprints);
         RetroStats = new RetroStatsService(Factory, Clock, Sprints);
@@ -165,8 +164,6 @@ public sealed class ServiceHarness : IDisposable
     public TestDbContextFactory Factory { get; }
 
     public LifeAreaService Areas { get; }
-
-    public ProjectService Projects { get; }
 
     public TaskService Tasks { get; }
 

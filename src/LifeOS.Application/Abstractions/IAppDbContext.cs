@@ -4,7 +4,6 @@ using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Notifications;
 using LifeOS.Domain.Planning;
-using LifeOS.Domain.Projects;
 using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +19,6 @@ public interface IAppDbContext : IAsyncDisposable
 {
     DbSet<LifeArea> LifeAreas { get; }
 
-    DbSet<Project> Projects { get; }
 
     DbSet<TaskItem> Tasks { get; }
 

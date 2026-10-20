@@ -21,8 +21,8 @@ public class HabitServiceTests
         Assert.Equal(code, ex.Code);
     }
 
-    private static HabitInput Weekly(string name = "Cykla", int target = 3, bool generate = false, Guid? goal = null, decimal increment = 1m) =>
-        new(name, HabitPeriod.Week, target, GoalId: goal, GoalIncrement: increment, GenerateSprintTasks: generate, EstimateMinutes: 60);
+    private static HabitInput Weekly(string name = "Cykla", int target = 3, Guid? goal = null, decimal increment = 1m) =>
+        new(name, HabitPeriod.Week, target, GoalId: goal, GoalIncrement: increment, EstimateMinutes: 60);
 
     [Fact]
     public async Task Habit_input_is_validated()
@@ -36,12 +36,12 @@ public class HabitServiceTests
     }
 
     [Fact]
-    public async Task Only_weekly_habits_can_generate_sprint_tasks()
+    public async Task Only_weekly_habits_generate_week_tasks()
     {
         using var h = new ServiceHarness();
-        var daily = await h.Habits.CreateAsync(new HabitInput("Stretcha", HabitPeriod.Day, 1, GenerateSprintTasks: true));
-        var monthly = await h.Habits.CreateAsync(new HabitInput("Säkerhetskopiera", HabitPeriod.Month, 1, GenerateSprintTasks: true));
-        var weekly = await h.Habits.CreateAsync(Weekly(generate: true));
+        var daily = await h.Habits.CreateAsync(new HabitInput("Stretcha", HabitPeriod.Day, 1));
+        var monthly = await h.Habits.CreateAsync(new HabitInput("Säkerhetskopiera", HabitPeriod.Month, 1));
+        var weekly = await h.Habits.CreateAsync(Weekly());
 
         Assert.False((await h.Habits.GetAsync(daily))!.Habit.GenerateSprintTasks);
         Assert.False((await h.Habits.GetAsync(monthly))!.Habit.GenerateSprintTasks);
@@ -132,7 +132,7 @@ public class HabitServiceTests
     {
         using var h = new ServiceHarness();
         var area = await h.Areas.CreateAsync("Cykling");
-        var habit = await h.Habits.CreateAsync(new HabitInput("Cykla", HabitPeriod.Week, 3, LifeAreaId: area, EstimateMinutes: 90, GenerateSprintTasks: true));
+        var habit = await h.Habits.CreateAsync(new HabitInput("Cykla", HabitPeriod.Week, 3, LifeAreaId: area, EstimateMinutes: 90));
 
         var result = await h.Habits.GenerateWeekTasksAsync(Wednesday);
         Assert.Equal((3, 3), (result.Created, result.AddedToSprint));
@@ -152,7 +152,7 @@ public class HabitServiceTests
     public async Task Generating_twice_never_creates_duplicates()
     {
         using var h = new ServiceHarness();
-        await h.Habits.CreateAsync(Weekly(generate: true));
+        await h.Habits.CreateAsync(Weekly());
 
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
         var second = await h.Habits.GenerateWeekTasksAsync(Wednesday);
@@ -167,7 +167,7 @@ public class HabitServiceTests
     public async Task Completions_already_logged_this_week_reduce_how_many_tasks_are_generated()
     {
         using var h = new ServiceHarness();
-        var id = await h.Habits.CreateAsync(Weekly(generate: true));
+        var id = await h.Habits.CreateAsync(Weekly());
         await h.Habits.LogAsync(id); // one ride already done this week
 
         var result = await h.Habits.GenerateWeekTasksAsync(Wednesday);
@@ -180,7 +180,7 @@ public class HabitServiceTests
     public async Task A_failed_run_is_repaired_by_the_next_one_and_each_week_gets_its_own_tasks()
     {
         using var h = new ServiceHarness();
-        await h.Habits.CreateAsync(Weekly(target: 2, generate: true));
+        await h.Habits.CreateAsync(Weekly(target: 2));
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
 
         // Simulate an interrupted run: one generated task was taken out of the sprint again.
@@ -200,7 +200,7 @@ public class HabitServiceTests
     public async Task Generation_is_refused_for_a_closed_sprint()
     {
         using var h = new ServiceHarness();
-        await h.Habits.CreateAsync(Weekly(generate: true));
+        await h.Habits.CreateAsync(Weekly());
         var task = await h.NewPlannableTaskAsync("Något");
         await h.Sprints.AddTaskAsync(Week, task);
         await h.Sprints.CloseAsync(Week, CarryDecision.Backlog);
@@ -212,7 +212,7 @@ public class HabitServiceTests
     public async Task Finishing_a_generated_task_records_exactly_one_completion_even_when_toggled_repeatedly()
     {
         using var h = new ServiceHarness();
-        var habit = await h.Habits.CreateAsync(Weekly(generate: true));
+        var habit = await h.Habits.CreateAsync(Weekly());
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
         var task = (await h.Sprints.GetBoardAsync(Week)).ActiveTasks.First().Task.Id;
 
@@ -235,7 +235,7 @@ public class HabitServiceTests
         using var h = new ServiceHarness();
         var goal = await h.Goals.CreateAsync(new GoalInput("Pass", GoalHorizon.Year, new DateOnly(2026, 1, 1), GoalProgressMode.Numeric,
             StartValue: 0, TargetValue: 10));
-        var habit = await h.Habits.CreateAsync(Weekly(generate: true, goal: goal));
+        var habit = await h.Habits.CreateAsync(Weekly(goal: goal));
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
         var task = (await h.Sprints.GetBoardAsync(Week)).ActiveTasks.First().Task.Id;
 
@@ -252,7 +252,7 @@ public class HabitServiceTests
     public async Task Logging_a_habit_that_has_an_open_generated_task_finishes_that_task_instead_of_counting_twice()
     {
         using var h = new ServiceHarness();
-        var habit = await h.Habits.CreateAsync(Weekly(generate: true));
+        var habit = await h.Habits.CreateAsync(Weekly());
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
 
         await h.Habits.LogAsync(habit);
@@ -275,7 +275,7 @@ public class HabitServiceTests
     {
         using var h = new ServiceHarness();
         var goal = await h.Goals.CreateAsync(new GoalInput("Mål", GoalHorizon.Quarter, new DateOnly(2026, 10, 1), GoalProgressMode.LinkedTasks));
-        await h.Habits.CreateAsync(Weekly(target: 2, generate: true, goal: goal));
+        await h.Habits.CreateAsync(Weekly(target: 2, goal: goal));
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
 
         var detail = (await h.Goals.GetAsync(goal))!;
@@ -289,7 +289,7 @@ public class HabitServiceTests
     public async Task The_database_itself_refuses_duplicate_generated_tasks_and_duplicate_completions()
     {
         using var h = new ServiceHarness();
-        var habit = await h.Habits.CreateAsync(Weekly(generate: true));
+        var habit = await h.Habits.CreateAsync(Weekly());
         await h.Habits.GenerateWeekTasksAsync(Wednesday);
         var task = (await h.Sprints.GetBoardAsync(Week)).ActiveTasks.First().Task.Id;
         await h.Tasks.SetStatusAsync(task, TaskItemStatus.Done);
@@ -330,5 +330,48 @@ public class HabitServiceTests
         await h.Tasks.CreateAsync(new TaskInput("Medel", Priority: TaskPriority.Medium));
 
         Assert.Equal(["Hög", "Medel", "Låg", "Ingen"], (await h.Tasks.ListBacklogAsync()).Select(t => t.Title));
+    }
+
+    [Fact]
+    public async Task Ensuring_the_week_adds_tasks_for_weekly_items_only_and_never_duplicates()
+    {
+        using var h = new ServiceHarness();
+        await h.Habits.CreateAsync(Weekly(target: 2));
+        await h.Habits.CreateAsync(new HabitInput("Stretcha", HabitPeriod.Day, 1));
+
+        await h.Habits.EnsureWeekTasksAsync(Wednesday);
+        await h.Habits.EnsureWeekTasksAsync(Wednesday);
+
+        var board = await h.Sprints.GetBoardAsync(Week);
+        Assert.Equal(["Cykla (1/2)", "Cykla (2/2)"], board.ActiveTasks.Select(t => t.Task.Title));
+        Assert.All(board.ActiveTasks, t => Assert.NotNull(t.Task.HabitId));
+    }
+
+    [Fact]
+    public async Task Ensuring_a_closed_week_quietly_does_nothing()
+    {
+        using var h = new ServiceHarness();
+        await h.Habits.CreateAsync(Weekly());
+        var task = await h.NewPlannableTaskAsync("Något");
+        await h.Sprints.AddTaskAsync(Week, task);
+        await h.Sprints.CloseAsync(Week, CarryDecision.Backlog);
+
+        await h.Habits.EnsureWeekTasksAsync(Wednesday);
+
+        Assert.Empty((await h.Sprints.GetBoardAsync(Week)).ActiveTasks);
+    }
+
+    [Fact]
+    public async Task The_backlog_can_be_filtered_to_recurring_tasks()
+    {
+        using var h = new ServiceHarness();
+        await h.Habits.CreateAsync(Weekly(target: 1));
+        await h.NewPlannableTaskAsync("Vanlig uppgift");
+        await h.Habits.EnsureWeekTasksAsync(Wednesday);
+
+        var recurring = await h.Tasks.ListBacklogAsync(new LifeOS.Application.Organize.TaskFilter(RecurringOnly: true));
+
+        Assert.Equal(["Cykla (1/1)"], recurring.Select(t => t.Title));
+        Assert.Equal(2, (await h.Tasks.ListBacklogAsync()).Count);
     }
 }

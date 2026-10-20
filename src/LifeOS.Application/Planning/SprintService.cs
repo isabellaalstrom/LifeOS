@@ -342,7 +342,6 @@ public sealed class SprintService(IAppDbContextFactory dbFactory, IUserClock clo
             });
         }
 
-        task.Triage = TaskTriage.Backlog;
         db.ScopeChanges.Add(NewChange(sprint.Id, task, ScopeChangeKind.Added, reason, now, relatedSprintId));
     }
 

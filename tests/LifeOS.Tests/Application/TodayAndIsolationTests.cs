@@ -91,7 +91,6 @@ public class TodayAndIsolationTests
         Assert.Equal((1, 1, 1), (overview.Sprint.ToDo, overview.Sprint.InProgress, overview.Sprint.Done));
         Assert.Equal(120, overview.Sprint.PlannedMinutes);
         Assert.Equal(LifeOS.Domain.Planning.CapacityStatus.Over, overview.Sprint.Capacity);
-        Assert.Equal(1, overview.InboxCount);
         Assert.Equal(["Deadline snart"], overview.Deadlines.Select(t => t.Title));
         Assert.Empty(overview.PastSprintsToClose);
 

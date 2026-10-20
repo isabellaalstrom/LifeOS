@@ -27,7 +27,6 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     [InlineData("/")]
     [InlineData("/goals")]
     [InlineData("/planning")]
-    [InlineData("/projects")]
     [InlineData("/habits")]
     [InlineData("/retros")]
     public async Task Anonymous_requests_to_app_pages_are_redirected_to_login(string path)
@@ -96,19 +95,16 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
 
         var page = await client.GetAsync("/planning");
         Assert.Equal(HttpStatusCode.OK, page.StatusCode);
-        Assert.Contains("Planering", await page.Content.ReadAsStringAsync());
+        Assert.Contains("Vecka", await page.Content.ReadAsStringAsync());
     }
 
     [Theory]
-    [InlineData("/", "Översikt")]
-    [InlineData("/today", "Idag")]
+    [InlineData("/", "Dagens fokus")]
     [InlineData("/planning", "Vecka")]
-    [InlineData("/planning/inbox", "Inkorg")]
     [InlineData("/planning/backlog", "Backlog")]
-    [InlineData("/projects", "Projekt")]
-    [InlineData("/areas", "Livsområden")]
+    [InlineData("/areas", "Kategorier")]
     [InlineData("/goals", "Nytt mål")]
-    [InlineData("/habits", "Ny vana")]
+    [InlineData("/habits", "Ny återkommande uppgift")]
     [InlineData("/retros", "Starta en återblick")]
     [InlineData("/settings", "AI-coach")]
     [InlineData("/guide", "Så hänger det ihop")]
@@ -130,7 +126,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     {
         await _factory.EnsureOwnerAsync();
         var client = _factory.CreateBrowserClient();
-        foreach (var path in new[] { "/today", "/planning/inbox", "/planning/backlog", "/areas", "/goals", "/habits", "/retros", "/settings", $"/retros/{Guid.NewGuid()}", $"/goals/{Guid.NewGuid()}", $"/habits/{Guid.NewGuid()}", $"/projects/{Guid.NewGuid()}" })
+        foreach (var path in new[] { "/planning/backlog", "/areas", "/goals", "/habits", "/retros", "/settings", $"/retros/{Guid.NewGuid()}", $"/goals/{Guid.NewGuid()}", $"/habits/{Guid.NewGuid()}" })
         {
             var response = await client.GetAsync(path);
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -149,13 +145,14 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
         var html = WebUtility.HtmlDecode(await client.GetStringAsync("/planning"));
         Assert.Contains("class=\"side-nav\"", html);
         Assert.Contains("class=\"bottom-nav\"", html);
-        foreach (var section in new[] { "Översikt", "Mål", "Planering", "Vanor", "Retron" })
+        foreach (var section in new[] { "Idag", "Vecka", "Backlog", "Mål", "Retron" })
         {
             Assert.Contains(section, html);
         }
 
-        // Projects and life areas are optional and stay out of the menu until switched on (or some already exist).
+        // Projects, the inbox and habits as separate places are gone: everything is tasks, goals and recurring tasks.
         Assert.DoesNotContain("href=\"projects\"", html);
+        Assert.DoesNotContain("href=\"planning/inbox\"", html);
     }
 
     [Theory]

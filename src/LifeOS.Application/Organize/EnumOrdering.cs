@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using LifeOS.Domain.Goals;
-using LifeOS.Domain.Projects;
 using LifeOS.Domain.Tasks;
 
 namespace LifeOS.Application.Organize;
@@ -19,7 +18,4 @@ public static class EnumOrdering
     public static readonly Expression<Func<Goal, int>> HorizonRank = g =>
         g.Horizon == GoalHorizon.Year ? 0 : g.Horizon == GoalHorizon.Quarter ? 1 : 2;
 
-    /// <summary>Active, then paused, completed, archived.</summary>
-    public static readonly Expression<Func<Project, int>> ProjectStatusRank = p =>
-        p.Status == ProjectStatus.Active ? 0 : p.Status == ProjectStatus.OnHold ? 1 : p.Status == ProjectStatus.Completed ? 2 : 3;
 }

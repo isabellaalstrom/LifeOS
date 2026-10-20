@@ -3,32 +3,16 @@ namespace LifeOS.Web.Services;
 /// <summary>Per-circuit notifications so components can refresh after changes made elsewhere (e.g. quick capture).</summary>
 public sealed class AppEvents
 {
-    public event Func<Task>? InboxChanged;
+    public event Func<Task>? TasksChanged;
 
-    /// <summary>Raised when a setting that changes the navigation was saved.</summary>
-    public event Func<Task>? PreferencesChanged;
-
-    public async Task NotifyPreferencesChangedAsync()
+    public async Task NotifyTasksChangedAsync()
     {
-        if (PreferencesChanged is null)
+        if (TasksChanged is null)
         {
             return;
         }
 
-        foreach (var handler in PreferencesChanged.GetInvocationList().Cast<Func<Task>>())
-        {
-            await handler();
-        }
-    }
-
-    public async Task NotifyInboxChangedAsync()
-    {
-        if (InboxChanged is null)
-        {
-            return;
-        }
-
-        foreach (var handler in InboxChanged.GetInvocationList().Cast<Func<Task>>())
+        foreach (var handler in TasksChanged.GetInvocationList().Cast<Func<Task>>())
         {
             await handler();
         }

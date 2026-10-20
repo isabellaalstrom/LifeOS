@@ -10,13 +10,14 @@
 @inject TodayService TodayService
 @inject TaskService Tasks
 @inject IUserClock Clock
+@inject NavigationManager Navigation
 @inject LifeOS.Application.Goals.GoalService GoalsApi
 @inject LifeOS.Application.Habits.HabitService HabitsApi
 @inject LifeOS.Application.Retros.RetroService RetrosApi
 
-<PageTitle>@L["Nav_Overview"] – @L["App_Title"]</PageTitle>
+<PageTitle>@L["Nav_Today"] – @L["App_Title"]</PageTitle>
 
-@if (_view is null)
+@if (_view is null || _today is null)
 {
     <MudProgressLinear Indeterminate="true" />
 }
@@ -57,11 +58,13 @@ else
         <OnboardingCard OnGoalCreated="ReloadAsync" />
     }
 
-    @if (_retroSuggestion is { } suggestion)
+    @* ---- gentle retro suggestions: last month, quarter and year, when it is time ---- *@
+    @foreach (var suggestion in _retroSuggestions)
     {
+        var s = suggestion;
         <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" ShowCloseIcon="false">
-            @L["Retros_Suggest", Fmt.RetroPeriod(L, suggestion.Type, suggestion.PeriodStart)]
-            <MudButton Size="Size.Small" Class="ml-2" Href="retros">@L["Retros_Open"]</MudButton>
+            @L["Retros_Suggest", Fmt.RetroPeriod(L, s.Type, s.PeriodStart)]
+            <MudButton Size="Size.Small" Class="ml-2" OnClick="() => StartRetroAsync(s)">@L["Retros_Start"]</MudButton>
         </MudAlert>
     }
 
@@ -74,28 +77,91 @@ else
     }
 
     <MudGrid Spacing="3">
-        @* ---- today's focus ---- *@
-        <MudItem xs="12" md="6">
-            <div class="tone-card tone-sage">
-                <p class="card-eyebrow">@L["Tab_Today"]</p>
-                <h2 class="card-title">@L["Overview_Today"]</h2>
-                @if (_view.Focus.Count == 0)
+        <MudItem xs="12" md="7">
+            @* ---- today's focus ---- *@
+            <div class="d-flex align-center gap-2 mb-1">
+                <MudText Typo="Typo.h6" Tag="@("h2")">@L["Today_Focus"]</MudText>
+                @if (_today.Focus.Count > 0)
                 {
-                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_FocusEmpty"]</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Today_Done", _today.Focus.Count(t => t.Status == TaskItemStatus.Done), _today.Focus.Count]</MudText>
                 }
-                @foreach (var t in _view.Focus.Take(5))
-                {
-                    <TaskRow Item="t" Today="_view.Date" ShowProject="false" OnOpen="OpenAsync" OnToggle="ToggleAsync" />
-                }
-                <MudButton Href="today" Variant="Variant.Text" Size="Size.Small" Class="mt-1">@L["Overview_OpenToday"]</MudButton>
             </div>
+            @if (_today.Focus.Count == 0)
+            {
+                <MudPaper Outlined="true" Class="pa-4 mb-3"><MudText Color="Color.Secondary">@L["Today_FocusEmpty"]</MudText></MudPaper>
+            }
+            @foreach (var t in _today.Focus)
+            {
+                <TaskRow Item="t" Today="_today.Date" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+                    <Actions>
+                        @if (t.FocusDate == _today.Date)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@L["Task_RemoveFocus"]"
+                                           OnClick="() => SetFocusAsync(t, false)" />
+                        }
+                    </Actions>
+                </TaskRow>
+            }
+
+            @* ---- recurring: tick off from here ---- *@
+            @if (_habits.Count > 0)
+            {
+                <MudText Typo="Typo.h6" Tag="@("h2")" Class="mt-4 mb-1">@L["Habit_Today"]</MudText>
+                @foreach (var h in _habits)
+                {
+                    <div class="task-row @(h.TargetMet ? "is-done" : null)">
+                        <div class="task-main" role="link" tabindex="0" @onclick='() => Navigation.NavigateTo($"habits/{h.Id}")'>
+                            <span class="task-title">@h.Name</span>
+                            <span class="task-meta">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Repeat">@L["Habit_Progress", h.CountInPeriod, h.TargetCount] · @L["Habit_Every_" + h.Period, h.TargetCount]</MudChip>
+                                @if (h.Streak > 0)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.LocalFireDepartment">@L["Habit_Streak_" + h.Period, h.Streak]</MudChip>
+                                }
+                            </span>
+                        </div>
+                        <div class="task-actions">
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="() => LogHabitAsync(h)">@L["Habit_Log"]</MudButton>
+                        </div>
+                    </div>
+                }
+            }
+
+            @* ---- due / overdue ---- *@
+            @if (_today.DueOrOverdue.Count > 0)
+            {
+                <MudText Typo="Typo.h6" Tag="@("h2")" Class="mt-4 mb-1">@L["Today_Due"]</MudText>
+                @foreach (var t in _today.DueOrOverdue)
+                {
+                    <TaskRow Item="t" Today="_today.Date" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+                        <Actions>
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => SetFocusAsync(t, true)">@L["Today_AddFocus"]</MudButton>
+                        </Actions>
+                    </TaskRow>
+                }
+            }
+
+            @* ---- from this week's plan ---- *@
+            <MudText Typo="Typo.h6" Tag="@("h2")" Class="mt-4 mb-1">@L["Today_Suggestions"]</MudText>
+            @if (_today.SprintSuggestions.Count == 0)
+            {
+                <MudText Color="Color.Secondary">@L["Today_NoSuggestions"]</MudText>
+            }
+            @foreach (var t in _today.SprintSuggestions)
+            {
+                <TaskRow Item="t" Today="_today.Date" OnOpen="OpenAsync" OnToggle="ToggleAsync">
+                    <Actions>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => SetFocusAsync(t, true)">@L["Today_AddFocus"]</MudButton>
+                    </Actions>
+                </TaskRow>
+            }
         </MudItem>
 
-        @* ---- current sprint ---- *@
-        <MudItem xs="12" md="6">
-            <div class="tone-card tone-sky">
-                <p class="card-eyebrow">@L["Tab_Sprint"]</p>
-                <h2 class="card-title">@L["Overview_Sprint"] · @L["Sprint_Week", _view.Sprint.IsoWeek]</h2>
+        <MudItem xs="12" md="5">
+            @* ---- the week ---- *@
+            <div class="tone-card tone-sky mb-3">
+                <p class="card-eyebrow">@L["Nav_Planning"]</p>
+                <h2 class="card-title">@L["Sprint_Week", _view.Sprint.IsoWeek]</h2>
                 @if (!_view.Sprint.Exists)
                 {
                     <MudText Color="Color.Secondary" Class="my-2">@L["Overview_NoSprint"]</MudText>
@@ -119,17 +185,12 @@ else
                             @L["Sprint_Planned", Fmt.Duration(L, s.PlannedMinutes), Fmt.Duration(L, s.CapacityMinutes)]
                         </MudText>
                     }
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
-                        @s.Stats.Original @L["Sprint_ScopeOriginal"].Value.ToLowerInvariant() · @s.Stats.AddedAfterStart @L["Sprint_ScopeAdded"].Value.ToLowerInvariant()
-                    </MudText>
                     <MudButton Href="planning" Variant="Variant.Text" Size="Size.Small" Class="mt-2">@L["Overview_OpenSprint"]</MudButton>
                 }
             </div>
-        </MudItem>
 
-        @* ---- goals ---- *@
-        <MudItem xs="12" md="6">
-            <div class="tone-card tone-lavender">
+            @* ---- goals ---- *@
+            <div class="tone-card tone-lavender mb-3">
                 <p class="card-eyebrow">@L["Nav_Goals"]</p>
                 <h2 class="card-title">@L["Overview_Goals"]</h2>
                 @if (_goals.Count == 0)
@@ -145,66 +206,27 @@ else
                 }
                 <MudButton Href="goals" Variant="Variant.Text" Size="Size.Small" Class="mt-1">@L["Overview_OpenGoals"]</MudButton>
             </div>
-        </MudItem>
 
-        @* ---- habits ---- *@
-        <MudItem xs="12" md="6">
-            <div class="tone-card tone-sage">
-                <p class="card-eyebrow">@L["Nav_Habits"]</p>
-                <h2 class="card-title">@L["Habit_Overview"]</h2>
-                @if (_habits.Count == 0)
-                {
-                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_HabitsEmpty"]</MudText>
-                }
-                @foreach (var h in _habits)
-                {
-                    <a href="@($"habits/{h.Id}")" class="mini-progress">
-                        <span class="mini-progress-head"><span>@h.Name</span><span>@L["Habit_Progress", h.CountInPeriod, h.TargetCount]</span></span>
-                        <MudProgressLinear Value="@(Math.Min(100.0, h.CountInPeriod * 100.0 / h.TargetCount))" Color="Color.Primary" Rounded="true" />
-                    </a>
-                }
-                <MudButton Href="habits" Variant="Variant.Text" Size="Size.Small" Class="mt-1">@L["Overview_OpenHabits"]</MudButton>
-            </div>
-        </MudItem>
-
-        @* ---- deadlines ---- *@
-        <MudItem xs="12" md="6">
-            <div class="tone-card tone-peach">
-                <p class="card-eyebrow">@L["Task_Due"]</p>
-                <h2 class="card-title">@L["Overview_Deadlines"]</h2>
-                @if (_view.Deadlines.Count == 0)
-                {
-                    <MudText Color="Color.Secondary" Class="my-2">@L["Overview_NoDeadlines"]</MudText>
-                }
-                @foreach (var t in _view.Deadlines)
-                {
-                    <TaskRow Item="t" Today="_view.Date" ShowProject="false" OnOpen="OpenAsync" OnToggle="ToggleAsync" />
-                }
-            </div>
-        </MudItem>
-
-        @* ---- inbox ---- *@
-        <MudItem xs="12" md="6">
-            <div class="tone-card tone-butter">
-                <p class="card-eyebrow">@L["Tab_Inbox"]</p>
-                <h2 class="card-title">@L["Overview_Inbox"]</h2>
-                <MudText Color="Color.Secondary" Class="my-1">@L["Overview_InboxCount", _view.InboxCount]</MudText>
-                <MudButton Href="planning/inbox" Variant="Variant.Text" Size="Size.Small">@L["Overview_OpenInbox"]</MudButton>
-            </div>
-        </MudItem>
-
-        @* ---- AI insight: on demand, cached ---- *@
-        <MudItem xs="12" md="6">
+            @* ---- AI insight: on demand, cached ---- *@
             <AiInsightCard />
         </MudItem>
     </MudGrid>
+
+    @* ---- the rest of the app, one tap away ---- *@
+    <nav class="shortcuts" aria-label="@L["Shortcuts"]">
+        <MudButton Href="habits" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Repeat">@L["Nav_Habits"]</MudButton>
+        <MudButton Href="areas" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Sell">@L["Areas_Title"]</MudButton>
+        <MudButton Href="retros" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Insights">@L["Nav_Retros"]</MudButton>
+        <MudButton Href="guide" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.HelpOutline">@L["Guide_Title"]</MudButton>
+    </nav>
 }
 
 @code {
     private OverviewView? _view;
+    private TodayView? _today;
     private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
     private IReadOnlyList<LifeOS.Application.Habits.HabitView> _habits = [];
-    private LifeOS.Application.Retros.RetroSuggestion? _retroSuggestion;
+    private IReadOnlyList<LifeOS.Application.Retros.RetroSuggestion> _retroSuggestions = [];
     private bool _hasAnyGoal = true;
 
     [Inject] private LifeOS.Web.Services.AppEvents Events { get; set; } = default!;
@@ -226,26 +248,47 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Events.InboxChanged += OnInboxChangedAsync;
+        Events.TasksChanged += OnTasksChangedAsync;
+        // Recurring items put their tasks into the week plan by themselves.
+        await HabitsApi.EnsureWeekTasksAsync(Clock.Today);
         await ReloadAsync();
     }
 
     private async Task ReloadAsync()
     {
         _view = await TodayService.GetOverviewAsync();
+        _today = await TodayService.GetTodayAsync();
         _goals = await GoalsApi.ListCurrentAsync();
         _hasAnyGoal = _goals.Count > 0 || (await GoalsApi.ListAsync(includeClosed: true)).Count > 0;
-        _habits = (await HabitsApi.ListAsync()).Take(5).ToList();
-        _retroSuggestion = (await RetrosApi.SuggestionsAsync()).FirstOrDefault();
+        _habits = await HabitsApi.ListAsync();
+        _retroSuggestions = await RetrosApi.SuggestionsAsync();
     }
 
-    private async Task OnInboxChangedAsync()
+    private async Task OnTasksChangedAsync()
     {
         await ReloadAsync();
         await InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose() => Events.InboxChanged -= OnInboxChangedAsync;
+    public void Dispose() => Events.TasksChanged -= OnTasksChangedAsync;
+
+    private async Task StartRetroAsync(LifeOS.Application.Retros.RetroSuggestion suggestion)
+    {
+        var id = await RetrosApi.StartOrResumeAsync(suggestion.Type, suggestion.PeriodStart);
+        Navigation.NavigateTo($"retros/{id}");
+    }
+
+    private async Task LogHabitAsync(LifeOS.Application.Habits.HabitView habit)
+    {
+        await RunAsync(() => HabitsApi.LogAsync(habit.Id));
+        await ReloadAsync();
+    }
+
+    private async Task SetFocusAsync(TaskView task, bool focus)
+    {
+        await RunAsync(() => Tasks.SetFocusAsync(task.Id, focus ? _today!.Date : null));
+        await ReloadAsync();
+    }
 
     private async Task ToggleAsync((TaskView Item, bool Done) change)
     {

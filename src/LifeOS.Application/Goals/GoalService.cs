@@ -70,16 +70,9 @@ public sealed class GoalService(IAppDbContextFactory dbFactory, IUserClock clock
             db, await db.Goals.Include(g => g.LifeArea).Where(g => g.ParentGoalId == id).OrderBy(g => g.PeriodStart).ToListAsync(ct), ct);
         var tasks = await db.Tasks
             .Where(t => t.ParentTaskId == null && t.Status != TaskItemStatus.Cancelled
-                        && (t.GoalId == id || (t.Project != null && t.Project.GoalId == id)))
+                        && t.GoalId == id)
             .OrderBy(t => t.Status == TaskItemStatus.Done).ThenBy(t => t.CreatedUtc)
             .ToView(db.SprintTasks)
-            .ToListAsync(ct);
-        var projects = await db.Projects.Where(p => p.GoalId == id)
-            .Select(p => new ProjectView(
-                p.Id, p.Name, p.Description, p.LifeAreaId, p.LifeArea != null ? p.LifeArea.Name : null, p.Status,
-                db.Tasks.Count(t => t.ProjectId == p.Id && t.ParentTaskId == null && (t.Status == TaskItemStatus.ToDo || t.Status == TaskItemStatus.InProgress)),
-                db.Tasks.Count(t => t.ProjectId == p.Id && t.ParentTaskId == null && t.Status == TaskItemStatus.Done),
-                p.GoalId, p.Goal != null ? p.Goal.Title : null))
             .ToListAsync(ct);
         var habits = await db.Habits.Where(h => h.GoalId == id && !h.IsArchived)
             .OrderBy(h => h.Name)
@@ -89,7 +82,7 @@ public sealed class GoalService(IAppDbContextFactory dbFactory, IUserClock clock
                 clock.Today, 0, false, 0, null, 0))
             .ToListAsync(ct);
 
-        return new GoalDetail(view, milestones, history, children, tasks, projects, habits);
+        return new GoalDetail(view, milestones, history, children, tasks, habits);
     }
 
     public async Task<Guid> CreateAsync(GoalInput input, CancellationToken ct = default)
@@ -235,11 +228,6 @@ public sealed class GoalService(IAppDbContextFactory dbFactory, IUserClock clock
         foreach (var t in await db.Tasks.Where(t => t.GoalId == id).ToListAsync(ct))
         {
             t.GoalId = null;
-        }
-
-        foreach (var p in await db.Projects.Where(p => p.GoalId == id).ToListAsync(ct))
-        {
-            p.GoalId = null;
         }
 
         foreach (var h in await db.Habits.Where(h => h.GoalId == id).ToListAsync(ct))

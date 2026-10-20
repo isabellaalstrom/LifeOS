@@ -15,9 +15,9 @@
             {
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="@AreaStyle">@Item.LifeAreaName</MudChip>
             }
-            @if (ShowProject && Item.ProjectName is not null)
+            @if (Item.HabitId is not null)
             {
-                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Folder">@Item.ProjectName</MudChip>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Repeat">@L["Task_Recurring"]</MudChip>
             }
             @if (ShowGoal && Item.GoalTitle is not null)
             {
@@ -63,7 +63,6 @@
     /// <summary>Today in the user's time zone, to flag overdue deadlines.</summary>
     [Parameter] public DateOnly Today { get; set; }
 
-    [Parameter] public bool ShowProject { get; set; } = true;
 
     [Parameter] public bool ShowPlanned { get; set; }
 

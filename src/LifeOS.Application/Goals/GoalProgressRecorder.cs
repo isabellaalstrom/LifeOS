@@ -26,18 +26,17 @@ public sealed class GoalProgressRecorder(IUserClock clock)
             .Select(m => new { m.GoalId, Done = m.CompletedUtc != null })
             .ToListAsync(ct);
 
-        // A task counts for a goal when linked directly or through its project. Subtasks never count (the parent does).
+        // A task counts for the goal it is linked to. Subtasks never count (the parent does).
         var tasks = await db.Tasks
             .Where(t => t.ParentTaskId == null && t.Status != TaskItemStatus.Cancelled
-                        && ((t.GoalId != null && goalIds.Contains(t.GoalId.Value))
-                            || (t.Project != null && t.Project.GoalId != null && goalIds.Contains(t.Project.GoalId.Value))))
-            .Select(t => new { t.GoalId, ProjectGoalId = t.Project != null ? t.Project.GoalId : null, Done = t.Status == TaskItemStatus.Done })
+                        && t.GoalId != null && goalIds.Contains(t.GoalId.Value))
+            .Select(t => new { t.GoalId, Done = t.Status == TaskItemStatus.Done })
             .ToListAsync(ct);
 
         foreach (var id in goalIds)
         {
             var ms = milestones.Where(m => m.GoalId == id).ToList();
-            var ts = tasks.Where(t => t.GoalId == id || t.ProjectGoalId == id).ToList();
+            var ts = tasks.Where(t => t.GoalId == id).ToList();
             result[id] = new GoalCounts(ms.Count(m => m.Done), ms.Count, ts.Count(t => t.Done), ts.Count);
         }
 

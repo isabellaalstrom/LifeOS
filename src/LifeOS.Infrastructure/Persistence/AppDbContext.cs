@@ -6,7 +6,6 @@ using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Notifications;
 using LifeOS.Domain.Planning;
-using LifeOS.Domain.Projects;
 using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
 using LifeOS.Infrastructure.Identity;
@@ -30,7 +29,6 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
 
     public DbSet<LifeArea> LifeAreas => Set<LifeArea>();
 
-    public DbSet<Project> Projects => Set<Project>();
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
 
@@ -95,8 +93,6 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<DateTimeOffsetToBinaryConverter>();
 
         // Enums are stored as readable text so the database stays understandable and reorder-safe.
-        configurationBuilder.Properties<ProjectStatus>().HaveConversion<string>().HaveMaxLength(20);
-        configurationBuilder.Properties<TaskTriage>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<TaskItemStatus>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<TaskPriority>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<ScopeChangeKind>().HaveConversion<string>().HaveMaxLength(20);
@@ -132,24 +128,14 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
             b.HasIndex(x => new { x.OwnerId, x.SortOrder });
         });
 
-        modelBuilder.Entity<Project>(b =>
-        {
-            b.Property(x => x.Name).HasMaxLength(150).IsRequired();
-            b.Property(x => x.Description).HasMaxLength(2000);
-            b.HasOne(x => x.LifeArea).WithMany().HasForeignKey(x => x.LifeAreaId).OnDelete(DeleteBehavior.Restrict);
-            b.HasIndex(x => new { x.OwnerId, x.Status });
-        });
-
         modelBuilder.Entity<TaskItem>(b =>
         {
             b.Property(x => x.Title).HasMaxLength(300).IsRequired();
             b.Property(x => x.Notes).HasMaxLength(4000);
             b.HasOne(x => x.LifeArea).WithMany().HasForeignKey(x => x.LifeAreaId).OnDelete(DeleteBehavior.Restrict);
-            b.HasOne(x => x.Project).WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne(x => x.Parent).WithMany(x => x.Subtasks).HasForeignKey(x => x.ParentTaskId).OnDelete(DeleteBehavior.Restrict);
             b.Ignore(x => x.IsOpen);
-            b.HasIndex(x => new { x.OwnerId, x.Triage, x.Status });
-            b.HasIndex(x => new { x.OwnerId, x.ProjectId });
+            b.HasIndex(x => new { x.OwnerId, x.Status });
             b.HasIndex(x => new { x.OwnerId, x.DueDate });
             b.HasIndex(x => new { x.OwnerId, x.FocusDate });
             b.HasIndex(x => new { x.OwnerId, x.ScheduledDate });
@@ -223,11 +209,6 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
             b.HasIndex(x => new { x.OwnerId, x.GoalId });
             // At most one generated task per habit, week and occurrence number (NULLs are distinct, so normal tasks are unaffected).
             b.HasIndex(x => new { x.HabitId, x.GeneratedForPeriodStart, x.GeneratedIndex }).IsUnique();
-        });
-
-        modelBuilder.Entity<Project>(b =>
-        {
-            b.HasOne(x => x.Goal).WithMany().HasForeignKey(x => x.GoalId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Retrospective>(b =>
