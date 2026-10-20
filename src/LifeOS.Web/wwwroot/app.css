@@ -1057,3 +1057,8 @@ a {
 .wb-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; font-size: .85rem; color: var(--lo-ink-2); }
 .wb-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.guide-ladder { margin: 6px 0; padding-left: 22px; }
+.guide-ladder li { margin: 6px 0; }
+.guide-words dt { font-weight: 600; margin-top: 8px; }
+.guide-words dd { margin: 2px 0 0; color: var(--lo-ink-2); }

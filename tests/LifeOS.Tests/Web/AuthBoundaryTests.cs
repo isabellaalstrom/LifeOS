@@ -111,6 +111,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     [InlineData("/habits", "Ny vana")]
     [InlineData("/retros", "Starta en återblick")]
     [InlineData("/settings", "AI-coach")]
+    [InlineData("/guide", "Så hänger det ihop")]
     public async Task Planning_pages_render_for_the_signed_in_owner(string path, string expectedText)
     {
         await _factory.EnsureOwnerAsync();

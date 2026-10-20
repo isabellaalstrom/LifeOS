@@ -545,4 +545,25 @@
   <data name="SkipToContent" xml:space="preserve"><value>Hoppa till innehållet</value></data>
   <data name="Trend_Eyebrow" xml:space="preserve"><value>Hur du mått över tid</value></data>
   <data name="Trend_Hint" xml:space="preserve"><value>Dina egna skattningar (1–5) från avslutade månadsåterblickar. Luckor betyder att du inte skattade.</value></data>
-  <data name="Trend_Period" xml:space="preserve"><value>Period</value></data></root>
+  <data name="Trend_Period" xml:space="preserve"><value>Period</value></data>
+  <data name="Guide_Title" xml:space="preserve"><value>Så hänger det ihop</value></data>
+  <data name="Guide_Link" xml:space="preserve"><value>Ny här? Läs hur allt hänger ihop</value></data>
+  <data name="Guide_Intro" xml:space="preserve"><value>Allt i LifeOS är valfritt. Det här är bara kartan, uppifrån och ner.</value></data>
+  <data name="Guide_Ladder" xml:space="preserve"><value>Från stora mål till vad du gör den här veckan</value></data>
+  <data name="Guide_Goals" xml:space="preserve"><value>Vad du vill uppnå under ett år, ett kvartal eller en månad. Till exempel "Bli starkare på cykeln".</value></data>
+  <data name="Guide_Projects" xml:space="preserve"><value>Valfritt. En samling uppgifter som hör ihop, till exempel "Bygga om badrummet". Kan kopplas till ett mål.</value></data>
+  <data name="Guide_Tasks" xml:space="preserve"><value>Uppgifter</value></data>
+  <data name="Guide_TasksText" xml:space="preserve"><value>Det du faktiskt gör. Kan ligga fritt, i ett projekt eller kopplas till ett mål. Har du mycket kan en uppgift ha underuppgifter (en nivå).</value></data>
+  <data name="Guide_Week" xml:space="preserve"><value>Varje vecka väljer du vilka uppgifter som får plats. Det är din veckoplan.</value></data>
+  <data name="Guide_LadderNote" xml:space="preserve"><value>Du kan hoppa över steg. En uppgift behöver varken projekt eller mål, och ett mål kan följas utan att något projekt finns.</value></data>
+  <data name="Guide_Words" xml:space="preserve"><value>Orden som brukar blandas ihop</value></data>
+  <data name="Guide_Subgoal" xml:space="preserve"><value>Delmål (underordnat mål)</value></data>
+  <data name="Guide_SubgoalText" xml:space="preserve"><value>Ett helt eget mål med kortare tid, till exempel ett månadsmål under ett kvartalsmål. Det hänger ihop genom "Överordnat mål".</value></data>
+  <data name="Guide_Milestone" xml:space="preserve"><value>Milstolpe</value></data>
+  <data name="Guide_MilestoneText" xml:space="preserve"><value>En punkt på en checklista inuti ETT mål. Passar när målet består av några tydliga steg. Väljs som sätt att mäta ("Delmål/milstolpar").</value></data>
+  <data name="Guide_HabitText" xml:space="preserve"><value>Något du gör regelbundet, till exempel 3 gånger i veckan. Kan kopplas till ett mål och kan skapa veckouppgifter.</value></data>
+  <data name="Guide_Area" xml:space="preserve"><value>Livsområde</value></data>
+  <data name="Guide_AreaText" xml:space="preserve"><value>Bara en etikett som Hälsa eller Hem för att gruppera saker. Påverkar ingenting annat och kan hoppas över.</value></data>
+  <data name="Guide_RetroText" xml:space="preserve"><value>Att stanna upp och se tillbaka på en månad, ett kvartal eller ett år, och bestämma vad du vill ändra.</value></data>
+  <data name="Guide_Minimum" xml:space="preserve"><value>Börja så här</value></data>
+  <data name="Guide_MinimumText" xml:space="preserve"><value>Skriv ner uppgifter med plusknappen, planera veckan och sätt ett eller två mål. Lägg till projekt, vanor och livsområden först när du känner behov av dem.</value></data></root>

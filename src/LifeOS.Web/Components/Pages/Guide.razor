@@ -1,0 +1,35 @@
+@page "/guide"
+@attribute [Authorize]
+@inherits PlanningComponentBase
+
+<PageTitle>@L["Guide_Title"] – @L["App_Title"]</PageTitle>
+
+<MudText Typo="Typo.h5" Tag="@("h1")">@L["Guide_Title"]</MudText>
+<MudText Color="Color.Secondary" Class="mb-3">@L["Guide_Intro"]</MudText>
+
+<section class="tone-card tone-sage my-3">
+    <h2 class="card-title">@L["Guide_Ladder"]</h2>
+    <ol class="guide-ladder">
+        <li><strong>@L["Nav_Goals"]</strong> – @L["Guide_Goals"]</li>
+        <li><strong>@L["Nav_Projects"]</strong> – @L["Guide_Projects"]</li>
+        <li><strong>@L["Guide_Tasks"]</strong> – @L["Guide_TasksText"]</li>
+        <li><strong>@L["Nav_Planning"]</strong> – @L["Guide_Week"]</li>
+    </ol>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Guide_LadderNote"]</MudText>
+</section>
+
+<section class="tone-card tone-lavender my-3">
+    <h2 class="card-title">@L["Guide_Words"]</h2>
+    <dl class="guide-words">
+        <dt>@L["Guide_Subgoal"]</dt><dd>@L["Guide_SubgoalText"]</dd>
+        <dt>@L["Guide_Milestone"]</dt><dd>@L["Guide_MilestoneText"]</dd>
+        <dt>@L["Nav_Habits"]</dt><dd>@L["Guide_HabitText"]</dd>
+        <dt>@L["Guide_Area"]</dt><dd>@L["Guide_AreaText"]</dd>
+        <dt>@L["Nav_Retros"]</dt><dd>@L["Guide_RetroText"]</dd>
+    </dl>
+</section>
+
+<section class="tone-card tone-butter my-3">
+    <h2 class="card-title">@L["Guide_Minimum"]</h2>
+    <MudText>@L["Guide_MinimumText"]</MudText>
+</section>
