@@ -165,7 +165,7 @@ public sealed class AiCoachService(
             "Schema: {\"title\":\"..\",\"description\":\"..\",\"mode\":\"Numeric\"|\"Milestones\"|\"LinkedTasks\"|\"Manual\"," +
             "\"start\":number|null,\"target\":number|null,\"unit\":\"..\"|null,\"milestones\":[\"..\"]}. " +
             "Gör idén till ett tydligt, mätbart mål. Använd Numeric bara om det finns ett naturligt mätvärde (då start, target, unit). " +
-            "milestones: högst 5 delmål, bara om de behövs.";
+            "milestones: högst 5 steg, bara om de behövs.";
 
         var user = $"Horisont: {horizon}. Personens idé: {roughIdea}";
         var (status, doc) = await CallAsync(AiFeature.GoalFormulation, prefs.Mode, schema, [new("user", user)], 600, ct);

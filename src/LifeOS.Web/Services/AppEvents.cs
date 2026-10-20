@@ -5,6 +5,22 @@ public sealed class AppEvents
 {
     public event Func<Task>? InboxChanged;
 
+    /// <summary>Raised when a setting that changes the navigation was saved.</summary>
+    public event Func<Task>? PreferencesChanged;
+
+    public async Task NotifyPreferencesChangedAsync()
+    {
+        if (PreferencesChanged is null)
+        {
+            return;
+        }
+
+        foreach (var handler in PreferencesChanged.GetInvocationList().Cast<Func<Task>>())
+        {
+            await handler();
+        }
+    }
+
     public async Task NotifyInboxChangedAsync()
     {
         if (InboxChanged is null)

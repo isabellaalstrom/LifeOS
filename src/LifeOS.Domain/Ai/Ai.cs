@@ -46,6 +46,9 @@ public class UserPreference : OwnedEntity
     public bool AiEnabled { get; set; }
 
     public AiCoachMode AiMode { get; set; } = AiCoachMode.Balanced;
+
+    /// <summary>Show Projects and Life areas in the navigation. Off keeps the app to goals, planning, habits and retros.</summary>
+    public bool ShowProjectsAndAreas { get; set; }
 }
 
 /// <summary>

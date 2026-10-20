@@ -26,6 +26,28 @@ public sealed class PreferenceService(IAppDbContextFactory dbFactory, IUserProfi
         return new AiPreferenceView(pref?.AiEnabled ?? false, pref?.AiMode ?? AiCoachMode.Balanced);
     }
 
+    /// <summary>Whether projects and life areas are shown in the navigation. Also true automatically when some already exist.</summary>
+    public async Task<bool> GetShowProjectsAndAreasAsync(CancellationToken ct = default)
+    {
+        await using var db = dbFactory.Create();
+        var pref = await db.UserPreferences.FirstOrDefaultAsync(ct);
+        return pref?.ShowProjectsAndAreas ?? false;
+    }
+
+    public async Task SetShowProjectsAndAreasAsync(bool show, CancellationToken ct = default)
+    {
+        await using var db = dbFactory.Create();
+        var pref = await db.UserPreferences.FirstOrDefaultAsync(ct);
+        if (pref is null)
+        {
+            pref = new UserPreference();
+            db.UserPreferences.Add(pref);
+        }
+
+        pref.ShowProjectsAndAreas = show;
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task SetAiAsync(bool enabled, AiCoachMode mode, CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();

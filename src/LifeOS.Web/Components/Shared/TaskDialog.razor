@@ -31,22 +31,29 @@
                     <MudNumericField T="int?" @bind-Value="_estimate" Label="@L["Task_Estimate"]" Min="1" Max="@TaskService.MaxEstimateMinutes"
                                      HideSpinButtons="true" Clearable="true" />
                 </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
-                        @foreach (var a in _areas)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudSelect T="Guid?" @bind-Value="_projectId" Label="@L["Task_Project"]" Clearable="true">
-                        @foreach (var p in _projects)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.Name</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
+                @* Areas and projects are optional; their fields only appear once some exist. *@
+                @if (_areas.Count > 0)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
+                            @foreach (var a in _areas)
+                            {
+                                <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+                @if (_projects.Count > 0)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="Guid?" @bind-Value="_projectId" Label="@L["Task_Project"]" Clearable="true">
+                            @foreach (var p in _projects)
+                            {
+                                <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
                 @if (_goals.Count > 0)
                 {
                     <MudItem xs="12">

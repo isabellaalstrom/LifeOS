@@ -149,10 +149,13 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
         var html = WebUtility.HtmlDecode(await client.GetStringAsync("/planning"));
         Assert.Contains("class=\"side-nav\"", html);
         Assert.Contains("class=\"bottom-nav\"", html);
-        foreach (var section in new[] { "Översikt", "Mål", "Planering", "Projekt", "Vanor", "Retron" })
+        foreach (var section in new[] { "Översikt", "Mål", "Planering", "Vanor", "Retron" })
         {
             Assert.Contains(section, html);
         }
+
+        // Projects and life areas are optional and stay out of the menu until switched on (or some already exist).
+        Assert.DoesNotContain("href=\"projects\"", html);
     }
 
     [Theory]

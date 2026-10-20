@@ -245,6 +245,9 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ShowProjectsAndAreas")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long>("UpdatedUtc")
                         .HasColumnType("INTEGER");
 

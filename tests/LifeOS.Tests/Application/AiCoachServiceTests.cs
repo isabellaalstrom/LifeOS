@@ -528,4 +528,20 @@ public class AiCoachServiceTests
         await AssertCodeAsync(PlanningException.Codes.InvalidTimeZone, () => h.Prefs.SetTimeZoneAsync(""));
         Assert.Equal("Europe/London", await h.Prefs.GetTimeZoneAsync());
     }
+
+    [Fact]
+    public async Task Projects_and_areas_are_hidden_by_default_and_the_choice_is_per_owner()
+    {
+        using var h = new ServiceHarness(userId: "user-a");
+        Assert.False(await h.Prefs.GetShowProjectsAndAreasAsync());
+
+        await h.Prefs.SetShowProjectsAndAreasAsync(true);
+        await h.Prefs.SetAiAsync(true, AiCoachMode.Analytical);   // saving other preferences keeps the choice
+        Assert.True(await h.Prefs.GetShowProjectsAndAreasAsync());
+        Assert.False(await h.ForUser("user-b").Prefs.GetShowProjectsAndAreasAsync());
+
+        await h.Prefs.SetShowProjectsAndAreasAsync(false);
+        Assert.False(await h.Prefs.GetShowProjectsAndAreasAsync());
+        Assert.True((await h.Prefs.GetAiAsync()).Enabled);
+    }
 }

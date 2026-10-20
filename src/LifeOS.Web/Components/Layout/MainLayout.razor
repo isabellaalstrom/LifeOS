@@ -1,9 +1,12 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject IStringLocalizer<SharedResource> L
 @inject IDialogService DialogService
 @inject LifeOS.Web.Services.AppEvents Events
 @inject LifeOS.Application.Abstractions.IUserClock Clock
 @inject NavigationManager Navigation
+@inject LifeOS.Application.Ai.PreferenceService Prefs
+@inject LifeOS.Application.Organize.ProjectService ProjectsApi
 
 <MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -45,7 +48,10 @@
         <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Outlined.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
         <NavLink href="goals"><MudIcon Icon="@Icons.Material.Outlined.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
         <NavLink href="planning"><MudIcon Icon="@Icons.Material.Outlined.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
-        <NavLink href="projects"><MudIcon Icon="@Icons.Material.Outlined.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+        @if (_showProjects)
+        {
+            <NavLink href="projects"><MudIcon Icon="@Icons.Material.Outlined.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+        }
         <NavLink href="habits"><MudIcon Icon="@Icons.Material.Outlined.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
         <NavLink href="retros"><MudIcon Icon="@Icons.Material.Outlined.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
     </nav>
@@ -61,7 +67,10 @@
     <NavLink href="" Match="NavLinkMatch.All"><MudIcon Icon="@Icons.Material.Outlined.Dashboard" /><span>@L["Nav_Overview"]</span></NavLink>
     <NavLink href="goals"><MudIcon Icon="@Icons.Material.Outlined.Flag" /><span>@L["Nav_Goals"]</span></NavLink>
     <NavLink href="planning"><MudIcon Icon="@Icons.Material.Outlined.ViewKanban" /><span>@L["Nav_Planning"]</span></NavLink>
-    <NavLink href="projects"><MudIcon Icon="@Icons.Material.Outlined.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+    @if (_showProjects)
+        {
+            <NavLink href="projects"><MudIcon Icon="@Icons.Material.Outlined.Folder" /><span>@L["Nav_Projects"]</span></NavLink>
+        }
     <NavLink href="habits"><MudIcon Icon="@Icons.Material.Outlined.Repeat" /><span>@L["Nav_Habits"]</span></NavLink>
     <NavLink href="retros"><MudIcon Icon="@Icons.Material.Outlined.Insights" /><span>@L["Nav_Retros"]</span></NavLink>
 </nav>
@@ -79,8 +88,35 @@
 
     private readonly MudTheme _theme = LifeOS.Web.Theming.LifeOsTheme.Create();
 
-    protected override void OnInitialized() =>
+    private bool _showProjects;
+
+    protected override async Task OnInitializedAsync()
+    {
         _dateText = Clock.Today.ToString("dddd d MMMM", System.Globalization.CultureInfo.CurrentCulture);
+        Events.PreferencesChanged += OnPreferencesChangedAsync;
+        await LoadNavAsync();
+    }
+
+    /// <summary>Projects and life areas stay out of the menu until switched on, or until the owner already has some.</summary>
+    private async Task LoadNavAsync()
+    {
+        try
+        {
+            _showProjects = await Prefs.GetShowProjectsAndAreasAsync() || (await ProjectsApi.ListAsync(includeClosed: true)).Count > 0;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException)
+        {
+            _showProjects = true; // unauthenticated or no owner yet: never hide anything because of an error
+        }
+    }
+
+    private async Task OnPreferencesChangedAsync()
+    {
+        await LoadNavAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Events.PreferencesChanged -= OnPreferencesChangedAsync;
 
     private async Task QuickAddAsync()
     {
