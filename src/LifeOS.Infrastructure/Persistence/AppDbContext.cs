@@ -5,6 +5,7 @@ using LifeOS.Domain.Goals;
 using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Notifications;
+using LifeOS.Domain.Reminders;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
@@ -57,6 +58,10 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
     public DbSet<RetroActionFollowUp> RetroActionFollowUps => Set<RetroActionFollowUp>();
 
     public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
+
+    public DbSet<ReminderSettings> ReminderSettings => Set<ReminderSettings>();
+
+    public DbSet<ReminderLink> ReminderLinks => Set<ReminderLink>();
 
     public DbSet<AiProposal> AiProposals => Set<AiProposal>();
 
@@ -244,6 +249,22 @@ public class AppDbContext : IdentityDbContext<AppUser>, IAppDbContext
         });
 
         modelBuilder.Entity<UserPreference>(b => b.HasIndex(x => x.OwnerId).IsUnique());
+
+        modelBuilder.Entity<ReminderSettings>(b =>
+        {
+            b.HasIndex(x => x.OwnerId).IsUnique();
+            b.Property(x => x.LastError).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<ReminderLink>(b =>
+        {
+            b.Property(x => x.ReminderUid).HasMaxLength(200);
+            b.Property(x => x.LastTitle).HasMaxLength(400).IsRequired();
+            b.HasOne(x => x.Task).WithMany().HasForeignKey(x => x.TaskItemId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.OwnerId, x.TaskItemId }).IsUnique();
+            // Pending links have no uid yet (NULLs are distinct), so only real uids must be unique.
+            b.HasIndex(x => new { x.OwnerId, x.ReminderUid }).IsUnique();
+        });
 
         modelBuilder.Entity<AiProposal>(b =>
         {

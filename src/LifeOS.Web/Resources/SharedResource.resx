@@ -545,4 +545,17 @@
   <data name="Goals_ScopeHint_Year" xml:space="preserve"><value>Årets mål, och kvartals- och månadsmålen som ligger inom året.</value></data>
   <data name="Goals_ScopeHint_Quarter" xml:space="preserve"><value>Kvartalets mål, och månadsmålen som ligger inom kvartalet.</value></data>
   <data name="Goals_ScopeHint_Month" xml:space="preserve"><value>Månadens mål.</value></data>
+  <data name="Settings_Reminders" xml:space="preserve"><value>Påminnelser från mobilen</value></data>
+  <data name="Settings_RemindersHint" xml:space="preserve"><value>Koppla en lista i Påminnelser (iOS) via Home Assistant. Ändringar följer med åt båda hållen, med någon minuts fördröjning.</value></data>
+  <data name="Settings_RemindersNotConfigured" xml:space="preserve"><value>Ingen lista är kopplad. Ange din lista som reminders_entity i appens konfiguration i Home Assistant (till exempel todo.namn_todo) och starta om appen.</value></data>
+  <data name="Settings_RemindersList" xml:space="preserve"><value>Ansluten lista: {0}</value></data>
+  <data name="Settings_RemindersImport" xml:space="preserve"><value>Hämta nya påminnelser till Backlog</value></data>
+  <data name="Settings_RemindersPush" xml:space="preserve"><value>Skicka dagens och försenade uppgifter till listan</value></data>
+  <data name="Settings_RemindersWhy" xml:space="preserve"><value>Avbockning följer med åt båda hållen. Det som ändrats senast på en sida vinner. Tar du bort en påminnelse på mobilen ligger uppgiften kvar i LifeOS.</value></data>
+  <data name="Settings_RemindersSync" xml:space="preserve"><value>Synka nu</value></data>
+  <data name="Settings_RemindersDone" xml:space="preserve"><value>Klart: {0} hämtade, {1} skickade, {2} uppdaterade.</value></data>
+  <data name="Settings_RemindersFailed" xml:space="preserve"><value>Det gick inte att nå listan. Inget har ändrats.</value></data>
+  <data name="Settings_RemindersOff" xml:space="preserve"><value>Synken är avstängd eller ingen lista är kopplad.</value></data>
+  <data name="Settings_RemindersLast" xml:space="preserve"><value>Senast synkat {0}</value></data>
+  <data name="Settings_RemindersError" xml:space="preserve"><value>Senaste försöket misslyckades: {0}</value></data>
 </root>

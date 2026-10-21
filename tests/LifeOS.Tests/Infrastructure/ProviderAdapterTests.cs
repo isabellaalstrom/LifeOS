@@ -5,6 +5,7 @@ using LifeOS.Application.Abstractions;
 using LifeOS.Infrastructure.Ai;
 using LifeOS.Infrastructure.Notifications;
 using LifeOS.Infrastructure.Persistence;
+using LifeOS.Infrastructure.Reminders;
 using LifeOS.Web.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -186,6 +187,129 @@ public class ProviderAdapterTests
         {
             File.WriteAllText(file, "{ det här är inte json");
             Assert.Empty(HomeAssistantOptions.Read(file));
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    // ---------- Home Assistant reminders ----------
+
+    private static HomeAssistantReminderClient Reminders(StubHandler handler, string? entity = "todo.mina", string? token = "ha-secret-token") =>
+        new(new HttpClient(handler),
+            Options.Create(new HomeAssistantApiOptions { Url = "http://ha.example/api", Token = token, ReminderEntity = entity }),
+            NullLogger<HomeAssistantReminderClient>.Instance);
+
+    private const string ItemsAnswer = """
+        {"changed_states":[],"service_response":{"todo.mina":{"items":[
+          {"summary":"Pakethållare","uid":"Reminder/A","status":"needs_action","due":"2026-10-21T11:00:00+00:00"},
+          {"summary":"Ziggy ketonmätning","uid":"Reminder/B","status":"needs_action","due":"2026-11-01"},
+          {"summary":"Klar sak","uid":"Reminder/C","status":"completed"},
+          {"summary":"Utan datum","uid":"Reminder/D","status":"needs_action"},
+          {"uid":"Reminder/E","status":"needs_action"}]}}}
+        """;
+
+    [Fact]
+    public async Task Reminder_items_are_read_with_dates_times_and_completion()
+    {
+        var handler = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(ItemsAnswer, Encoding.UTF8, "application/json") });
+
+        var items = await Reminders(handler).GetItemsAsync();
+
+        Assert.Equal(["Reminder/A", "Reminder/B", "Reminder/C", "Reminder/D"], items.Select(i => i.Uid));   // the item without a summary is skipped
+        Assert.Equal(DateTimeOffset.Parse("2026-10-21T11:00:00Z"), items[0].DueAt);
+        Assert.Null(items[0].Due);
+        Assert.Equal(new DateOnly(2026, 11, 1), items[1].Due);
+        Assert.True(items[2].Done);
+        Assert.False(items[3].Done);
+        Assert.Null(items[3].Due);
+
+        var (request, body) = Assert.Single(handler.Calls);
+        Assert.Equal("http://ha.example/api/services/todo/get_items?return_response", request.RequestUri!.ToString());
+        Assert.Equal("Bearer ha-secret-token", request.Headers.Authorization!.ToString());
+        Assert.DoesNotContain("ha-secret-token", body);
+        using var doc = JsonDocument.Parse(body!);
+        Assert.Equal("todo.mina", doc.RootElement.GetProperty("entity_id").GetString());
+    }
+
+    [Fact]
+    public async Task Adding_and_updating_use_the_todo_services_with_only_the_given_fields()
+    {
+        var handler = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") });
+        var client = Reminders(handler);
+
+        await client.AddAsync("Köp mjölk", new DateOnly(2026, 10, 14));
+        await client.UpdateAsync("Reminder/A", null, null, true);
+        await client.UpdateAsync("Reminder/A", "Nytt namn", new DateOnly(2026, 12, 24), null);
+
+        Assert.Equal(
+            ["http://ha.example/api/services/todo/add_item", "http://ha.example/api/services/todo/update_item", "http://ha.example/api/services/todo/update_item"],
+            handler.Calls.Select(c => c.Request.RequestUri!.ToString()));
+        using var add = JsonDocument.Parse(handler.Calls[0].Body!);
+        Assert.Equal(("Köp mjölk", "2026-10-14"), (add.RootElement.GetProperty("item").GetString(), add.RootElement.GetProperty("due_date").GetString()));
+        using var tick = JsonDocument.Parse(handler.Calls[1].Body!);
+        Assert.Equal(("Reminder/A", "completed"), (tick.RootElement.GetProperty("item").GetString(), tick.RootElement.GetProperty("status").GetString()));
+        Assert.False(tick.RootElement.TryGetProperty("rename", out _));
+        Assert.False(tick.RootElement.TryGetProperty("due_date", out _));
+        using var edit = JsonDocument.Parse(handler.Calls[2].Body!);
+        Assert.Equal(("Nytt namn", "2026-12-24"), (edit.RootElement.GetProperty("rename").GetString(), edit.RootElement.GetProperty("due_date").GetString()));
+        Assert.False(edit.RootElement.TryGetProperty("status", out _));
+    }
+
+    [Theory]
+    [InlineData(null, "tok")]
+    [InlineData("", "tok")]
+    [InlineData("todo.mina", null)]
+    public async Task Without_an_entity_and_a_token_the_connection_is_off_and_nothing_is_sent(string? entity, string? token)
+    {
+        var handler = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = Reminders(handler, entity, token);
+
+        if (token is null)
+        {
+            // The Supervisor normally supplies the token through the environment; absent here, so the connection stays off.
+            Environment.SetEnvironmentVariable("SUPERVISOR_TOKEN", null);
+        }
+
+        Assert.False(client.IsConfigured);
+        Assert.Null(client.ListName);
+        await Assert.ThrowsAsync<LifeOS.Application.Abstractions.ReminderException>(() => client.GetItemsAsync());
+        Assert.Empty(handler.Calls);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task Home_assistant_errors_become_a_short_reminder_exception_without_the_answer_text(HttpStatusCode status)
+    {
+        var handler = new StubHandler((_, _) => new HttpResponseMessage(status) { Content = new StringContent("SECRET LIST CONTENT") });
+
+        var ex = await Assert.ThrowsAsync<LifeOS.Application.Abstractions.ReminderException>(() => Reminders(handler).GetItemsAsync());
+
+        Assert.Contains(((int)status).ToString(), ex.Message);
+        Assert.DoesNotContain("SECRET", ex.Message);
+    }
+
+    [Fact]
+    public async Task Network_failures_and_unexpected_answers_are_reminder_exceptions()
+    {
+        var down = new StubHandler((_, _) => throw new HttpRequestException("nere"));
+        await Assert.ThrowsAsync<LifeOS.Application.Abstractions.ReminderException>(() => Reminders(down).GetItemsAsync());
+
+        var odd = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"service_response\":{}}", Encoding.UTF8, "application/json") });
+        await Assert.ThrowsAsync<LifeOS.Application.Abstractions.ReminderException>(() => Reminders(odd).GetItemsAsync());
+    }
+
+    [Fact]
+    public void The_reminders_entity_is_mapped_from_the_home_assistant_options()
+    {
+        var file = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(file, "{\"reminders_entity\":\"todo.mina\"}");
+            Assert.Equal("todo.mina", HomeAssistantOptions.Read(file)["LifeOS:HomeAssistant:ReminderEntity"]);
         }
         finally
         {

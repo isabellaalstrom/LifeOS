@@ -952,6 +952,97 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.ToTable("SprintTasks");
                 });
 
+            modelBuilder.Entity("LifeOS.Domain.Reminders.ReminderLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("LastDone")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("LastDue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastTitle")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("PendingSinceUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ReminderUid")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TaskItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("TaskItemId");
+
+                    b.HasIndex("OwnerId", "ReminderUid")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId", "TaskItemId")
+                        .IsUnique();
+
+                    b.ToTable("ReminderLinks");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Reminders.ReminderSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ImportEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("LastSyncUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PushEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedUtc")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("ReminderSettings");
+                });
+
             modelBuilder.Entity("LifeOS.Domain.Retros.RetroAction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1535,6 +1626,17 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Sprint");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LifeOS.Domain.Reminders.ReminderLink", b =>
+                {
+                    b.HasOne("LifeOS.Domain.Tasks.TaskItem", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Task");
                 });

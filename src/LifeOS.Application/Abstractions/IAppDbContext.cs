@@ -3,6 +3,7 @@ using LifeOS.Domain.Goals;
 using LifeOS.Domain.Habits;
 using LifeOS.Domain.LifeAreas;
 using LifeOS.Domain.Notifications;
+using LifeOS.Domain.Reminders;
 using LifeOS.Domain.Planning;
 using LifeOS.Domain.Retros;
 using LifeOS.Domain.Tasks;
@@ -57,6 +58,10 @@ public interface IAppDbContext : IAsyncDisposable
     DbSet<AiRetroMessage> AiRetroMessages { get; }
 
     DbSet<NotificationPreference> NotificationPreferences { get; }
+
+    DbSet<ReminderSettings> ReminderSettings { get; }
+
+    DbSet<ReminderLink> ReminderLinks { get; }
 
     DbSet<ScheduledNotification> ScheduledNotifications { get; }
 

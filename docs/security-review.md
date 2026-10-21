@@ -39,6 +39,12 @@ data, graceful behaviour when services are missing).
 * `/diagnostics/request` is authenticated and exposes no cookies or secrets.
 * Web Push requires HTTPS (or localhost); the settings page explains this. The service worker caches nothing and shows only the generic push text.
 
+## Home Assistant reminders (optional)
+
+* Off unless `reminders_entity` is set. The Supervisor token comes from the environment, is sent only to the Supervisor proxy and is never logged; failures log status codes only, never list contents.
+* Task titles and dates are shared only with your own Home Assistant (and from there with your iCloud account through the integration you set up), only for the one configured list and only after you enable import or sending.
+* The to-do entity is the only HA object LifeOS touches; it does not read states, call other services or create automations.
+
 ## Notifications
 
 * Nothing is sent until a category is enabled. Texts are generic (counts and invitations) and never contain task titles, goal names or retro content, so a lock screen or push service cannot read private data.

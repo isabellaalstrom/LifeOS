@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<HabitService>();
         services.AddScoped<RetroStatsService>();
         services.AddScoped<RetroService>();
+        services.AddScoped<LifeOS.Application.Reminders.ReminderSyncService>();
         services.AddScoped<LifeOS.Application.Ai.PreferenceService>();
         services.AddScoped<LifeOS.Application.Ai.AiContextBuilder>();
         services.AddScoped<LifeOS.Application.Ai.AiProposalService>();

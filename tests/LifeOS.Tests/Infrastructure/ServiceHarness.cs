@@ -5,6 +5,7 @@ using LifeOS.Application.Habits;
 using LifeOS.Application.Notifications;
 using LifeOS.Application.Organize;
 using LifeOS.Application.Planning;
+using LifeOS.Application.Reminders;
 using LifeOS.Application.Retros;
 using LifeOS.Domain.Ai;
 using LifeOS.Domain.Notifications;
@@ -107,6 +108,70 @@ public sealed class FakeProfileStore : IUserProfileStore
         Task.FromResult<IReadOnlyList<string>>(["user-a", "user-b"]);
 }
 
+/// <summary>An in-memory reminders list. With <see cref="Lag"/>, added items only show up after <see cref="Release"/> (like iCloud).</summary>
+public sealed class FakeReminderClient : IReminderClient
+{
+    private readonly List<ReminderItem> _delayed = [];
+
+    public bool IsConfigured { get; set; } = true;
+
+    public string? ListName => IsConfigured ? "todo.test" : null;
+
+    public bool Lag { get; set; }
+
+    public bool Fail { get; set; }
+
+    public List<ReminderItem> Items { get; } = [];
+
+    public int AddCalls { get; private set; }
+
+    public int UpdateCalls { get; private set; }
+
+    /// <summary>Something the owner added on the phone.</summary>
+    public ReminderItem Phone(string summary, DateOnly? due = null, DateTimeOffset? dueAt = null, bool done = false)
+    {
+        var item = new ReminderItem("Reminder/" + Guid.NewGuid().ToString("N"), summary, done, due, dueAt);
+        Items.Add(item);
+        return item;
+    }
+
+    public void Release()
+    {
+        Items.AddRange(_delayed);
+        _delayed.Clear();
+    }
+
+    public void Replace(string uid, Func<ReminderItem, ReminderItem> change)
+    {
+        var i = Items.FindIndex(x => x.Uid == uid);
+        Items[i] = change(Items[i]);
+    }
+
+    public Task<IReadOnlyList<ReminderItem>> GetItemsAsync(CancellationToken cancellationToken = default) =>
+        Fail ? throw new ReminderException("down") : Task.FromResult<IReadOnlyList<ReminderItem>>(Items.ToList());
+
+    public Task AddAsync(string summary, DateOnly? due, CancellationToken cancellationToken = default)
+    {
+        AddCalls++;
+        var item = new ReminderItem("Reminder/" + Guid.NewGuid().ToString("N"), summary, false, due, null);
+        (Lag ? _delayed : Items).Add(item);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(string uid, string? summary, DateOnly? due, bool? done, CancellationToken cancellationToken = default)
+    {
+        UpdateCalls++;
+        Replace(uid, i => i with
+        {
+            Summary = summary ?? i.Summary,
+            Due = due ?? (due is null && i.Due is not null ? i.Due : null),
+            DueAt = due is not null ? null : i.DueAt,
+            Done = done ?? i.Done,
+        });
+        return Task.CompletedTask;
+    }
+}
+
 /// <summary>Real services on a real migrated SQLite database with a controllable user and clock.</summary>
 public sealed class ServiceHarness : IDisposable
 {
@@ -153,6 +218,8 @@ public sealed class ServiceHarness : IDisposable
         Dispatcher = new NotificationDispatcher(Factory, Clock, [PushSender, NtfySender]);
         Notifications = new NotificationService(Factory, Clock, new NotificationRunner(Planner, Dispatcher));
         Subscriptions = new PushSubscriptionService(Factory);
+        ReminderClient = new FakeReminderClient();
+        Reminders = new ReminderSyncService(Factory, Clock, ReminderClient, Tasks);
     }
 
     public TestDatabase Db { get; }
@@ -208,6 +275,10 @@ public sealed class ServiceHarness : IDisposable
     public NotificationService Notifications { get; }
 
     public PushSubscriptionService Subscriptions { get; }
+
+    public FakeReminderClient ReminderClient { get; }
+
+    public ReminderSyncService Reminders { get; }
 
     /// <summary>A second set of services for another owner against the same database and clock.</summary>
     public ServiceHarness ForUser(string userId) => new(userId, shareWith: this);

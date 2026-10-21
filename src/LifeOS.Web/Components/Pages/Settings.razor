@@ -16,6 +16,7 @@
 @inject IEnumerable<INotificationSender> Senders
 @inject IUserClock Clock
 @inject IJSRuntime Js
+@inject LifeOS.Application.Reminders.ReminderSyncService Reminders
 
 <PageTitle>@L["Nav_Settings"] – @L["App_Title"]</PageTitle>
 
@@ -63,6 +64,41 @@ else
             <li>@L["Settings_AiShared3"]</li>
             <li>@L["Settings_AiShared4"]</li>
         </ul>
+    </section>
+
+    @* ---- reminders from the phone, through Home Assistant ---- *@
+    <section class="settings-card tone-card tone-peach">
+        <h2 class="card-title">@L["Settings_Reminders"]</h2>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Settings_RemindersHint"]</MudText>
+        @if (_reminders is { Configured: false })
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" ShowCloseIcon="false">@L["Settings_RemindersNotConfigured"]</MudAlert>
+        }
+        else if (_reminders is not null)
+        {
+            <MudText Typo="Typo.body2" Class="mb-1">@L["Settings_RemindersList", _reminders.ListName ?? ""]</MudText>
+            <MudSwitch T="bool" Value="_reminders.ImportEnabled" ValueChanged="v => SaveRemindersAsync(v, _reminders.PushEnabled)" Color="Color.Primary" Label="@L["Settings_RemindersImport"]" />
+            <MudSwitch T="bool" Value="_reminders.PushEnabled" ValueChanged="v => SaveRemindersAsync(_reminders.ImportEnabled, v)" Color="Color.Primary" Label="@L["Settings_RemindersPush"]" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">@L["Settings_RemindersWhy"]</MudText>
+            <div class="d-flex flex-wrap align-center gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Sync" OnClick="SyncRemindersAsync"
+                           Disabled="@(_syncing || !(_reminders.ImportEnabled || _reminders.PushEnabled))">@L["Settings_RemindersSync"]</MudButton>
+                @if (!string.IsNullOrEmpty(_syncResult))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_syncResult</MudText>
+                }
+            </div>
+            @if (_reminders.LastSyncUtc is { } last)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">
+                    @L["Settings_RemindersLast", TimeZoneInfo.ConvertTime(last, Clock.Zone).ToString("d MMM HH:mm", CultureInfo.CurrentCulture)]
+                </MudText>
+            }
+            @if (!string.IsNullOrEmpty(_reminders.LastError))
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2" ShowCloseIcon="false">@L["Settings_RemindersError", _reminders.LastError]</MudAlert>
+            }
+        }
     </section>
 
     @* ---- notifications ---- *@
@@ -176,6 +212,9 @@ else
     private AiPreferenceView? _ai;
     private AiAvailability? _availability;
     private string _zone = string.Empty;
+    private LifeOS.Application.Reminders.ReminderStatusView? _reminders;
+    private bool _syncing;
+    private string? _syncResult;
     private IReadOnlyList<NotificationView> _recent = [];
     private IReadOnlyList<PushSubscriptionView> _devices = [];
     private bool _ntfyAvailable;
@@ -196,6 +235,7 @@ else
         _ai = await Prefs.GetAiAsync();
         _availability = await Coach.GetAvailabilityAsync();
         _zone = await Prefs.GetTimeZoneAsync();
+        _reminders = await Reminders.GetStatusAsync();
         _ntfyAvailable = Senders.Any(s => s.Channel == NotificationChannel.Ntfy && s.IsAvailable);
         await LoadListsAsync();
     }
@@ -242,6 +282,29 @@ else
             _zone = zone;
             Snackbar.Add(L["Settings_Saved"], Severity.Success);
         }
+    }
+
+    private async Task SaveRemindersAsync(bool import, bool push)
+    {
+        await Reminders.SetEnabledAsync(import, push);
+        _reminders = await Reminders.GetStatusAsync();
+        Snackbar.Add(L["Settings_Saved"], Severity.Success);
+    }
+
+    private async Task SyncRemindersAsync()
+    {
+        _syncing = true;
+        _syncResult = null;
+        StateHasChanged();
+        var result = await Reminders.SyncAsync();
+        _syncResult = result.Status switch
+        {
+            LifeOS.Application.Reminders.ReminderSyncStatus.Ok => L["Settings_RemindersDone", result.Imported, result.Pushed, result.Updated],
+            LifeOS.Application.Reminders.ReminderSyncStatus.Failed => L["Settings_RemindersFailed"],
+            _ => L["Settings_RemindersOff"],
+        };
+        _reminders = await Reminders.GetStatusAsync();
+        _syncing = false;
     }
 
     private async Task SaveAiAsync(bool enabled, AiCoachMode mode)

@@ -78,6 +78,7 @@ public sealed class NotificationWorker(
             try
             {
                 await runner.RunAsOwnerAsync(owner, sp => sp.GetRequiredService<NotificationRunner>().RunAsync(ct), ct);
+                await runner.RunAsOwnerAsync(owner, sp => sp.GetRequiredService<LifeOS.Application.Reminders.ReminderSyncService>().SyncAsync(ct), ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

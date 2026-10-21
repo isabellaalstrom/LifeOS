@@ -3,6 +3,7 @@ using LifeOS.Application.Ai;
 using LifeOS.Infrastructure.Ai;
 using LifeOS.Infrastructure.Notifications;
 using LifeOS.Infrastructure.Persistence;
+using LifeOS.Infrastructure.Reminders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionName));
         services.Configure<WebPushOptions>(configuration.GetSection(WebPushOptions.SectionName));
         services.Configure<NtfyOptions>(configuration.GetSection(NtfyOptions.SectionName));
+        services.Configure<HomeAssistantApiOptions>(configuration.GetSection(HomeAssistantApiOptions.SectionName));
         services.Configure<NotificationWorkerOptions>(configuration.GetSection(NotificationWorkerOptions.SectionName));
 
         // Scoped factory: each operation gets its own short-lived context that still sees the current user.
@@ -48,6 +50,9 @@ public static class DependencyInjection
         services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<WebPushSender>());
         services.AddHttpClient<NtfySender>(client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<NtfySender>());
+        // Reminders through Home Assistant: optional, off unless an entity is configured.
+        services.AddHttpClient<IReminderClient, HomeAssistantReminderClient>((sp, client) =>
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, sp.GetRequiredService<IOptions<HomeAssistantApiOptions>>().Value.TimeoutSeconds)));
         services.AddSingleton<IOwnerScopeRunner, OwnerScopeRunner>();
         services.AddHostedService<NotificationWorker>();
         return services;
