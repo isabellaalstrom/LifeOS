@@ -104,6 +104,7 @@ public partial class AuthBoundaryTests : IClassFixture<WebAppFactory>
     [InlineData("/planning/backlog", "Backlog")]
     [InlineData("/areas", "Kategorier")]
     [InlineData("/goals", "Nytt mål")]
+    [InlineData("/goals", "Visa avklarade och pausade")]
     [InlineData("/habits", "Ny återkommande uppgift")]
     [InlineData("/retros", "Starta en återblick")]
     [InlineData("/settings", "AI-coach")]

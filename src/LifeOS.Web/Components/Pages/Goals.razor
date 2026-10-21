@@ -17,27 +17,33 @@
 </div>
 
 <div class="subnav" role="tablist">
+    <button type="button" role="tab" aria-selected="@(_scope is null)" class="@(_scope is null ? "active" : null)"
+            @onclick="() => SetScopeAsync(null)">@L["Goals_All"]</button>
     @foreach (var h in Enum.GetValues<GoalHorizon>())
     {
         var horizon = h;
-        <button type="button" role="tab" aria-selected="@(_horizon == horizon)" class="@(_horizon == horizon ? "active" : null)"
-                @onclick="() => SetHorizonAsync(horizon)">@L["Horizon_" + horizon]</button>
+        <button type="button" role="tab" aria-selected="@(_scope == horizon)" class="@(_scope == horizon ? "active" : null)"
+                @onclick="() => SetScopeAsync(horizon)">@L["Horizon_" + horizon]</button>
     }
 </div>
 
-<div class="sprint-header">
-    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" aria-label="@L["Goals_PeriodPrev"]" OnClick="() => ShiftAsync(-1)" />
-    <div class="sprint-title">
-        <MudText Typo="Typo.h5">@GoalDialog.PeriodText(_horizon, _periodStart)</MudText>
+@if (_scope is { } scope)
+{
+    <div class="sprint-header">
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" aria-label="@L["Goals_PeriodPrev"]" OnClick="() => ShiftAsync(-1)" />
+        <div class="sprint-title">
+            <MudText Typo="Typo.h5">@GoalDialog.PeriodText(scope, _periodStart)</MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" aria-label="@L["Goals_PeriodNext"]" OnClick="() => ShiftAsync(1)" />
+        @if (_periodStart != GoalPeriods.Start(scope, Clock.Today))
+        {
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="TodayAsync">@L["Sprint_ThisWeek"]</MudButton>
+        }
     </div>
-    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" aria-label="@L["Goals_PeriodNext"]" OnClick="() => ShiftAsync(1)" />
-    @if (_periodStart != GoalPeriods.Start(_horizon, Clock.Today))
-    {
-        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="TodayAsync">@L["Sprint_ThisWeek"]</MudButton>
-    }
-</div>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">@L["Goals_ScopeHint_" + scope]</MudText>
+}
 
-<MudSwitch T="bool" Value="_showClosed" ValueChanged="ShowClosedChangedAsync" Label="@L["Goals_ShowClosed"]" Color="Color.Primary" Class="mb-2" />
+<MudSwitch T="bool" Value="_showClosed" ValueChanged="ShowClosedChangedAsync" Label="@L["Goals_ShowInactive"]" Color="Color.Primary" Class="mb-2" />
 
 @if (_goals is null)
 {
@@ -51,44 +57,45 @@ else if (_goals.Count == 0)
 }
 else
 {
-    <div class="goal-list">
-        @foreach (var g in _goals)
-        {
-            <GoalCard Goal="g" OnOpen="Open" />
-        }
-    </div>
+    <GoalTree Goals="_goals" OnOpen="Open"
+              ShowYearHeading="@(_scope is null)"
+              ShowQuarterHeading="@(_scope is null or GoalHorizon.Year)"
+              ShowMonthHeading="@(_scope is not GoalHorizon.Month)" />
 }
 
 @code {
-    private GoalHorizon _horizon = GoalHorizon.Quarter;
+    /// <summary>The chosen period type, or null for every goal. Defaults to the year, which brings its quarters and months with it.</summary>
+    private GoalHorizon? _scope = GoalHorizon.Year;
+    private GoalHorizon CurrentHorizon => _scope ?? GoalHorizon.Quarter;
     private DateOnly _periodStart;
     private bool _showClosed;
     private IReadOnlyList<GoalView>? _goals;
 
     protected override async Task OnInitializedAsync()
     {
-        _periodStart = GoalPeriods.Start(_horizon, Clock.Today);
+        _periodStart = GoalPeriods.Start(CurrentHorizon, Clock.Today);
         await ReloadAsync();
     }
 
-    private async Task ReloadAsync() => _goals = await GoalsApi.ListAsync(_horizon, _periodStart, _showClosed);
+    private async Task ReloadAsync() =>
+        _goals = await GoalsApi.ListWithinAsync(_scope, _scope is null ? null : _periodStart, _showClosed);
 
-    private async Task SetHorizonAsync(GoalHorizon horizon)
+    private async Task SetScopeAsync(GoalHorizon? scope)
     {
-        _horizon = horizon;
-        _periodStart = GoalPeriods.Start(horizon, Clock.Today);
+        _scope = scope;
+        _periodStart = GoalPeriods.Start(CurrentHorizon, Clock.Today);
         await ReloadAsync();
     }
 
     private async Task ShiftAsync(int periods)
     {
-        _periodStart = GoalPeriods.Shift(_horizon, _periodStart, periods);
+        _periodStart = GoalPeriods.Shift(CurrentHorizon, _periodStart, periods);
         await ReloadAsync();
     }
 
     private async Task TodayAsync()
     {
-        _periodStart = GoalPeriods.Start(_horizon, Clock.Today);
+        _periodStart = GoalPeriods.Start(CurrentHorizon, Clock.Today);
         await ReloadAsync();
     }
 
@@ -104,7 +111,7 @@ else
     {
         var parameters = new DialogParameters<GoalDialog>
         {
-            { x => x.DefaultHorizon, _horizon },
+            { x => x.DefaultHorizon, CurrentHorizon },
             { x => x.DefaultPeriodStart, _periodStart },
         };
         var result = await ShowDialogAsync<GoalDialog>(L["Goals_New"], parameters);

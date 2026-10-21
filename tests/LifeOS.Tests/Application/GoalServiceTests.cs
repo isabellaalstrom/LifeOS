@@ -294,4 +294,43 @@ public class GoalServiceTests
         Assert.Equal(40m, (await h.Goals.GetAsync(id))!.Goal.Percent);
         Assert.Equal(2, (await h.Goals.GetAsync(id))!.History.Count);
     }
+
+    [Fact]
+    public async Task A_period_view_brings_the_shorter_goals_inside_it_without_any_manual_link()
+    {
+        using var h = new ServiceHarness();
+        await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "År", GoalHorizon.Year, new DateOnly(2026, 1, 1)));
+        await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Q4", GoalHorizon.Quarter, new DateOnly(2026, 10, 1)));
+        await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Q1", GoalHorizon.Quarter, new DateOnly(2026, 1, 1)));
+        await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Nov", GoalHorizon.Month, new DateOnly(2026, 11, 1)));
+        await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Nästa år", GoalHorizon.Year, new DateOnly(2027, 1, 1)));
+
+        var inYear = await h.Goals.ListWithinAsync(GoalHorizon.Year, new DateOnly(2026, 1, 1), includeInactive: false);
+        Assert.Equal(["Nov", "Q1", "Q4", "År"], inYear.Select(g => g.Title).Order(StringComparer.Ordinal));   // 2027 is outside
+
+        var inQuarter = await h.Goals.ListWithinAsync(GoalHorizon.Quarter, new DateOnly(2026, 10, 1), includeInactive: false);
+        Assert.Equal(["Q4", "Nov"], inQuarter.Select(g => g.Title));            // the year goal is above the scope, so not included
+
+        var inMonth = await h.Goals.ListWithinAsync(GoalHorizon.Month, new DateOnly(2026, 11, 1), includeInactive: false);
+        Assert.Equal(["Nov"], inMonth.Select(g => g.Title));
+
+        Assert.Equal(5, (await h.Goals.ListWithinAsync(null, null, includeInactive: false)).Count);
+    }
+
+    [Fact]
+    public async Task Paused_and_achieved_goals_are_hidden_until_asked_for()
+    {
+        using var h = new ServiceHarness();
+        await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Aktivt"));
+        var paused = await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Pausat"));
+        var achieved = await h.Goals.CreateAsync(Of(GoalProgressMode.LinkedTasks, "Klart"));
+        await h.Goals.SetStatusAsync(paused, GoalStatus.Paused);
+        await h.Goals.SetStatusAsync(achieved, GoalStatus.Achieved);
+
+        Assert.Equal(["Aktivt"], (await h.Goals.ListWithinAsync(null, null, includeInactive: false)).Select(g => g.Title));
+        var all = await h.Goals.ListWithinAsync(null, null, includeInactive: true);
+        Assert.Equal(3, all.Count);
+        Assert.Equal(GoalStatus.Paused, all.Single(g => g.Title == "Pausat").Status);
+        Assert.Equal(GoalStatus.Achieved, all.Single(g => g.Title == "Klart").Status);
+    }
 }

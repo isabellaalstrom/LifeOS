@@ -1,0 +1,100 @@
+@using System.Globalization
+@using LifeOS.Application.Goals
+@using LifeOS.Domain.Goals
+@inject IStringLocalizer<SharedResource> L
+
+@* Goals grouped by the calendar: year, then quarter, then month. Nothing is linked by hand; the dates decide where a goal sits.
+   A quarter or month heading appears as soon as something lives there, even if the longer goal above it does not exist. *@
+@foreach (var year in Years)
+{
+    <section class="goal-year">
+        @if (ShowYearHeading)
+        {
+            <h2 class="goal-group-head">@year.Year.ToString(CultureInfo.InvariantCulture) <span>@Summary(year.Goals)</span></h2>
+        }
+        @foreach (var g in year.YearGoals)
+        {
+            <GoalCard Goal="g" OnOpen="OnOpen" />
+        }
+
+        @foreach (var quarter in year.Quarters)
+        {
+            <div class="goal-quarter">
+                @if (ShowQuarterHeading)
+                {
+                    <h3 class="goal-group-head">@L["Horizon_Quarter"] @quarter.Number <span>@Summary(quarter.Goals)</span></h3>
+                }
+                @foreach (var g in quarter.QuarterGoals)
+                {
+                    <GoalCard Goal="g" OnOpen="OnOpen" />
+                }
+
+                @foreach (var month in quarter.Months)
+                {
+                    <div class="goal-month">
+                        @if (ShowMonthHeading)
+                        {
+                            <h4 class="goal-group-head">@CultureInfo.CurrentCulture.TextInfo.ToTitleCase(month.Start.ToString("MMMM", CultureInfo.CurrentCulture)) <span>@Summary(month.Goals)</span></h4>
+                        }
+                        @foreach (var g in month.Goals)
+                        {
+                            <GoalCard Goal="g" OnOpen="OnOpen" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<GoalView> Goals { get; set; } = [];
+
+    [Parameter] public EventCallback<GoalView> OnOpen { get; set; }
+
+    /// <summary>The headings that repeat what the page already says are left out (for example the year in a year view).</summary>
+    [Parameter] public bool ShowYearHeading { get; set; } = true;
+
+    [Parameter] public bool ShowQuarterHeading { get; set; } = true;
+
+    [Parameter] public bool ShowMonthHeading { get; set; } = true;
+
+    private sealed record MonthGroup(DateOnly Start, List<GoalView> Goals);
+
+    private sealed record QuarterGroup(int Number, List<GoalView> QuarterGoals, List<MonthGroup> Months)
+    {
+        public IEnumerable<GoalView> Goals => QuarterGoals.Concat(Months.SelectMany(m => m.Goals));
+    }
+
+    private sealed record YearGroup(int Year, List<GoalView> YearGoals, List<QuarterGroup> Quarters)
+    {
+        public IEnumerable<GoalView> Goals => YearGoals.Concat(Quarters.SelectMany(q => q.Goals));
+    }
+
+    private IEnumerable<YearGroup> Years => Goals
+        .GroupBy(g => g.PeriodStart.Year)
+        .OrderBy(y => y.Key)
+        .Select(y => new YearGroup(
+            y.Key,
+            y.Where(g => g.Horizon == GoalHorizon.Year).ToList(),
+            y.Where(g => g.Horizon != GoalHorizon.Year)
+                .GroupBy(g => (g.PeriodStart.Month - 1) / 3 + 1)
+                .OrderBy(q => q.Key)
+                .Select(q => new QuarterGroup(
+                    q.Key,
+                    q.Where(g => g.Horizon == GoalHorizon.Quarter).ToList(),
+                    q.Where(g => g.Horizon == GoalHorizon.Month)
+                        .GroupBy(g => g.PeriodStart)
+                        .OrderBy(m => m.Key)
+                        .Select(m => new MonthGroup(m.Key, m.ToList()))
+                        .ToList()))
+                .ToList()));
+
+    /// <summary>"4 mål · 1 uppnått": counts only, no averages that could mislead.</summary>
+    private string Summary(IEnumerable<GoalView> goals)
+    {
+        var list = goals.ToList();
+        var achieved = list.Count(g => g.Status == GoalStatus.Achieved);
+        return achieved > 0 ? L["Goals_GroupSummary", list.Count, achieved] : L["Goals_GroupCount", list.Count];
+    }
+}

@@ -538,4 +538,11 @@
   <data name="Guide_CategoriesText" xml:space="preserve"><value>Kategorier (Hälsa, Hem, Jobb) är fria taggar du skapar själv, om du vill. De går att filtrera på.</value></data>
   <data name="Field_Description" xml:space="preserve"><value>Beskrivning</value></data>
   <data name="Field_Name" xml:space="preserve"><value>Namn</value></data>
+  <data name="Goals_All" xml:space="preserve"><value>Alla</value></data>
+  <data name="Goals_ShowInactive" xml:space="preserve"><value>Visa avklarade och pausade</value></data>
+  <data name="Goals_GroupCount" xml:space="preserve"><value>{0} mål</value></data>
+  <data name="Goals_GroupSummary" xml:space="preserve"><value>{0} mål · {1} uppnådda</value></data>
+  <data name="Goals_ScopeHint_Year" xml:space="preserve"><value>Årets mål, och kvartals- och månadsmålen som ligger inom året.</value></data>
+  <data name="Goals_ScopeHint_Quarter" xml:space="preserve"><value>Kvartalets mål, och månadsmålen som ligger inom kvartalet.</value></data>
+  <data name="Goals_ScopeHint_Month" xml:space="preserve"><value>Månadens mål.</value></data>
 </root>

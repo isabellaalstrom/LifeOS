@@ -35,6 +35,37 @@ public sealed class GoalService(IAppDbContextFactory dbFactory, IUserClock clock
         return await BuildViewsAsync(db, goals, ct);
     }
 
+    /// <summary>
+    /// Goals inside a chosen period together with the shorter-horizon goals that lie within it (a year also brings its
+    /// quarters and months, a quarter its months). With no scope, every goal. Nothing is linked by hand: the dates decide.
+    /// Only active goals unless <paramref name="includeInactive"/>, which adds paused, achieved and dropped ones.
+    /// </summary>
+    public async Task<IReadOnlyList<GoalView>> ListWithinAsync(
+        GoalHorizon? scopeHorizon, DateOnly? scopeStart, bool includeInactive, CancellationToken ct = default)
+    {
+        await using var db = dbFactory.Create();
+        var query = db.Goals.Include(g => g.LifeArea).AsQueryable();
+        if (!includeInactive)
+        {
+            query = query.Where(g => g.Status == GoalStatus.Active);
+        }
+
+        if (scopeHorizon is { } h && scopeStart is { } start)
+        {
+            var end = GoalPeriods.EndExclusive(h, start);
+            query = query.Where(g => g.PeriodStart >= start && g.PeriodStart < end);
+        }
+
+        var goals = await query.OrderBy(g => g.PeriodStart).ThenBy(g => g.CreatedUtc).ToListAsync(ct);
+        if (scopeHorizon is { } horizon)
+        {
+            // Same horizon or a shorter one (Year < Quarter < Month in the enum).
+            goals = goals.Where(g => g.Horizon >= horizon).ToList();
+        }
+
+        return await BuildViewsAsync(db, goals, ct);
+    }
+
     /// <summary>Active goals whose period contains today, for the overview.</summary>
     public async Task<IReadOnlyList<GoalView>> ListCurrentAsync(int take = 5, CancellationToken ct = default)
     {

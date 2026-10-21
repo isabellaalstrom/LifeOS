@@ -1064,3 +1064,13 @@ a {
 .guide-words dd { margin: 2px 0 0; color: var(--lo-ink-2); }
 .guide-list { margin: 6px 0; padding-left: 22px; } .guide-list li { margin: 6px 0; }
 .shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 8px; }
+
+/* ---- goal tree ---- */
+.goal-group-head { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 6px; font-family: var(--lo-serif); }
+.goal-group-head span { font-family: var(--lo-sans); font-size: .8rem; font-weight: 400; color: var(--lo-ink-2); }
+h2.goal-group-head { font-size: 1.4rem; }
+h3.goal-group-head { font-size: 1.1rem; }
+h4.goal-group-head { font-size: .95rem; }
+.goal-quarter { margin-left: 8px; padding-left: 12px; border-left: 2px solid var(--lo-line); }
+.goal-month { margin-left: 8px; padding-left: 12px; border-left: 2px solid var(--lo-line); }
+.goal-year > .goal-card, .goal-quarter > .goal-card, .goal-month > .goal-card { margin-bottom: 8px; }
