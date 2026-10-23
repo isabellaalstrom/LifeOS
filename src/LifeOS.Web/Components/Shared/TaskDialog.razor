@@ -2,8 +2,6 @@
 @using LifeOS.Application.Organize
 @using LifeOS.Domain.Tasks
 @inject TaskService Tasks
-@inject LifeAreaService Areas
-@inject LifeOS.Application.Goals.GoalService Goals
 
 <MudDialog>
     <DialogContent>
@@ -30,29 +28,13 @@
                     <MudNumericField T="int?" @bind-Value="_estimate" Label="@L["Task_Estimate"]" Min="1" Max="@TaskService.MaxEstimateMinutes"
                                      HideSpinButtons="true" Clearable="true" />
                 </MudItem>
-                @* Areas and projects are optional; their fields only appear once some exist. *@
-                @if (_areas.Count > 0)
-                {
-                    <MudItem xs="12" sm="6">
-                        <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
-                            @foreach (var a in _areas)
-                            {
-                                <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                }
-                @if (_goals.Count > 0)
-                {
-                    <MudItem xs="12">
-                        <MudSelect T="Guid?" @bind-Value="_goalId" Label="@L["Task_Goal"]" Clearable="true">
-                            @foreach (var g in _goals)
-                            {
-                                <MudSelectItem T="Guid?" Value="@((Guid?)g.Id)">@g.Title</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                }
+                @* Categories and goals are optional; a new one can be made right in the picker. *@
+                <MudItem xs="12" sm="6">
+                    <AreaPicker @bind-Value="_areaId" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <GoalPicker @bind-Value="_goalId" />
+                </MudItem>
                 <MudItem xs="12" sm="4">
                     <MudDatePicker Date="_due" DateChanged="d => _due = d" Label="@L["Task_Due"]"
                                    Clearable="true" Editable="false" />
@@ -117,8 +99,6 @@
     /// <summary>Set to the created task's id after saving (also returned as dialog data).</summary>
     private bool _loading = true;
     private TaskDetail? _detail;
-    private IReadOnlyList<LifeAreaView> _areas = [];
-    private IReadOnlyList<LifeOS.Application.Goals.GoalView> _goals = [];
     private Guid? _goalId;
 
     private string _title = string.Empty;
@@ -133,8 +113,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _areas = await Areas.ListAsync();
-        _goals = await Goals.ListAsync(includeClosed: false);
 
         if (TaskId is { } id)
         {

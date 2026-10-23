@@ -6,7 +6,6 @@
 @using LifeOS.Domain.Habits
 @inject HabitService Habits
 @inject GoalService Goals
-@inject LifeAreaService Areas
 @inject LifeOS.Application.Abstractions.IUserClock Clock
 
 <MudDialog>
@@ -32,24 +31,11 @@
                 <MudItem xs="6">
                     <MudNumericField T="int" @bind-Value="_target" Label="@L["Habit_Target"]" Min="1" Max="@HabitService.MaxTarget" HideSpinButtons="true" />
                 </MudItem>
-                @if (_areas.Count > 0)
-                {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
-                        @foreach (var a in _areas)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <AreaPicker @bind-Value="_areaId" />
                 </MudItem>
-                }
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="Guid?" @bind-Value="_goalId" Label="@L["Task_Goal"]" Clearable="true">
-                        @foreach (var g in _goals)
-                        {
-                            <MudSelectItem T="Guid?" Value="@((Guid?)g.Id)">@g.Title</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <GoalPicker @bind-Value="_goalId" OnCreated="ReloadGoalsAsync" />
                 </MudItem>
                 @if (SelectedGoalIsNumeric)
                 {
@@ -84,7 +70,6 @@
     [Parameter] public Guid? DefaultGoalId { get; set; }
 
     private bool _loading = true;
-    private IReadOnlyList<LifeAreaView> _areas = [];
     private IReadOnlyList<GoalView> _goals = [];
     private string _name = string.Empty;
     private string? _notes;
@@ -95,11 +80,12 @@
     private decimal _increment = 1m;
     private int? _estimate;
 
+    private async Task ReloadGoalsAsync() => _goals = await Goals.ListAsync(includeClosed: false);
+
     private bool SelectedGoalIsNumeric => _goals.Any(g => g.Id == _goalId && g.Mode == GoalProgressMode.Numeric);
 
     protected override async Task OnInitializedAsync()
     {
-        _areas = await Areas.ListAsync();
         _goals = await Goals.ListAsync(includeClosed: false);
         _goalId = DefaultGoalId;
 

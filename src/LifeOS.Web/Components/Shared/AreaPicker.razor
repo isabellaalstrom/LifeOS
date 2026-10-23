@@ -1,0 +1,71 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Organize
+@inject LifeAreaService Areas
+
+@* Choose a category, or make a new one right here without leaving the dialog. *@
+@if (_areas.Count > 0)
+{
+    <MudSelect T="Guid?" Value="Value" ValueChanged="SelectAsync" Label="@L["Task_Area"]" Clearable="true">
+        @foreach (var a in _areas)
+        {
+            <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
+        }
+    </MudSelect>
+}
+
+@if (!_adding)
+{
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => _adding = true">@L["Picker_NewArea"]</MudButton>
+}
+else
+{
+    <div class="picker-inline">
+        <MudTextField T="string" @bind-Value="_name" Label="@L["Picker_AreaName"]" Immediate="true" AutoFocus="true" MaxLength="100"
+                      OnKeyDown="OnKeyDown" Margin="Margin.Dense" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@string.IsNullOrWhiteSpace(_name)" OnClick="CreateAsync">@L["Picker_Add"]</MudButton>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Cancel">@L["Cancel"]</MudButton>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? Value { get; set; }
+
+    [Parameter] public EventCallback<Guid?> ValueChanged { get; set; }
+
+    private IReadOnlyList<LifeAreaView> _areas = [];
+    private bool _adding;
+    private string? _name;
+
+    protected override async Task OnInitializedAsync() => _areas = await Areas.ListAsync();
+
+    private async Task SelectAsync(Guid? id)
+    {
+        Value = id;
+        await ValueChanged.InvokeAsync(id);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_name))
+        {
+            await CreateAsync();
+        }
+    }
+
+    private void Cancel()
+    {
+        _adding = false;
+        _name = null;
+    }
+
+    private async Task CreateAsync()
+    {
+        Guid id = default;
+        if (await RunAsync(async () => id = await Areas.CreateAsync(_name ?? string.Empty)))
+        {
+            _areas = await Areas.ListAsync();
+            Cancel();
+            await SelectAsync(id);
+        }
+    }
+}

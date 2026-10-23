@@ -558,4 +558,9 @@
   <data name="Settings_RemindersOff" xml:space="preserve"><value>Synken är avstängd eller ingen lista är kopplad.</value></data>
   <data name="Settings_RemindersLast" xml:space="preserve"><value>Senast synkat {0}</value></data>
   <data name="Settings_RemindersError" xml:space="preserve"><value>Senaste försöket misslyckades: {0}</value></data>
+  <data name="Picker_NewArea" xml:space="preserve"><value>Ny kategori</value></data>
+  <data name="Picker_AreaName" xml:space="preserve"><value>Namn på kategorin</value></data>
+  <data name="Picker_NewGoal" xml:space="preserve"><value>Nytt mål</value></data>
+  <data name="Picker_GoalTitle" xml:space="preserve"><value>Namn på målet</value></data>
+  <data name="Picker_Add" xml:space="preserve"><value>Lägg till</value></data>
 </root>

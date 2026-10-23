@@ -4,7 +4,6 @@
 @using LifeOS.Application.Organize
 @using LifeOS.Domain.Goals
 @inject GoalService Goals
-@inject LifeAreaService Areas
 @inject LifeOS.Application.Abstractions.IUserClock Clock
 @inject LifeOS.Application.Ai.IAiCoachService Coach
 
@@ -50,19 +49,11 @@
                     <MudDatePicker Date="Fmt.ToDateTime(_periodDate)" DateChanged="d => OnPeriodChanged(Fmt.ToDateOnly(d))"
                                    Label="@L["Goal_Period"]" HelperText="@PeriodLabel" Editable="false" />
                 </MudItem>
-                @* Areas are optional and only offered once some exist. A goal's older "parent" link, if any, is kept as is
+                @* Categories are optional and can be made in the picker. A goal's older "parent" link, if any, is kept as is
                    but can no longer be created here: use milestones for the steps of a goal instead. *@
-                @if (_areas.Count > 0)
-                {
-                    <MudItem xs="12" sm="6">
-                        <MudSelect T="Guid?" @bind-Value="_areaId" Label="@L["Task_Area"]" Clearable="true">
-                            @foreach (var a in _areas)
-                            {
-                                <MudSelectItem T="Guid?" Value="@((Guid?)a.Id)">@a.Name</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                }
+                <MudItem xs="12" sm="6">
+                    <AreaPicker @bind-Value="_areaId" />
+                </MudItem>
             </MudGrid>
 
             <MudSelect T="GoalProgressMode" @bind-Value="_mode" Label="@L["Goal_Mode"]" Class="mt-3" HelperText="@L["ModeHint_" + _mode]">
@@ -107,7 +98,6 @@
     [Parameter] public string? DefaultTitle { get; set; }
 
     private bool _loading = true;
-    private IReadOnlyList<LifeAreaView> _areas = [];
     private IReadOnlyList<GoalView> _allGoals = [];
     private string _title = string.Empty;
     private string? _description;
@@ -148,7 +138,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _areas = await Areas.ListAsync();
         _allGoals = await Goals.ListAsync(includeClosed: false);
         _horizon = DefaultHorizon;
         _periodDate = DefaultPeriodStart ?? Clock.Today;

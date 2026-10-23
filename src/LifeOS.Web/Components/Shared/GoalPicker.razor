@@ -1,0 +1,85 @@
+@inherits PlanningComponentBase
+@using LifeOS.Application.Goals
+@using LifeOS.Domain.Goals
+@inject GoalService Goals
+@inject LifeOS.Application.Abstractions.IUserClock Clock
+
+@* Choose a goal, or make a new one right here: a title and how long it runs. It follows its tasks; details can be changed later. *@
+@if (_goals.Count > 0)
+{
+    <MudSelect T="Guid?" Value="Value" ValueChanged="SelectAsync" Label="@L["Task_Goal"]" Clearable="true">
+        @foreach (var g in _goals)
+        {
+            <MudSelectItem T="Guid?" Value="@((Guid?)g.Id)">@g.Title</MudSelectItem>
+        }
+    </MudSelect>
+}
+
+@if (!_adding)
+{
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => _adding = true">@L["Picker_NewGoal"]</MudButton>
+}
+else
+{
+    <div class="picker-inline">
+        <MudTextField T="string" @bind-Value="_title" Label="@L["Picker_GoalTitle"]" Immediate="true" AutoFocus="true" MaxLength="200"
+                      OnKeyDown="OnKeyDown" Margin="Margin.Dense" />
+        <MudSelect T="GoalHorizon" @bind-Value="_horizon" Label="@L["Goal_Horizon"]" Margin="Margin.Dense" Style="min-width:8rem">
+            @foreach (var h in Enum.GetValues<GoalHorizon>())
+            {
+                <MudSelectItem T="GoalHorizon" Value="@h">@L["Horizon_" + h]</MudSelectItem>
+            }
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@string.IsNullOrWhiteSpace(_title)" OnClick="CreateAsync">@L["Picker_Add"]</MudButton>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Cancel">@L["Cancel"]</MudButton>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? Value { get; set; }
+
+    [Parameter] public EventCallback<Guid?> ValueChanged { get; set; }
+
+    /// <summary>Raised after a goal was made, so a dialog that keeps its own list of goals can reload it.</summary>
+    [Parameter] public EventCallback OnCreated { get; set; }
+
+    private IReadOnlyList<GoalView> _goals = [];
+    private bool _adding;
+    private string? _title;
+    private GoalHorizon _horizon = GoalHorizon.Quarter;
+
+    protected override async Task OnInitializedAsync() => _goals = await Goals.ListAsync(includeClosed: false);
+
+    private async Task SelectAsync(Guid? id)
+    {
+        Value = id;
+        await ValueChanged.InvokeAsync(id);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_title))
+        {
+            await CreateAsync();
+        }
+    }
+
+    private void Cancel()
+    {
+        _adding = false;
+        _title = null;
+    }
+
+    private async Task CreateAsync()
+    {
+        Guid id = default;
+        var input = new GoalInput(_title ?? string.Empty, _horizon, GoalPeriods.Start(_horizon, Clock.Today), GoalProgressMode.LinkedTasks);
+        if (await RunAsync(async () => id = await Goals.CreateAsync(input)))
+        {
+            _goals = await Goals.ListAsync(includeClosed: false);
+            Cancel();
+            await SelectAsync(id);
+            await OnCreated.InvokeAsync();
+        }
+    }
+}
