@@ -43,7 +43,7 @@ data, graceful behaviour when services are missing).
 
 * Off unless `reminders_entity` is set. The Supervisor token comes from the environment, is sent only to the Supervisor proxy and is never logged; failures log status codes only, never list contents.
 * Task titles and dates are shared only with your own Home Assistant (and from there with your iCloud account through the integration you set up), only for the one configured list and only after you enable import or sending.
-* The to-do entity is the only HA object LifeOS touches; it does not read states, call other services or create automations.
+* LifeOS calls only the to-do services for the one configured entity and, if configured, one `notify.*` service for notifications (generic title and text only). It does not read states, call other services or create automations.
 
 ## Notifications
 

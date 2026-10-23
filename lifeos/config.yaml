@@ -1,6 +1,6 @@
 # Home Assistant app (add-on) manifest. LifeOS is a standalone app; it only calls Home Assistant (to-do services) if a reminders list is configured below.
 name: LifeOS
-version: "0.5.1"
+version: "0.6.0"
 slug: lifeos
 # Prebuilt image published by .github/workflows/publish-app-image.yml ({arch} = amd64 | aarch64).
 # The tag is `version` above, so bump it for every release. ha/build-local-app.ps1 strips this line for local builds.
@@ -28,6 +28,7 @@ backup: cold
 options: {}
 schema:
   reminders_entity: str?
+  notify_service: str?
   openai_api_key: password?
   openai_model: str?
   ntfy_url: str?

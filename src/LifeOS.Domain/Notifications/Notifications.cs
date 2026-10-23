@@ -32,6 +32,9 @@ public enum NotificationChannel
 {
     WebPush,
     Ntfy,
+
+    /// <summary>The Home Assistant companion app on the owner's phone, through a notify service.</summary>
+    HomeAssistant,
 }
 
 public enum DeliveryStatus
@@ -63,6 +66,8 @@ public class NotificationPreference : OwnedEntity
 
     /// <summary>Also deliver through ntfy, when it is configured on the server.</summary>
     public bool NtfyEnabled { get; set; }
+
+    public bool HomeAssistantEnabled { get; set; }
 
     public bool IsEnabled(NotificationCategory category) => category switch
     {

@@ -643,6 +643,9 @@ namespace LifeOS.Infrastructure.Persistence.Migrations
                     b.Property<bool>("HabitsEnabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("HomeAssistantEnabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("NtfyEnabled")
                         .HasColumnType("INTEGER");
 

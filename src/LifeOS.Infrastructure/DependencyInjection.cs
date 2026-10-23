@@ -50,6 +50,9 @@ public static class DependencyInjection
         services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<WebPushSender>());
         services.AddHttpClient<NtfySender>(client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<NtfySender>());
+        services.AddHttpClient<HomeAssistantNotifySender>((sp, client) =>
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, sp.GetRequiredService<IOptions<HomeAssistantApiOptions>>().Value.TimeoutSeconds)));
+        services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<HomeAssistantNotifySender>());
         // Reminders through Home Assistant: optional, off unless an entity is configured.
         services.AddHttpClient<IReminderClient, HomeAssistantReminderClient>((sp, client) =>
             client.Timeout = TimeSpan.FromSeconds(Math.Max(5, sp.GetRequiredService<IOptions<HomeAssistantApiOptions>>().Value.TimeoutSeconds)));

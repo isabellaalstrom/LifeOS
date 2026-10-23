@@ -563,4 +563,9 @@
   <data name="Picker_NewGoal" xml:space="preserve"><value>Nytt mål</value></data>
   <data name="Picker_GoalTitle" xml:space="preserve"><value>Namn på målet</value></data>
   <data name="Picker_Add" xml:space="preserve"><value>Lägg till</value></data>
+  <data name="Settings_HaNotify" xml:space="preserve"><value>Via Home Assistant-appen (rekommenderas)</value></data>
+  <data name="Settings_HaNotifyOn" xml:space="preserve"><value>Skicka notiser till mobilen via Home Assistant-appen</value></data>
+  <data name="Settings_HaNotifyHint" xml:space="preserve"><value>Notiserna kommer som vanliga notiser från Home Assistant-appen på mobilen. Inget mer behöver installeras, och det fungerar utan HTTPS.</value></data>
+  <data name="Settings_HaNotifyNotConfigured" xml:space="preserve"><value>Ange mobilens notistjänst som notify_service i appens konfiguration i Home Assistant (till exempel notify.mobile_app_din_telefon) och starta om appen. Då kan notiserna gå via Home Assistant-appen.</value></data>
+  <data name="Channel_HomeAssistant" xml:space="preserve"><value>HA-appen</value></data>
 </root>

@@ -190,6 +190,27 @@ public class NotificationTests
     }
 
     [Fact]
+    public async Task The_home_assistant_app_is_used_only_when_enabled_and_can_deliver_without_any_registered_browser()
+    {
+        using var off = await WithDueTaskAsync(subscribed: false);
+        off.PushSender.Enqueue(SendOutcome.NoRecipient());
+        await off.Planner.PlanAsync();
+        await off.Dispatcher.DispatchDueAsync();
+        Assert.Empty(off.HaSender.Sent);                                          // opt-in, like ntfy
+
+        using var on = await WithDueTaskAsync(TasksOnly with { HomeAssistantEnabled = true }, subscribed: false);
+        on.PushSender.Enqueue(SendOutcome.NoRecipient());
+        await on.Planner.PlanAsync();
+        await on.Dispatcher.DispatchDueAsync();
+
+        var payload = Assert.Single(on.HaSender.Sent);
+        Assert.DoesNotContain("HEMLIG-TITEL", payload.Title + payload.Body);
+        var n = await OnlyAsync(on);
+        Assert.Equal(NotificationStatus.Sent, n.Status);
+        Assert.Equal([NotificationChannel.HomeAssistant], n.Deliveries.Select(d => d.Channel));
+    }
+
+    [Fact]
     public async Task Ntfy_alone_delivers_when_no_device_is_registered()
     {
         using var h = await WithDueTaskAsync(TasksOnly with { NtfyEnabled = true }, subscribed: false);

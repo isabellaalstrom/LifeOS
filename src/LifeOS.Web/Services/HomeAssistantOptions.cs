@@ -17,6 +17,7 @@ public static class HomeAssistantOptions
         ["ntfy_token"] = "LifeOS:Notifications:Ntfy:Token",
         ["push_subject"] = "LifeOS:Notifications:WebPush:Subject",
         ["reminders_entity"] = "LifeOS:HomeAssistant:ReminderEntity",
+        ["notify_service"] = "LifeOS:HomeAssistant:NotifyService",
     };
 
     public static IConfigurationBuilder AddHomeAssistantOptions(this IConfigurationBuilder builder, string? path = null)

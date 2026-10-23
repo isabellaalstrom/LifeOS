@@ -127,7 +127,20 @@ else
         </MudGrid>
         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-1">@L["Settings_QuietHint"]</MudText>
 
-        @* -- this device -- *@
+        @* -- through the Home Assistant app on the phone (recommended) -- *@
+        <MudText Typo="Typo.subtitle2" Class="mt-4">@L["Settings_HaNotify"]</MudText>
+        @if (_haNotifyAvailable)
+        {
+            <MudSwitch T="bool" Value="_notif.HomeAssistantEnabled" ValueChanged="v => SaveNotifAsync(_notif with { HomeAssistantEnabled = v })" Color="Color.Primary"
+                       Label="@L["Settings_HaNotifyOn"]" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">@L["Settings_HaNotifyHint"]</MudText>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" ShowCloseIcon="false">@L["Settings_HaNotifyNotConfigured"]</MudAlert>
+        }
+
+        @* -- this device (browser push) -- *@
         <MudText Typo="Typo.subtitle2" Class="mt-4">@L["Settings_Push"]</MudText>
         @if (!_pushChecked)
         {
@@ -218,6 +231,7 @@ else
     private IReadOnlyList<NotificationView> _recent = [];
     private IReadOnlyList<PushSubscriptionView> _devices = [];
     private bool _ntfyAvailable;
+    private bool _haNotifyAvailable;
     private bool _pushChecked, _pushBusy, _testing;
     private PushSupport? _support;
     private string? _thisEndpoint;
@@ -237,6 +251,7 @@ else
         _zone = await Prefs.GetTimeZoneAsync();
         _reminders = await Reminders.GetStatusAsync();
         _ntfyAvailable = Senders.Any(s => s.Channel == NotificationChannel.Ntfy && s.IsAvailable);
+        _haNotifyAvailable = Senders.Any(s => s.Channel == NotificationChannel.HomeAssistant && s.IsAvailable);
         await LoadListsAsync();
     }
 

@@ -214,8 +214,9 @@ public sealed class ServiceHarness : IDisposable
 
         PushSender = new FakeSender(NotificationChannel.WebPush);
         NtfySender = new FakeSender(NotificationChannel.Ntfy);
+        HaSender = new FakeSender(NotificationChannel.HomeAssistant);
         Planner = new NotificationPlanner(Factory, Clock, Retros);
-        Dispatcher = new NotificationDispatcher(Factory, Clock, [PushSender, NtfySender]);
+        Dispatcher = new NotificationDispatcher(Factory, Clock, [PushSender, NtfySender, HaSender]);
         Notifications = new NotificationService(Factory, Clock, new NotificationRunner(Planner, Dispatcher));
         Subscriptions = new PushSubscriptionService(Factory);
         ReminderClient = new FakeReminderClient();
@@ -267,6 +268,8 @@ public sealed class ServiceHarness : IDisposable
     public FakeSender PushSender { get; }
 
     public FakeSender NtfySender { get; }
+
+    public FakeSender HaSender { get; }
 
     public NotificationPlanner Planner { get; }
 

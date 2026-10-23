@@ -14,7 +14,8 @@ public sealed record NotificationPreferenceView(
     TimeOnly SendTime,
     TimeOnly QuietStart,
     TimeOnly QuietEnd,
-    bool NtfyEnabled);
+    bool NtfyEnabled,
+    bool HomeAssistantEnabled = false);
 
 /// <summary>The owner's settings: AI, notifications and time zone. Everything defaults to off or neutral.</summary>
 public sealed class PreferenceService(IAppDbContextFactory dbFactory, IUserProfileStore profile)
@@ -66,6 +67,7 @@ public sealed class PreferenceService(IAppDbContextFactory dbFactory, IUserProfi
         p.QuietStart = view.QuietStart;
         p.QuietEnd = view.QuietEnd;
         p.NtfyEnabled = view.NtfyEnabled;
+        p.HomeAssistantEnabled = view.HomeAssistantEnabled;
         await db.SaveChangesAsync(ct);
     }
 
@@ -80,5 +82,5 @@ public sealed class PreferenceService(IAppDbContextFactory dbFactory, IUserProfi
     }
 
     internal static NotificationPreferenceView ToView(NotificationPreference p) => new(
-        p.TasksEnabled, p.GoalsEnabled, p.RetrosEnabled, p.HabitsEnabled, p.SendTime, p.QuietStart, p.QuietEnd, p.NtfyEnabled);
+        p.TasksEnabled, p.GoalsEnabled, p.RetrosEnabled, p.HabitsEnabled, p.SendTime, p.QuietStart, p.QuietEnd, p.NtfyEnabled, p.HomeAssistantEnabled);
 }

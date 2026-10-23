@@ -22,7 +22,7 @@ notifications, polish.** See `LifeOS_Codex_MVP_Brief.md`, `docs/decisions.md` an
 | **Kategorier** | Optional free tags (Hälsa, Hem, Jobb) for tasks, goals and recurring items. |
 | **Retron** (`/retros`) | Monthly, quarterly and annual reflections (weekly is optional), saved as drafts. Period facts, guided questions, optional well-being (with a small trend chart), actions and experiments that are followed up in later retros. Suggested on Idag only for periods you actually used the app in. |
 | **AI coach** (optional, off by default) | In a retro: a coach that reads what you saved, separates *what the data shows* from *tentative interpretations*, asks one follow-up question and can suggest actions. Also: help formulating a goal, week suggestions from the backlog, and an on-demand insight. The AI **only proposes**; nothing is saved until you press *Godkänn*. Everything works without it. |
-| **Notiser** (optional, nothing sent by default) | Web Push (PWA) reminders for due tasks, a weekly goal check-in and retro invitations, with a send time and quiet hours. Optional extra channel: ntfy. Texts are generic and never contain your titles or answers. |
+| **Notiser** (optional, nothing sent by default) | Reminders for due tasks, a weekly goal check-in and retro invitations, with a send time and quiet hours. Channels: the **Home Assistant app on your phone** (recommended: no HTTPS or extra app needed), Web Push (PWA, needs HTTPS), and optionally ntfy. Texts are generic and never contain your titles or answers. |
 | **Påminnelser från mobilen** (optional) | Connect one list in iOS Reminders (or any Home Assistant to-do list). New reminders become backlog tasks, tasks that are due or in today's focus appear in the list, and ticking off follows both ways. Off until you enable it in Settings. |
 | **Kom igång / guide** | A short onboarding card while there are no goals, and a one-page guide (`?` in the top bar) explaining tasks, goals and recurring tasks. |
 | **Inställningar** (`/settings`) | Time zone, AI on/off and coach style (with what is shared), notification categories, this device's push registration, a test notification and recent deliveries. |
@@ -68,6 +68,7 @@ Configuration (environment variables use `__`):
 | `LifeOS__Ai__DailyLimit` | `30` | most AI calls per day |
 | `LifeOS__Notifications__WebPush__Subject` | project URL | VAPID contact, `mailto:` or `https:` (HA option `push_subject`) |
 | `LifeOS__HomeAssistant__ReminderEntity` | empty (off) | the Home Assistant to-do entity to sync with, for example `todo.name_todo` (HA option `reminders_entity`; the app gets API access from the Supervisor) |
+| `LifeOS__HomeAssistant__NotifyService` | empty (off) | your phone's notify service, for example `notify.mobile_app_name` (HA option `notify_service`) |
 | `LifeOS__Notifications__Ntfy__Url` / `Topic` / `Token` | empty (ntfy off) | optional extra channel (HA options `ntfy_url`, `ntfy_topic`, `ntfy_token`) |
 
 Health: `GET /health` (anonymous, returns `Healthy`/`Unhealthy`, no details).

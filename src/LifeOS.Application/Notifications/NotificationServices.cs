@@ -205,6 +205,14 @@ public sealed class NotificationDispatcher(
 {
     private static readonly TimeSpan LockTime = TimeSpan.FromMinutes(5);
 
+    /// <summary>Web Push is always tried (it only reaches registered devices); the others are opt-in.</summary>
+    private static bool ChannelEnabled(NotificationChannel channel, NotificationPreference pref) => channel switch
+    {
+        NotificationChannel.Ntfy => pref.NtfyEnabled,
+        NotificationChannel.HomeAssistant => pref.HomeAssistantEnabled,
+        _ => true,
+    };
+
     public async Task<int> DispatchDueAsync(CancellationToken ct = default)
     {
         await using var db = dbFactory.Create();
@@ -251,7 +259,7 @@ public sealed class NotificationDispatcher(
             var delivered = false;
             var anyRecipient = false;
             var errors = new List<string>();
-            foreach (var sender in senders.Where(s => s.IsAvailable && (s.Channel == NotificationChannel.WebPush || pref.NtfyEnabled)))
+            foreach (var sender in senders.Where(s => s.IsAvailable && ChannelEnabled(s.Channel, pref)))
             {
                 SendOutcome outcome;
                 try

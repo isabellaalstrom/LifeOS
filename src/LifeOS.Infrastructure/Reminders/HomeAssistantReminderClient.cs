@@ -21,6 +21,9 @@ public sealed class HomeAssistantApiOptions
     /// <summary>The to-do entity that holds the reminders, for example todo.name_todo. Empty means the connection is off.</summary>
     public string? ReminderEntity { get; set; }
 
+    /// <summary>A notify service of the phone running the Home Assistant app, for example notify.mobile_app_name. Empty means off.</summary>
+    public string? NotifyService { get; set; }
+
     public int TimeoutSeconds { get; set; } = 20;
 }
 
